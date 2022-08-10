@@ -132,20 +132,104 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             .oneTime().inline()
             }
         )
-        async function Gold_Up() {
-            
+        async function Gold_Up(id: number, count: number) {
+            const user_get: any = await prisma.user.findFirst({
+                where: {
+                    id
+                }
+            })
+            const money_put = await prisma.user.update({
+                where: {
+                    id: user_get.id
+                },
+                data: {
+                    gold: user_get.gold + count
+                }
+            })
+            await vk.api.messages.send({
+                user_id: user_get.idvk,
+                random_id: 0,
+                message: `🏦Вам начислено ${count}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
+            })
+            context.send(`🏦Операция завершена успешно`)
+            console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
         }
-        async function Gold_Down() {
-            
+        async function Gold_Down(id: number, count: number) {
+            const user_get: any = await prisma.user.findFirst({
+                where: {
+                    id
+                }
+            })
+            if (user_get.gold-count >= 0) {
+                const money_put = await prisma.user.update({
+                    where: {
+                        id: user_get.id
+                    },
+                    data: {
+                        gold: user_get.gold - count
+                    }
+                })
+                await vk.api.messages.send({
+                    user_id: user_get.idvk,
+                    random_id: 0,
+                    message: `🏦С вас снятно ${count}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
+                })
+                context.send(`🏦Операция завершена успешно`)
+                console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
+            } else {
+                context.send(`Вы хотите снять ${count} 🪙галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`)
+            }
         }
-        async function Xp_Up() {
-            
+        async function Xp_Up(id: number, count: number) {
+            const user_get: any = await prisma.user.findFirst({
+                where: {
+                    id
+                }
+            })
+            const money_put = await prisma.user.update({
+                where: {
+                    id: user_get.id
+                },
+                data: {
+                    xp: user_get.xp + count
+                }
+            })
+            await vk.api.messages.send({
+                user_id: user_get.idvk,
+                random_id: 0,
+                message: `🏦Вам начислено ${count}🧙магического опыта. \nВаш МО: ${money_put.xp}🧙`
+            })
+            context.send(`🏦Операция завершена успешно`)
+            console.log(`User ${user_get.idvk} got ${count} MO. Him/Her XP now ${money_put.xp}`)
         }
-        async function Xp_Down() {
-            
+        async function Xp_Down(id: number, count: number) {
+            const user_get: any = await prisma.user.findFirst({
+                where: {
+                    id
+                }
+            })
+            if (user_get.xp-count >= 0) {
+                const money_put = await prisma.user.update({
+                    where: {
+                        id: user_get.id
+                    },
+                    data: {
+                        xp: user_get.xp - count
+                    }
+                })
+                await vk.api.messages.send({
+                    user_id: user_get.idvk,
+                    random_id: 0,
+                    message: `🏦С вас снятно ${count}🧙магического опыта. \nВаш МО: ${money_put.xp}🧙`
+                })
+                context.send(`🏦Операция завершена успешно`)
+                console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
+            } else {
+                context.send(`Вы хотите снять ${count} 🪙галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.xp}. Уверены, что хотите сделать баланс: ${user_get.xp-count}`)
+            }
         }
-        async function Back() {
-            
+        async function Back(id: number, count: number) {
+            context.send(`Операция отменена пользователем.`)
         }
         if (ans.payload && ans.payload.command != 'back') {
             let money_check = false
@@ -161,32 +245,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         'xp_down': Xp_Down,
                         'back': Back
                     }
-                    config[ans.payload.command](Number(datas[0].id), gold.text)
-                    const user_get: any = await prisma.user.findFirst({
-                        where: {
-                            id: Number(datas[0].id)
-                        }
-                    })
-                    const money_put = await prisma.user.update({
-                        where: {
-                            id: user_get.id
-                        },
-                        data: {
-                            gold: user_get.gold + Number(gold.text)
-                        }
-                    })
-                    
-                    if (money_put) {
-                        await vk.api.messages.send({
-                            user_id: user_get.idvk,
-                            random_id: 0,
-                            message: `💳Вам начислено ${gold.text}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
-                        })
-                        context.send(`Операция завершена успешно`)
-                        console.log(`User ${user_get.idvk} got ${gold.text} gold. Him bank now ${money_put.gold}`)
-                    } else {
-                        context.send(`Операция завершена неуспешно`)
-                    }
+                    const answergot = await config[ans.payload.command](Number(datas[0].id), Number(gold.text))
                     money_check = true
                     
                 } else {
