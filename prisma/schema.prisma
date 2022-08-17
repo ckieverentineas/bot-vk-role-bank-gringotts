@@ -13,13 +13,24 @@ datasource db {
 //user
 
 model User {
-  id     Int      @id @default(autoincrement())
-  idvk   Int
-  name   String
-  class  String
-  spec   String
-  lvl   Int @default(0)
-  gold   Int @default(60)
-  xp   Int @default(0)
-  crdate DateTime @default(now())
+  id       Int        @id @default(autoincrement())
+  idvk     Int
+  name     String
+  class    String
+  spec     String
+  lvl      Int        @default(0)
+  gold     Int        @default(60)
+  xp       Int        @default(0)
+  crdate   DateTime   @default(now())
+  Artefact Artefact[]
+}
+
+model Artefact {
+  id      Int  @id @default(autoincrement())
+  user    User @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_user Int
+  name     String
+  label String
+  description     String
+  type String
 }
