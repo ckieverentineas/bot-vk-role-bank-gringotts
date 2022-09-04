@@ -49,6 +49,35 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         `)
         prisma.$disconnect()
     })
+    hearManager.hear(/артефакты/, async (context) => {
+        const get_user:any = await prisma.user.findFirst({
+            where: {
+                idvk: context.senderId
+            }
+        })
+        context.send(`
+            Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}:
+            `
+        )
+        const artefact = await prisma.artefact.findMany({
+            where: {
+                id_user: get_user.id
+            }
+        })
+        if (artefact.length > 0) {
+            artefact.forEach(element => {
+                context.send(`
+                    Название: ${element.name}
+                    ${element.label}:  ${element.type}
+                    Подробнее о артефатке:  ${element.description}
+                `)
+            });
+        } else {
+            context.send(`У Вас еще нет артефактов =(`)
+        }
+        
+        prisma.$disconnect()
+    })
     hearManager.hear(/магазин/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
             where: {
@@ -303,7 +332,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             trigger = false
             while (trigger == false) {
                 const description: any = await context.question(`
-                    Укажите для нового 🔮артефакта описание:
+                    Укажите для нового 🔮артефакта ссылку на картинку самого артефакта из альбома группы Хогвартс Онлайн:
                 `)
                 if (description.text.length <= 1000) {
                     trigger = true
