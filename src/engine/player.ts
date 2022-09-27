@@ -65,7 +65,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         })
         if (artefact.length > 0) {
-            artefact.forEach(element => {
+            artefact.forEach(async element => {
                 context.send(`
                     Название: ${element.name}
                     ${element.label}:  ${element.type}
@@ -109,7 +109,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         } else {
             let keyboard = Keyboard.builder()
-            category.forEach((element: { name: any; id: any; }) => {
+            category.forEach(async element => {
                 keyboard.textButton({
                     label: element.name,
                     payload: {
@@ -167,7 +167,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (item.length == 0) {
                     context.send(`К сожалению приалвки пока что пусты=/`)
                 } else {
-                    item.forEach(element => {
+                    item.forEach(async element => {
                         const buer: any= context.send(`${element.name} Цена: ${element.price}`,
                             {
                                 keyboard: Keyboard.builder()
@@ -578,6 +578,49 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         
         
+        prisma.$disconnect()
+    })
+    hearManager.hear(/инвентарь/, async (context) => {
+        const get_user:any = await prisma.user.findFirst({
+            where: {
+                idvk: context.senderId
+            }
+        })
+        const inventory = await prisma.inventory.findMany({
+            where: {
+                id_user: get_user.id
+            }
+        })
+        let cart = ''
+        if (inventory) {
+            const promise = new Promise(async (resolve, reject) => {
+                inventory.forEach(async element => {
+                    console.log(element)
+                    const item = await prisma.item.findFirst({
+                        where: {
+                            id: element.id_item 
+                        }
+                    })
+                    console.log(item)
+                    cart += `${item?.name} \n`
+                    console.log(cart)
+                    if(inventory[inventory.length-1] === element){
+                        resolve('Все прошло отлично!');
+                    }
+                })
+            });
+            promise.then(
+                (data) => {
+                    console.log(data)
+                    context.send(`Вы приобрели следующее: \n ${cart}`)
+                },
+                (error) => {
+                console.log(error); // вывести ошибку
+                }
+            );
+        } else {
+            context.send(`Вы еще ничего не приобрели:(`)
+        }
         prisma.$disconnect()
     })
 }

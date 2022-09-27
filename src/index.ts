@@ -183,6 +183,47 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		`)
 		console.log(`Success save user idvk: ${context.senderId}`)
 		console.log(save)
+	} else {
+		context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+			{
+				keyboard: Keyboard.builder()
+				.textButton({
+					label: 'карта',
+					payload: {
+						command: 'grif'
+					},
+					color: 'secondary'
+				}).row()
+				.textButton({
+					label: 'артефакты',
+					payload: {
+						command: 'coga'
+					},
+					color: 'secondary'
+				}).row()
+				.textButton({
+					label: 'магазин',
+					payload: {
+						command: 'sliz'
+					},
+					color: 'secondary'
+				}).row()
+				.textButton({
+					label: 'инвентарь',
+					payload: {
+						command: 'sliz'
+					},
+					color: 'secondary'
+				}).row()
+				.textButton({
+					label: 'операции',
+					payload: {
+						command: 'sliz'
+					},
+					color: 'secondary'
+				}).oneTime()
+			}
+		)
 	}
 	prisma.$disconnect()
 	return next();
