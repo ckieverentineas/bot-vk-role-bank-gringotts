@@ -79,15 +79,194 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         prisma.$disconnect()
     })
     hearManager.hear(/магазин/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({
+        const category:any = await prisma.category.findMany({})
+        if (category.length == 0) {
+            const ans: any = await context.question(`
+                    Магазинов еще нет
+                `,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({
+                        label: 'Добавить магазин',
+                        payload: {
+                            command: 'new_shop'
+                        },
+                        color: 'secondary'
+                    })
+                    .oneTime().inline()
+                }
+            )
+            if (ans.payload.command == 'new_shop') {
+                const shop = await context.question(`
+                    Введите название магазина:
+                `)
+                const shop_create = await prisma.category.create({
+                    data: {
+                        name: shop.text
+                    }
+                })
+                context.send(`Вы открыли следующий магазин ${shop_create.name}`)
+            }
+        } else {
+            let keyboard = Keyboard.builder()
+            category.forEach((element: { name: any; id: any; }) => {
+                keyboard.textButton({
+                    label: element.name,
+                    payload: {
+                        command: `${element.id}`
+                    }
+                })
+                .textButton({
+                    label: "Удалить",
+                    payload: {
+                        command: `${element.id}`
+                    }
+                }).row()
+            })
+            const ans: any = await context.question(`
+                    Куда пойдем?
+                `,
+                {
+                    keyboard: keyboard
+                    .textButton({
+                        label: 'Добавить магазин',
+                        payload: {
+                            command: 'new_shop'
+                        },
+                        color: 'secondary'
+                    })
+                    .oneTime().inline()
+                }
+            )
+            if (ans.text == "Удалить") {
+                const shop_delete = await prisma.category.delete({
+                    where: {
+                        id: Number(ans.payload.command)
+                    }
+                })
+                context.send(`Удален магазин ${shop_delete.name}`)
+            }
+            if (ans.payload.command == 'new_shop') {
+                const shop = await context.question(`
+                    Введите название магазина:
+                `)
+                const shop_create = await prisma.category.create({
+                    data: {
+                        name: shop.text
+                    }
+                })
+                context.send(`Вы открыли следующий магазин ${shop_create.name}`)
+            }
+            if (category.find(i => i.name == ans.text)) {
+                context.send(`Вы оказались в ${ans.text}`)
+                const item: any= await prisma.item.findMany({
+                    where: {
+                        id_category: Number(ans.payload.command)
+                    }
+                })
+                if (item.length == 0) {
+                    context.send(`К сожалению приалвки пока что пусты=/`)
+                } else {
+                    item.forEach(element => {
+                        const buer: any= context.send(`${element.name} Цена: ${element.price}`,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({
+                                    label: 'Купить',
+                                    payload: {
+                                        command: `${element.name}`
+                                    },
+                                    color: 'secondary'
+                                })
+                                .oneTime().inline()
+                            }
+                        )
+                    })
+                }
+                const ans_item: any = await context.question(`
+                        Что будем делать?
+                    `,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({
+                            label: 'Добавить товар',
+                            payload: {
+                                command: 'new_item'
+                            },
+                            color: 'secondary'
+                        })
+                        .textButton({
+                            label: 'Перейти к покупкам',
+                            payload: {
+                                command: 'continue'
+                            },
+                            color: 'secondary'
+                        })
+                        .oneTime().inline()
+                    }
+                )
+                if (ans_item.payload.command == 'new_item') {
+                    const item_name = await context.question(`
+                        Введите название предмета:
+                    `)
+                    const item_price = await context.question(`
+                        Введите его ценность:
+                    `)
+                    const item_create = await prisma.item.create({
+                        data: {
+                            name: item_name.text,
+                            price: Number(item_price.text),
+                            id_category: Number(ans.payload.command),
+                            type: "Не ограничено покупок"
+                        }
+                    })
+                    context.send(`Для магазина ${ans.text} добавлен новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`)
+                }
+            }
+        }
+        
+        prisma.$disconnect()
+    })
+    hearManager.hear(/Купить/, async (context) => {
+        const item_buy:any = await prisma.item.findFirst({
             where: {
-                idvk: context.senderId
+                name: context.messagePayload.command
             }
         })
-        context.send(`
-            Зайдя в переулок и взглянув на прилавок, вы вспомнили что на вашем счету 🪙${get_user.gold} галлеонов
-        `)
-        prisma.$disconnect()
+        const item_inventory:any = await prisma.inventory.findFirst({
+            where: {
+                id_item: item_buy.id
+            }
+        })
+        if ( item_buy.id != item_inventory?.id_item) {
+            const user: any = await prisma.user.findFirst({
+                where: {
+                    idvk: context.senderId
+                }
+            })
+            if (user.gold >= item_buy.price) {
+                const money = await prisma.user.update({
+                    data: {
+                        gold: user.gold - item_buy.price
+                    },
+                    where: {
+                        id: user.id
+                    }
+                })
+                context.send(`С вашего счета списано ${item_buy.price}, осталось галлеонов: ${money.gold}`)
+                const inventory = await prisma.inventory.create({
+                    data: {
+                        id_user: user.id,
+                        id_item: item_buy.id
+                    }
+                })
+                context.send(`Ваша покупка доставлена: ${context.messagePayload.command}`)
+            } else {
+                context.send(`Недостаточно средств на покупку: ${context.messagePayload.command}`)
+            }
+        } else {
+            context.send(`У вас уже есть ${context.messagePayload.command}!`)
+        }
     })
     hearManager.hear(/операции/, async (context) => {
         let name_check = false
