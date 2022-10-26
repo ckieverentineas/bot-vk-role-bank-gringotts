@@ -24,6 +24,14 @@ model User {
   crdate    DateTime    @default(now())
   Artefact  Artefact[]
   Inventory Inventory[]
+  role      Role        @relation(fields: [id_role], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_role   Int         @default(1)
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  User User[]
 }
 
 model Artefact {

@@ -174,6 +174,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 				name: datas[0].name,
 				class: datas[1].class,
 				spec: datas[2].spec,
+				id_role: 1
 			}
 		})
 		context.send(`
@@ -184,46 +185,82 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		console.log(`Success save user idvk: ${context.senderId}`)
 		console.log(save)
 	} else {
-		context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
-			{
-				keyboard: Keyboard.builder()
-				.textButton({
-					label: 'карта',
-					payload: {
-						command: 'grif'
-					},
-					color: 'secondary'
-				}).row()
-				.textButton({
-					label: 'артефакты',
-					payload: {
-						command: 'coga'
-					},
-					color: 'secondary'
-				}).row()
-				.textButton({
-					label: 'магазин',
-					payload: {
-						command: 'sliz'
-					},
-					color: 'secondary'
-				}).row()
-				.textButton({
-					label: 'инвентарь',
-					payload: {
-						command: 'sliz'
-					},
-					color: 'secondary'
-				}).row()
-				.textButton({
-					label: 'операции',
-					payload: {
-						command: 'sliz'
-					},
-					color: 'secondary'
-				}).oneTime()
-			}
-		)
+		if (user_check.id_role === 2) {
+			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+				{
+					keyboard: Keyboard.builder()
+					.textButton({
+						label: 'карта',
+						payload: {
+							command: 'grif'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'артефакты',
+						payload: {
+							command: 'coga'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'магазин',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'инвентарь',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'операции',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).oneTime()
+				}
+			)
+		} else {
+			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+				{
+					keyboard: Keyboard.builder()
+					.textButton({
+						label: 'карта',
+						payload: {
+							command: 'grif'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'артефакты',
+						payload: {
+							command: 'coga'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'магазин',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'инвентарь',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).oneTime()
+				}
+			)
+		}
 	}
 	prisma.$disconnect()
 	return next();
