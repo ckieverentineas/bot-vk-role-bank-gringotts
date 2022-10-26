@@ -222,50 +222,51 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     context.send(`Для магазина ${ans.text} добавлен новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`)
                 }
+                if (ans_item.payload.command == 'continue') {
+                    context.send(`Нажимайте кнопку купить у желаемого товара`)
+                }
             }
         }
         
         prisma.$disconnect()
     })
     hearManager.hear(/Купить/, async (context) => {
+        const user: any = await prisma.user.findFirst({
+            where: {
+                idvk: context.senderId
+            }
+        })
         const item_buy:any = await prisma.item.findFirst({
             where: {
-                name: context.messagePayload.command
+                name: context.messagePayload.command,
             }
         })
         const item_inventory:any = await prisma.inventory.findFirst({
             where: {
-                id_item: item_buy.id
+                id_item: item_buy.id,
+                id_user: user.id
             }
         })
-        if ( item_buy.id != item_inventory?.id_item) {
-            const user: any = await prisma.user.findFirst({
+        
+        if (!item_inventory && user.gold >= item_buy.price) {
+            const money = await prisma.user.update({
+                data: {
+                    gold: user.gold - item_buy.price
+                },
                 where: {
-                    idvk: context.senderId
+                    id: user.id
                 }
             })
-            if (user.gold >= item_buy.price) {
-                const money = await prisma.user.update({
-                    data: {
-                        gold: user.gold - item_buy.price
-                    },
-                    where: {
-                        id: user.id
-                    }
-                })
-                context.send(`С вашего счета списано ${item_buy.price}, осталось галлеонов: ${money.gold}`)
-                const inventory = await prisma.inventory.create({
-                    data: {
-                        id_user: user.id,
-                        id_item: item_buy.id
-                    }
-                })
-                context.send(`Ваша покупка доставлена: ${context.messagePayload.command}`)
-            } else {
-                context.send(`Недостаточно средств на покупку: ${context.messagePayload.command}`)
-            }
+            context.send(`С вашего счета списано ${item_buy.price}, осталось галлеонов: ${money.gold}`)
+            const inventory = await prisma.inventory.create({
+                data: {
+                    id_user: user.id,
+                    id_item: item_buy.id
+                }
+            })
+            context.send(`Ваша покупка доставлена: ${context.messagePayload.command}`)
         } else {
-            context.send(`У вас уже есть ${context.messagePayload.command}!`)
+            context.send(`У вас уже есть ${context.messagePayload.command}! или же недостаточно средств!`)
         }
     })
     hearManager.hear(/операции/, async (context) => {
@@ -406,7 +407,45 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 context.send(`🏦Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
             } else {
-                context.send(`Вы хотите снять ${count} 🪙галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`)
+                const confirmq = await context.question(`Вы хотите снять ${count} 🪙галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({
+                        label: 'Да',
+                        payload: {
+                            command: 'confirm'
+                        },
+                        color: 'secondary'
+                    })
+                    .textButton({
+                        label: 'Нет',
+                        payload: {
+                            command: 'gold_down'
+                        },
+                        color: 'secondary'
+                    })
+                    .oneTime().inline()
+                    }
+                )
+                if (confirmq.payload.command === 'confirm') {
+                    const money_put = await prisma.user.update({
+                        where: {
+                            id: user_get.id
+                        },
+                        data: {
+                            gold: user_get.gold - count
+                        }
+                    })
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: `🏦С вас снятно ${count}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
+                    })
+                    context.send(`🏦Операция завершена успешно`)
+                    console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
+                } else {
+                    context.send(`Нужно быть жестче! Греби бабло`)
+                }
             }
         }
         async function Xp_Up(id: number) {
@@ -592,6 +631,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         })
         let cart = ''
+        let counter = 0
         if (inventory) {
             const promise = new Promise(async (resolve, reject) => {
                 inventory.forEach(async element => {
@@ -604,7 +644,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     console.log(item)
                     cart += `${item?.name} \n`
                     console.log(cart)
-                    if(inventory[inventory.length-1] === element){
+                    counter++
+                    if(inventory.length == counter){
                         resolve('Все прошло отлично!');
                     }
                 })
