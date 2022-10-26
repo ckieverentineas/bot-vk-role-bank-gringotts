@@ -42,7 +42,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         context.send(`
             Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:
             💳UID: ${get_user.id}
-            🪙Галлеоны: ${get_user.gold}
+            💰Галлеоны: ${get_user.gold}
             🧙Магический опыт: ${get_user.xp}
             📈Уровень: ${get_user.lvl}
             🔮Количество артефактов: ${artefact_counter}
@@ -296,7 +296,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         🏦Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}:
                         
                         💳UID: ${get_user.id}
-                        🪙Галлеоны: ${get_user.gold}
+                        💰Галлеоны: ${get_user.gold}
                         🧙Магический опыт: ${get_user.xp}
                         📈Уровень: ${get_user.lvl}
                         🔮Количество артефактов: ${artefact_counter}
@@ -313,14 +313,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             {
             keyboard: Keyboard.builder()
             .textButton({
-                label: '+🪙',
+                label: '+💰',
                 payload: {
                     command: 'gold_up'
                 },
                 color: 'secondary'
             })
             .textButton({
-                label: '-🪙',
+                label: '-💰',
                 payload: {
                     command: 'gold_down'
                 },
@@ -378,7 +378,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             await vk.api.messages.send({
                 user_id: user_get.idvk,
                 random_id: 0,
-                message: `🏦Вам начислено ${count}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
+                message: `🏦Вам начислено ${count}💰 галлеонов. \nВаш счёт: ${money_put.gold}💰`
             })
             context.send(`🏦Операция завершена успешно`)
             console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
@@ -402,12 +402,12 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `🏦С вас снятно ${count}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
+                    message: `🏦С вас снятно ${count}💰 галлеонов. \nВаш счёт: ${money_put.gold}💰`
                 })
                 context.send(`🏦Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
             } else {
-                const confirmq = await context.question(`Вы хотите снять ${count} 🪙галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`,
+                const confirmq = await context.question(`Вы хотите снять ${count} 💰галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`,
                 {
                     keyboard: Keyboard.builder()
                     .textButton({
@@ -439,7 +439,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `🏦С вас снятно ${count}🪙галлеонов. \nВаш счёт: ${money_put.gold}🪙`
+                        message: `🏦С вас снятно ${count}💰 галлеонов. \nВаш счёт: ${money_put.gold}💰`
                     })
                     context.send(`🏦Операция завершена успешно`)
                     console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
