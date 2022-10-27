@@ -24,7 +24,7 @@ export const vk = new VK({
 const questionManager = new QuestionManager();
 const hearManager = new HearManager<IQuestionMessageContext>();
 const prisma = new PrismaClient()
-
+export const root = 590776444
 /*prisma.$use(async (params, next) => {
 	console.log('This is middleware!')
 	// Modify or interrogate params here
@@ -185,7 +185,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		console.log(`Success save user idvk: ${context.senderId}`)
 		console.log(save)
 	} else {
-		if (user_check.id_role === 2) {
+		if (user_check.idvk == root && user_check.id_role === 2) {
 			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
 				{
 					keyboard: Keyboard.builder()
@@ -195,9 +195,23 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 							command: 'grif'
 						},
 						color: 'secondary'
+					})
+					.textButton({
+						label: 'инвентарь',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
 					}).row()
 					.textButton({
 						label: 'артефакты',
+						payload: {
+							command: 'coga'
+						},
+						color: 'secondary'
+					})
+					.textButton({
+						label: 'админы',
 						payload: {
 							command: 'coga'
 						},
@@ -211,7 +225,55 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						color: 'secondary'
 					}).row()
 					.textButton({
+						label: 'операции',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					})
+					.textButton({
+						label: 'права',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).oneTime()
+				}
+			)
+		}else if (user_check.id_role === 2) {
+			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+				{
+					keyboard: Keyboard.builder()
+					.textButton({
+						label: 'карта',
+						payload: {
+							command: 'grif'
+						},
+						color: 'secondary'
+					})
+					.textButton({
 						label: 'инвентарь',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'артефакты',
+						payload: {
+							command: 'coga'
+						},
+						color: 'secondary'
+					})
+					.textButton({
+						label: 'админы',
+						payload: {
+							command: 'coga'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'магазин',
 						payload: {
 							command: 'sliz'
 						},
@@ -226,7 +288,8 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 					}).oneTime()
 				}
 			)
-		} else {
+		} 
+		if (user_check.id_role === 1) {
 			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
 				{
 					keyboard: Keyboard.builder()
@@ -234,6 +297,13 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						label: 'карта',
 						payload: {
 							command: 'grif'
+						},
+						color: 'secondary'
+					}).row()
+					.textButton({
+						label: 'инвентарь',
+						payload: {
+							command: 'sliz'
 						},
 						color: 'secondary'
 					}).row()
@@ -246,13 +316,6 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 					}).row()
 					.textButton({
 						label: 'магазин',
-						payload: {
-							command: 'sliz'
-						},
-						color: 'secondary'
-					}).row()
-					.textButton({
-						label: 'инвентарь',
 						payload: {
 							command: 'sliz'
 						},

@@ -82,7 +82,7 @@ export async function Gen_Inline_Button(context: any, weapon_type: any) {
 }
 
 export async function Accessed(context: any) {
-    const role = await prisma.user.findFirst({
+    const role: any = await prisma.user.findFirst({
         where: {
             idvk: context.senderId
         }

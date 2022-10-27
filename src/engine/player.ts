@@ -6,13 +6,12 @@ import { Attachment, Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
-import { vk } from '../index';
+import { root, vk } from '../index';
 import { Accessed } from "./core/helper";
-
 const prisma = new PrismaClient()
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
-	hearManager.hear(/0/, async (context) => {
+	hearManager.hear(/deleted/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
             where: {
                 idvk: context.senderId
@@ -687,7 +686,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         })
         let cart = ''
         let counter = 0
-        if (inventory) {
+        if (inventory.length == 0) {
+            context.send(`Вы еще ничего не приобрели:(`)
+        } else {
+            console.log(`ok`)
             const promise = new Promise(async (resolve, reject) => {
                 inventory.forEach(async element => {
                     console.log(element)
@@ -714,30 +716,161 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 console.log(error); // вывести ошибку
                 }
             );
-        } else {
-            context.send(`Вы еще ничего не приобрели:(`)
         }
         prisma.$disconnect()
     })
 
     hearManager.hear(/админка/, async (context: any) => {
+        if (context.senderId == root) {
+            const user:any = await prisma.user.findFirst({
+                where: {
+                    idvk: Number(context.senderId)
+                }
+            })
+            const lvlup = await prisma.user.update({
+                where: {
+                    id: user.id
+                },
+                data: {
+                    id_role: 2
+                }
+            })
+            if (lvlup) {
+                context.send(`Рут права получены`)
+            } else {
+                context.send(`Ошибка`)
+            }
+        }
+    })
+    hearManager.hear(/права/, async (context: any) => {
+        if (context.senderId == root) {
+            const uid = await context.question(`
+                Введите 💳UID банковского счета получателя:
+			`)
+			if (uid.text) {
+                const get_user = await prisma.user.findFirst({
+                    where: {
+                        id: Number(uid.text)
+                    }
+                })
+                if (get_user) {
+                    const artefact_counter = await prisma.artefact.count({
+                        where: {
+                            id_user: Number(uid.text)
+                        }
+                    })
+                    const role: any = await prisma.role.findFirst({
+                        where: {
+                            id: get_user.id_role
+                        }
+                    })
+                    context.send(`
+                        🏦Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}:
+                        
+                        💳UID: ${get_user.id}
+                        💰Галлеоны: ${get_user.gold}
+                        🧙Магический опыт: ${get_user.xp}
+                        📈Уровень: ${get_user.lvl}
+                        🔮Количество артефактов: ${artefact_counter}
+
+                        Права пользователя: ${role.name}
+                    `)
+                    const answer1 = await context.question(`
+                        Что будем делать?
+                        `,
+                        {
+                            keyboard: Keyboard.builder()
+                            .textButton({
+                                label: 'Дать админку',
+                                payload: {
+                                    command: 'access'
+                                },
+                                color: 'secondary'
+                            })
+                            .textButton({
+                                label: 'Снять админку',
+                                payload: {
+                                    command: 'denied'
+                                },
+                                color: 'secondary'
+                            }).row()
+                            .textButton({
+                                label: 'Ничего не делать',
+                                payload: {
+                                    command: 'cancel'
+                                },
+                                color: 'secondary'
+                            })
+                            .oneTime().inline()
+                        }
+                    )
+                    if (!answer1.payload) {
+                        context.send(`Жмите только по кнопкам с иконками!`)
+                    } else {
+                        if (answer1.payload.command === 'access') {
+                            const lvlup = await prisma.user.update({
+                                where: {
+                                    id: get_user.id
+                                },
+                                data: {
+                                    id_role: 2
+                                }
+                            })
+                            if (lvlup) {
+                                context.send(`Администратором становится ${get_user.name}`)
+                                await vk.api.messages.send({
+                                    user_id: get_user.idvk,
+                                    random_id: 0,
+                                    message: `Вас назначили администратором`
+                                })
+                            } else {
+                                context.send(`Ошибка`)
+                            }
+                        }
+                        if (answer1.payload.command === 'denied') {
+                            const lvlup = await prisma.user.update({
+                                where: {
+                                    id: get_user.id
+                                },
+                                data: {
+                                    id_role: 1
+                                }
+                            })
+                            if (lvlup) {
+                                context.send(`Обычным пользователем становится ${get_user.name}`)
+                                await vk.api.messages.send({
+                                    user_id: get_user.idvk,
+                                    random_id: 0,
+                                    message: `Вас понизили до обычного пользователя`
+                                })
+                            } else {
+                                context.send(`Ошибка`)
+                            }
+                        }
+                        if (answer1.payload.command === 'cancel') {
+                            context.send(`Тоже вариант`)
+                        }
+                    }
+                }
+			} else {
+				context.send(`Нет такого банковского счета!`)
+			}
+        }
+        prisma.$disconnect
+    })
+    hearManager.hear(/админы/, async (context: any) => {
         const user = await prisma.user.findFirst({
             where: {
-                idvk: Number(context.senderId)
+                idvk: context.senderId
             }
         })
-        const lvlup = await prisma.user.update({
-            where: {
-                id: user.id
-            },
-            data: {
-                id_role: 2
-            }
-        })
-        if (lvlup) {
-            context.send(`Рут права получены`)
-        } else {
-            context.send(`Ошибка`)
+        if (user?.id_role == 2) {
+            const users = await prisma.user.findMany({
+                where: {
+                    id_role: 2
+                }
+            })
+            context.send(`${JSON.stringify(users)}`)
         }
     })
 }
