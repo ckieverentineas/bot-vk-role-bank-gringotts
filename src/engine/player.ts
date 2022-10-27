@@ -356,6 +356,44 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         🔮Количество артефактов: ${artefact_counter}
                     `)
                 }
+                const inventory = await prisma.inventory.findMany({
+                    where: {
+                        id_user: get_user?.id
+                    }
+                })
+                let cart = ''
+                let counter = 0
+                if (inventory.length == 0) {
+                    context.send(`Покупки пока не совершались`)
+                } else {
+                    console.log(`ok`)
+                    const promise = new Promise(async (resolve, reject) => {
+                        inventory.forEach(async element => {
+                            console.log(element)
+                            const item = await prisma.item.findFirst({
+                                where: {
+                                    id: element.id_item 
+                                }
+                            })
+                            console.log(item)
+                            cart += `${item?.name} \n`
+                            console.log(cart)
+                            counter++
+                            if(inventory.length == counter){
+                                resolve('Все прошло отлично!');
+                            }
+                        })
+                    });
+                    promise.then(
+                        (data) => {
+                            console.log(data)
+                            context.send(`Были совершены следующие покупки: \n ${cart}`)
+                        },
+                        (error) => {
+                        console.log(error); // вывести ошибку
+                        }
+                    );
+                }
 			} else {
 				context.send(`Нет такого банковского счета!`)
 			}
