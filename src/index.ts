@@ -218,7 +218,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						color: 'secondary'
 					}).row()
 					.textButton({
-						label: 'магазин',
+						label: 'Косой переулок',
 						payload: {
 							command: 'sliz'
 						},
@@ -273,7 +273,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						color: 'secondary'
 					}).row()
 					.textButton({
-						label: 'магазин',
+						label: 'Косой переулок',
 						payload: {
 							command: 'sliz'
 						},
@@ -315,7 +315,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						color: 'secondary'
 					}).row()
 					.textButton({
-						label: 'магазин',
+						label: 'Косой переулок',
 						payload: {
 							command: 'sliz'
 						},

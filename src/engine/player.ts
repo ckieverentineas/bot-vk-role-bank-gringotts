@@ -78,8 +78,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         
         prisma.$disconnect()
     })
-    hearManager.hear(/магазин/, async (context) => {
-        if (await Accessed(context) == 2) {
+    hearManager.hear(/Косой переулок/, async (context) => {
+        if (context.senderId == root) {
             const category:any = await prisma.category.findMany({})
             if (category.length == 0) {
                 const ans: any = await context.question(`
