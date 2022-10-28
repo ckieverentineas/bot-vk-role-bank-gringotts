@@ -184,6 +184,13 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		`)
 		console.log(`Success save user idvk: ${context.senderId}`)
 		console.log(save)
+		context.send(`Список обязательных для покупки вещей:
+		1. Волшебная палочка
+		2. Сова, кошка или жаба
+		3. Комплект учебников
+		
+		Посетите Косой переулок и приобретите их первым делом!`)
+		context.send(`Подсказка: Когда все операции вы успешно завершили и клавиатуры нет, напишите клава!`)
 	} else {
 		if (user_check.idvk == root && user_check.id_role === 2) {
 			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
