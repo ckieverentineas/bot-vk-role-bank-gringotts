@@ -642,6 +642,18 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                 })
                 context.send(`Удален артефакт ${art_del.name}`)
+                const user_find = await prisma.user.findFirst({
+                    where: {
+                        id: art_del.id_user
+                    }
+                })
+                if (user_find) {
+                    await vk.api.messages.send({
+                        user_id: user_find.idvk,
+                        random_id: 0,
+                        message: `Ваш артефакт ${art_del.name} изьял ОМОН!`
+                    })
+                }
             }
         })
         async function Artefact_Add(id: number, count: number) {
