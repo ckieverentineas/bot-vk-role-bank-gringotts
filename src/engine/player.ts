@@ -7,11 +7,11 @@ import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
 import { root, vk } from '../index';
-import { Accessed } from "./core/helper";
+import { Accessed, Keyboard_Index } from "./core/helper";
 const prisma = new PrismaClient()
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
-	hearManager.hear(/deleted/, async (context) => {
+	/*hearManager.hear(/deleted/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
             where: {
                 idvk: context.senderId
@@ -27,7 +27,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             console.log(`Deleted ${get_user.name}`)
         }
         prisma.$disconnect()
-    })
+    })*/
     hearManager.hear(/карта/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
             where: {
@@ -48,6 +48,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             🔮Количество артефактов: ${artefact_counter}
         `)
         prisma.$disconnect()
+        console.log(`User ${get_user.idvk} see card`)
+        await Keyboard_Index(context, `Карточку посмотрели, что дальше?`)
     })
     hearManager.hear(/артефакты/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
@@ -69,17 +71,19 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 context.send(`
                     Название: ${element.name}
                     ${element.label}:  ${element.type}
-                    Подробнее о артефатке:  ${element.description}
+                    Подробнее о артефакте:  ${element.description}
                 `)
             });
         } else {
             context.send(`У Вас еще нет артефактов =(`)
         }
-        
         prisma.$disconnect()
+        console.log(`User ${get_user.idvk} see artefacts`)
+        await Keyboard_Index(context, `Артефактов много не бывает, как насчет еще чего-нибудь?`)
     })
     hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {
+            console.log(`Admin ${context.senderId} enter in shopping`)
             const category:any = await prisma.category.findMany({})
             if (category.length == 0) {
                 const ans: any = await context.question(`
@@ -106,6 +110,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             name: shop.text
                         }
                     })
+                    console.log(`User ${context.senderId} open new shop`)
                     context.send(`Вы открыли следующий магазин ${shop_create.name}`)
                 }
             } else {
@@ -145,6 +150,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             id: Number(ans.payload.command)
                         }
                     })
+                    console.log(`User ${context.senderId} close shop`)
                     context.send(`Удален магазин ${shop_delete.name}`)
                 }
                 if (ans.payload?.command == 'new_shop') {
@@ -156,6 +162,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             name: shop.text
                         }
                     })
+                    console.log(`User ${context.senderId} open new shop`)
                     context.send(`Вы открыли следующий магазин ${shop_create.name}`)
                 }
                 if (category.find(i => i.name == ans.text)) {
@@ -206,7 +213,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             .oneTime().inline()
                         }
                     )
-                    if (ans_item.payload.command == 'new_item') {
+                    if (ans_item.payload?.command == 'new_item') {
                         const item_name = await context.question(`
                             Введите название предмета:
                         `)
@@ -221,6 +228,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                 type: "Не ограничено покупок"
                             }
                         })
+                        console.log(`User ${context.senderId} added new item ${item_create.id}`)
                         context.send(`Для магазина ${ans.text} добавлен новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`)
                     }
                     if (ans_item.payload.command == 'continue') {
@@ -229,6 +237,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 }
             }
         } else {
+            console.log(`User ${context.senderId} enter in shopping`)
             const category:any = await prisma.category.findMany({})
             if (category.length == 0) {
                 const ans: any = await context.send(`Магазинов еще нет`)
@@ -280,6 +289,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         prisma.$disconnect()
+        await Keyboard_Index(context, `Счастливых покупок, жмите кнопку "Купить" на понравившихся товарах`)
     })
     hearManager.hear(/Купить/, async (context) => {
         if (context.messagePayload == null) {
@@ -318,10 +328,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     id_item: item_buy.id
                 }
             })
+            console.log(`User ${context.senderId} bought new item ${item_buy.id}`)
             context.send(`Ваша покупка доставлена: ${context.messagePayload.command}`)
         } else {
+            console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
             context.send(`У вас уже есть ${context.messagePayload.command}! или же недостаточно средств!`)
         }
+        await Keyboard_Index(context, `Может еще что-нибуь приобрести?`)
     })
     hearManager.hear(/операции/, async (context) => {
         if (await Accessed(context) != 2) {
@@ -339,9 +352,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         id: Number(uid.text)
                     }
                 })
-                console.log(uid.text)
-                console.log(get_user)
                 if (get_user) {
+                    console.log(`Admin ${context.senderId} opened ${get_user.idvk} card UID: ${get_user.id}`)
                     name_check = true
 				    datas.push({id: `${uid.text}`})
                     const artefact_counter = await prisma.artefact.count({
@@ -368,18 +380,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     if (inventory.length == 0) {
                         context.send(`Покупки пока не совершались`)
                     } else {
-                        console.log(`ok`)
                         const promise = new Promise(async (resolve, reject) => {
                             inventory.forEach(async element => {
-                                console.log(element)
                                 const item = await prisma.item.findFirst({
                                     where: {
                                         id: element.id_item 
                                     }
                                 })
-                                console.log(item)
                                 cart += `${item?.name} \n`
-                                console.log(cart)
                                 counter++
                                 if(inventory.length == counter){
                                     resolve('Все прошло отлично!');
@@ -388,7 +396,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         });
                         promise.then(
                             (data) => {
-                                console.log(data)
+                                console.log(`Admin ${context.senderId} see inventory from user: ${get_user.idvk}`)
                                 context.send(`Были совершены следующие покупки: \n ${cart}`)
                             },
                             (error) => {
@@ -513,7 +521,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `🏦С вас снятно ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                    message: `🏦С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
                 })
                 context.send(`🏦Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
@@ -550,7 +558,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `🏦С вас снятно ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                        message: `🏦С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
                     })
                     context.send(`🏦Операция завершена успешно`)
                     console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
@@ -603,7 +611,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `🏦С вас снятно ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                    message: `🏦С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
                 })
                 context.send(`🏦Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
@@ -622,7 +630,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     context.send(`
                             Название: ${element.name}
                             ${element.label}:  ${element.type}
-                            Подробнее о артефатке:  ${element.description}
+                            Подробнее о артефакте:  ${element.description}
                         `,
                         {
                             keyboard: Keyboard.builder()
@@ -640,6 +648,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             } else {
                 context.send(`Артефакты отсутствуют =(`)
             }
+            console.log(`Admin ${context.senderId} see artefacts from user UID: ${id}`)
         }
         hearManager.hear(/Удалить🔮/, async (context) => {
             if (context.messagePayload == null) {
@@ -650,8 +659,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     id: Number(context.messagePayload.command)
                 }
             })
-            console.log(art_get)
-            console.log(context.messagePayload.command)
             if (art_get) {
                 const art_del = await prisma.artefact.delete({
                     where: {
@@ -671,7 +678,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         message: `Ваш артефакт ${art_del.name} изьял ОМОН!`
                     })
                 }
+                console.log(`Admin ${context.senderId} destroy artefact from user UID: ${user_find?.idvk}`)
             }
+            await Keyboard_Index(context, 'Был артефакт, нееет артефакта!')
         })
         async function Artefact_Add(id: number, count: number) {
             let datas = []
@@ -758,9 +767,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     ${artefact_create.label}: ${artefact_create.type}
                 `
             })
+            console.log(`Admin ${context.senderId} create artefact for user: ${target.idvk}`)
             context.send(`🏦Операция завершена успешно`)
         }
         async function Back(id: number, count: number) {
+            console.log(`Admin ${context.senderId} canceled operation for user UID: ${id}`)
             context.send(`Операция отменена пользователем.`)
         }
         async function Ipnut_Gold() {
@@ -811,6 +822,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         message: `Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
                     })
                 }
+                console.log(`Admin ${context.senderId} deleted user: ${user_del.idvk}`)
             }
         }
         if (ans.payload && ans.payload.command != 'back') {
@@ -828,8 +840,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         } else {
             context.send(`Операция отменена пользователем.`)
         }
-        
-        
+        await Keyboard_Index(context, `Как насчет еще одной операции? Может позвать доктора?`)
         prisma.$disconnect()
     })
     hearManager.hear(/инвентарь/, async (context) => {
@@ -848,18 +859,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         if (inventory.length == 0) {
             context.send(`Вы еще ничего не приобрели:(`)
         } else {
-            console.log(`ok`)
             const promise = new Promise(async (resolve, reject) => {
                 inventory.forEach(async element => {
-                    console.log(element)
                     const item = await prisma.item.findFirst({
                         where: {
                             id: element.id_item 
                         }
                     })
-                    console.log(item)
                     cart += `${item?.name} \n`
-                    console.log(cart)
                     counter++
                     if(inventory.length == counter){
                         resolve('Все прошло отлично!');
@@ -868,7 +875,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             });
             promise.then(
                 (data) => {
-                    console.log(data)
                     context.send(`Вы приобрели следующее: \n ${cart}`)
                 },
                 (error) => {
@@ -877,6 +883,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             );
         }
         prisma.$disconnect()
+        console.log(`User ${context.senderId} see self inventory`)
+        await Keyboard_Index(context, `Что ж, имущества много не бывает, но как насчет подзаработать еще галлеонов?`)
     })
 
     hearManager.hear(/админка/, async (context: any) => {
@@ -900,6 +908,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 context.send(`Ошибка`)
             }
         }
+        console.log(`Super user ${context.senderId} got root`)
+        await Keyboard_Index(context, `Захват мира снова в теме!`)
     })
     hearManager.hear(/права/, async (context: any) => {
         if (context.senderId == root) {
@@ -982,6 +992,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                     random_id: 0,
                                     message: `Вас назначили администратором`
                                 })
+                                console.log(`Admin ${context.senderId} set status admin for ${get_user.idvk}`)
                             } else {
                                 context.send(`Ошибка`)
                             }
@@ -1002,6 +1013,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                     random_id: 0,
                                     message: `Вас понизили до обычного пользователя`
                                 })
+                                console.log(`Admin ${context.senderId} drop status admin for ${get_user.idvk}`)
                             } else {
                                 context.send(`Ошибка`)
                             }
@@ -1016,6 +1028,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 			}
         }
         prisma.$disconnect
+        await Keyboard_Index(context, `Повышение в должности, не всегда понижение!`)
     })
     hearManager.hear(/админы/, async (context: any) => {
         const user = await prisma.user.findFirst({
@@ -1031,6 +1044,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             })
             context.send(`${JSON.stringify(users)}`)
         }
+        console.log(`Admin ${context.senderId} see list administrators`)
+        await Keyboard_Index(context, `Им бы еще черные очки, и точно люди в черном!`)
     })
 }
 

@@ -23,7 +23,7 @@ export const vk = new VK({
 //инициализация
 const questionManager = new QuestionManager();
 const hearManager = new HearManager<IQuestionMessageContext>();
-const prisma = new PrismaClient()
+export const prisma = new PrismaClient()
 export const root = 590776444
 /*prisma.$use(async (params, next) => {
 	console.log('This is middleware!')
@@ -184,7 +184,6 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			🏦Вам зачислено ${save.gold} галлеонов
 		`)
 		console.log(`Success save user idvk: ${context.senderId}`)
-		console.log(save)
 		context.send(`Список обязательных для покупки вещей:
 		1. Волшебная палочка
 		2. Сова, кошка или жаба

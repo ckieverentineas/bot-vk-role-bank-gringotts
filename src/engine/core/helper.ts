@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client"
-import { Keyboard } from "vk-io"
+import { Attachment, Keyboard } from "vk-io"
+import { root } from "../.."
 
 const prisma = new PrismaClient()
 
@@ -88,4 +89,151 @@ export async function Accessed(context: any) {
         }
     })
     return role.id_role
+}
+
+export async function Keyboard_Index(context: any, messa: any) {
+    const user_check: any = await prisma.user.findFirst({
+        where: {
+            idvk: context.senderId
+        }
+    })
+    if (user_check.idvk == root && user_check.id_role === 2) {
+        context.send(`${messa}`,
+            {
+                keyboard: Keyboard.builder()
+                .textButton({
+                    label: 'карта',
+                    payload: {
+                        command: 'grif'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
+                    label: 'инвентарь',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'артефакты',
+                    payload: {
+                        command: 'coga'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
+                    label: 'админы',
+                    payload: {
+                        command: 'coga'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'Косой переулок',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'операции',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
+                    label: 'права',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).oneTime()
+            }
+        )
+    }else if (user_check.id_role === 2) {
+        context.send(`${messa}`,
+            {
+                keyboard: Keyboard.builder()
+                .textButton({
+                    label: 'карта',
+                    payload: {
+                        command: 'grif'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
+                    label: 'инвентарь',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'артефакты',
+                    payload: {
+                        command: 'coga'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
+                    label: 'админы',
+                    payload: {
+                        command: 'coga'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'Косой переулок',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'операции',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).oneTime()
+            }
+        )
+    } 
+    if (user_check.id_role === 1) {
+        context.send(`${messa}`,
+            {
+                keyboard: Keyboard.builder()
+                .textButton({
+                    label: 'карта',
+                    payload: {
+                        command: 'grif'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'инвентарь',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'артефакты',
+                    payload: {
+                        command: 'coga'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: 'Косой переулок',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'secondary'
+                }).oneTime()
+            }
+        )
+    }
 }
