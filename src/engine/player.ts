@@ -147,7 +147,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     context.send(`Удален магазин ${shop_delete.name}`)
                 }
-                if (ans.payload.command == 'new_shop') {
+                if (ans.payload?.command == 'new_shop') {
                     const shop = await context.question(`
                         Введите название магазина:
                     `)
@@ -471,6 +471,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         )
         async function Gold_Up(id: number) {
             const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
             const user_get: any = await prisma.user.findFirst({
                 where: {
                     id
@@ -487,13 +488,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             await vk.api.messages.send({
                 user_id: user_get.idvk,
                 random_id: 0,
-                message: `🏦Вам начислено ${count}💰 галлеонов. \nВаш счёт: ${money_put.gold}💰`
+                message: `🏦Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
             })
             context.send(`🏦Операция завершена успешно`)
             console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
         }
         async function Gold_Down(id: number) {
             const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
             const user_get: any = await prisma.user.findFirst({
                 where: {
                     id
@@ -511,7 +513,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `🏦С вас снятно ${count}💰 галлеонов. \nВаш счёт: ${money_put.gold}💰`
+                    message: `🏦С вас снятно ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
                 })
                 context.send(`🏦Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
@@ -548,7 +550,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `🏦С вас снятно ${count}💰 галлеонов. \nВаш счёт: ${money_put.gold}💰`
+                        message: `🏦С вас снятно ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
                     })
                     context.send(`🏦Операция завершена успешно`)
                     console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
@@ -559,6 +561,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         async function Xp_Up(id: number) {
             const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
             const user_get: any = await prisma.user.findFirst({
                 where: {
                     id
@@ -575,13 +578,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             await vk.api.messages.send({
                 user_id: user_get.idvk,
                 random_id: 0,
-                message: `🏦Вам начислено ${count}🧙магического опыта. \nВаш МО: ${money_put.xp}🧙`
+                message: `🏦Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \n Уведомление: ${messa}`
             })
             context.send(`🏦Операция завершена успешно`)
             console.log(`User ${user_get.idvk} got ${count} MO. Him/Her XP now ${money_put.xp}`)
         }
         async function Xp_Down(id: number) {
             const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
             const user_get: any = await prisma.user.findFirst({
                 where: {
                     id
@@ -599,7 +603,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `🏦С вас снятно ${count}🧙магического опыта. \nВаш МО: ${money_put.xp}🧙`
+                    message: `🏦С вас снятно ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
                 })
                 context.send(`🏦Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
@@ -769,6 +773,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (gold.text) {
                     money_check = true
                     golden = Number(gold.text)
+                } 
+            }
+            return golden
+        }
+        async function Ipnut_Message() {
+            let golden = ''
+            let money_check = false
+            while (money_check == false) {
+                const gold = await context.question(`
+                    Введите уведомление пользователю ${ans.text}:
+                `)
+                if (gold.text) {
+                    money_check = true
+                    golden = gold.text
                 } 
             }
             return golden
