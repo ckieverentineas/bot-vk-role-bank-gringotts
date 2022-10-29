@@ -169,7 +169,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         context.send(`К сожалению приалвки пока что пусты=/`)
                     } else {
                         item.forEach(async element => {
-                            const buer: any= context.send(`${element.name} Цена: ${element.price}`,
+                            const buer: any= context.send(`${element.name} ${element.price}💰`,
                                 {
                                     keyboard: Keyboard.builder()
                                     .textButton({
@@ -261,7 +261,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         context.send(`К сожалению приалвки пока что пусты=/`)
                     } else {
                         item.forEach(async element => {
-                            const buer: any= context.send(`${element.name} Цена: ${element.price}`,
+                            const buer: any= context.send(`${element.name} ${element.price}💰`,
                                 {
                                     keyboard: Keyboard.builder()
                                     .textButton({
@@ -441,6 +441,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 },
                 color: 'secondary'
             })
+            .textButton({
+                label: '👁🔮',
+                payload: {
+                    command: 'artefact_show'
+                },
+                color: 'secondary'
+            })
             .row()
             .textButton({
                 label: '🔙',
@@ -590,6 +597,53 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 context.send(`Вы хотите снять ${count} 🧙магического опыта c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.xp}. Уверены, что хотите сделать баланс: ${user_get.xp-count}`)
             }
         }
+        async function Artefact_Show(id: number) { 
+            const artefact = await prisma.artefact.findMany({
+                where: {
+                    id_user: id
+                }
+            })
+            if (artefact.length > 0) {
+                artefact.forEach(async element => {
+                    context.send(`
+                            Название: ${element.name}
+                            ${element.label}:  ${element.type}
+                            Подробнее о артефатке:  ${element.description}
+                        `,
+                        {
+                            keyboard: Keyboard.builder()
+                            .textButton({
+                                label: 'Удалить🔮',
+                                payload: {
+                                    command: `${element.id}`
+                                },
+                                color: 'secondary'
+                            })
+                            .oneTime().inline()
+                        }
+                    )
+                });
+            } else {
+                context.send(`Артефакты отсутствуют =(`)
+            }
+        }
+        hearManager.hear(/Удалить🔮/, async (context) => {
+            const art_get: any = await prisma.artefact.findFirst({
+                where: {
+                    id: Number(context.messagePayload.command)
+                }
+            })
+            console.log(art_get)
+            console.log(context.messagePayload.command)
+            if (art_get) {
+                const art_del = await prisma.artefact.delete({
+                    where: {
+                        id: Number(context.messagePayload.command)
+                    }
+                })
+                context.send(`Удален артефакт ${art_del.name}`)
+            }
+        })
         async function Artefact_Add(id: number, count: number) {
             let datas = []
             let trigger = false
@@ -701,7 +755,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 'xp_up': Xp_Up,
                 'xp_down': Xp_Down,
                 'back': Back,
-                'artefact_add': Artefact_Add
+                'artefact_add': Artefact_Add,
+                'artefact_show': Artefact_Show
             }
             const answergot = await config[ans.payload.command](Number(datas[0].id))
         } else {
