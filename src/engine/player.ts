@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { HearManager } from "@vk-io/hear";
 import { randomInt } from "crypto";
 import { send } from "process";
-import { Attachment, Keyboard, KeyboardBuilder } from "vk-io";
+import { Attachment, Keyboard, KeyboardBuilder, PhotoAttachment } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
@@ -57,6 +57,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 idvk: context.senderId
             }
         })
+        await context.sendPhotos({
+            value: './src/art/artefact.jpg',
+        });
         context.send(`
             Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}:
             `
@@ -251,6 +254,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         }
                     }).row()
                 })
+                await context.sendPhotos({
+                    value: './src/art/shop.jpg',
+                });
                 const ans: any = await context.question(`
                         Куда пойдем?
                     `,
@@ -258,6 +264,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         keyboard: keyboard
                         .oneTime().inline()
                     }
+                    
                 )
                 if (category.find(i => i.name == ans.text)) {
                     context.send(`Вы оказались в ${ans.text}`)
@@ -856,6 +863,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         })
         let cart = ''
         let counter = 0
+        await context.sendPhotos({
+            value: './src/art/inventory.jpg',
+        });
         if (inventory.length == 0) {
             context.send(`Вы еще ничего не приобрели:(`)
         } else {
