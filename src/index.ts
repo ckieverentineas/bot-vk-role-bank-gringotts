@@ -40,9 +40,26 @@ vk.updates.on('message_new', hearManager.middleware);
 InitGameRoutes(hearManager)
 registerUserRoutes(hearManager)
 
-
+let blocker: Array<1> = []
 //миддлевар для предварительной обработки сообщений
 vk.updates.on('message_new', async (context: any, next: any) => {
+	if (context.text == `позвать сотрудника`) {
+		if (!blocker.includes(context.senderId)) {
+			blocker.push(context.senderId)
+			context.send(`Включен режим удержания клиента, для возврата в нормальный режим, пишите: позвать бота`)
+			console.log(`User ${context.senderId} activated mode for talk with employee`)
+		}
+	}
+	if (context.text == `позвать бота`) {
+		if (blocker.includes(context.senderId)) {
+			blocker.splice(blocker.indexOf(context.senderId))
+			context.send(`Банковское обслуживание переведено в штатный режим.`)
+			console.log(`User ${context.senderId} return in mode for talk with bot`)
+		}
+	}
+	if (blocker.includes(context.senderId)) {
+		return
+	}
 	//проверяем есть ли пользователь в базах данных
 	const user_check = await prisma.user.findFirst({
 		where: {
@@ -193,7 +210,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		context.send(`Подсказка: Когда все операции вы успешно завершили и клавиатуры нет, напишите клава!`)
 	} else {
 		if (user_check.idvk == root && user_check.id_role === 2) {
-			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+			context.send(`Гоблины Банка Гриннотс приветствуют вас, для связи с нами напишите: позвать сотрудника`,
 				{
 					keyboard: Keyboard.builder()
 					.textButton({
@@ -248,7 +265,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 				}
 			)
 		}else if (user_check.id_role === 2) {
-			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+			context.send(`Гоблины Банка Гриннотс приветствуют вас, для связи с нами напишите: позвать сотрудника`,
 				{
 					keyboard: Keyboard.builder()
 					.textButton({
@@ -297,7 +314,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			)
 		} 
 		if (user_check.id_role === 1) {
-			context.send(`Bank system 1.0v приветсвует вас, что угодно?`,
+			context.send(`Гоблины Банка Гриннотс приветствуют вас, для связи с нами напишите: позвать сотрудника`,
 				{
 					keyboard: Keyboard.builder()
 					.textButton({
