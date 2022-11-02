@@ -189,6 +189,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                         },
                                         color: 'secondary'
                                     })
+                                    .textButton({
+                                        label: 'Редактировать',
+                                        payload: {
+                                            command: `${element.name}`
+                                        },
+                                        color: 'secondary'
+                                    })
                                     .oneTime().inline()
                                 }
                             )
@@ -342,6 +349,33 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             context.send(`У вас уже есть ${context.messagePayload.command}! или же недостаточно средств!`)
         }
         await Keyboard_Index(context, `Может еще что-нибудь приобрести?`)
+    })
+    hearManager.hear(/Редактировать/, async (context) => {
+        if (context.messagePayload == null && context.senderId != root) {
+            return
+        }
+        const item_buy:any = await prisma.item.findFirst({
+            where: {
+                name: context.messagePayload.command,
+            }
+        })
+        if (item_buy) {
+            const name = await context.question(`Предмет: ${item_buy.name}.\nВведите новое имя для товара:`)
+            const item_update = await prisma.item.update({
+                where: {
+                    id: item_buy.id
+                },
+                data: {
+                    name
+                }
+            })
+            console.log(`Admin ${context.senderId} edit name item ${item_buy.id}`)
+            context.send(`Имя предмета ${item_buy.name} изменено на ${item_update.name}`)
+        } else {
+            console.log(`Admin ${context.senderId} can't edit name item ${item_buy.id}`)
+            context.send(`Имя предмета не удалось поменять`)
+        }
+        await Keyboard_Index(context, `Может еще что-нибудь отредактировать?`)
     })
     hearManager.hear(/операции/, async (context) => {
         if (await Accessed(context) != 2) {
