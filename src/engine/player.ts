@@ -443,7 +443,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     context.send(`
                         🏦Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}:
-                        
+                        https://vk.com/id${get_user.idvk}
                         💳UID: ${get_user.id}
                         💰Галлеоны: ${get_user.gold}
                         🧙Магический опыт: ${get_user.xp}
@@ -767,7 +767,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let trigger = false
             while (trigger == false) {
                 const name: any = await context.question(`
-                    🏦Внимание запущена процедура генерации Артефакта для банковского счёта 💳:${id}
+                    🏦Внимание! запущена процедура генерации Артефакта для банковского счёта 💳:${id}
                     Укажите для нового 🔮артефакта название:
                 `)
                 if (name.text.length <= 30) {
