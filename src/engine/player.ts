@@ -280,23 +280,61 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             id_category: Number(ans.payload.command)
                         }
                     })
+                    const user: any = await prisma.user.findFirst({
+                        where: {
+                            idvk: context.senderId
+                        }
+                    })
+                    const inventory: any = await prisma.inventory.findMany({
+                        where: {
+                            id_user: user.id
+                        }
+                    })
                     if (item.length == 0) {
                         context.send(`К сожалению приалвки пока что пусты=/`)
                     } else {
                         item.forEach(async element => {
-                            const buer: any= context.send(`${element.name} ${element.price}💰`,
-                                {
-                                    keyboard: Keyboard.builder()
-                                    .textButton({
-                                        label: 'Купить',
-                                        payload: {
-                                            command: `${element.name}`
-                                        },
-                                        color: 'secondary'
-                                    })
-                                    .oneTime().inline()
+                            async function Searcher(data: any, target: number) {
+                                let counter = 0
+                                while (data.length != counter) {
+                                    if (data[counter].id_item == target) {
+                                        return true
+                                    }
+                                    counter++
                                 }
-                            )
+                                return false
+                            }
+                            const checker = await Searcher(inventory, element.id)
+                            if (checker){
+                                const buer: any= context.send(`${element.name} ${element.price}💰`,
+                                    {
+                                        keyboard: Keyboard.builder()
+                                        .textButton({
+                                            label: 'Куплено',
+                                            payload: {
+                                                command: `${element.name}`
+                                            },
+                                            color: 'positive'
+                                        })
+                                        .oneTime().inline()
+                                    }
+                                )
+                            } else {
+                                const buer: any= context.send(`${element.name} ${element.price}💰`,
+                                    {
+                                        keyboard: Keyboard.builder()
+                                        .textButton({
+                                            label: 'Купить',
+                                            payload: {
+                                                command: `${element.name}`
+                                            },
+                                            color: 'secondary'
+                                        })
+                                        .oneTime().inline()
+                                    }
+                                )
+                            }
+                            
                         })
                     }
                 }
@@ -352,6 +390,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     hearManager.hear(/Редактировать/, async (context) => {
         if (context.messagePayload == null && context.senderId != root) {
+            console.log((`stop`))
             return
         }
         const item_buy:any = await prisma.item.findFirst({
@@ -360,13 +399,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         })
         if (item_buy) {
-            const name = await context.question(`Предмет: ${item_buy.name}.\nВведите новое имя для товара:`)
+            const name: any = await context.question(`Предмет: ${item_buy.name}.\nВведите новое имя для товара:`)
             const item_update = await prisma.item.update({
                 where: {
                     id: item_buy.id
                 },
                 data: {
-                    name
+                    name: name.text
                 }
             })
             console.log(`Admin ${context.senderId} edit name item ${item_buy.id}`)
