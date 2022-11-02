@@ -134,21 +134,28 @@ export async function Keyboard_Index(context: any, messa: any) {
                     payload: {
                         command: 'sliz'
                     },
-                    color: 'secondary'
+                    color: 'positive'
+                })
+                .textButton({
+                    label: 'Услуги',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'primary'
                 }).row()
                 .textButton({
                     label: 'операции',
                     payload: {
                         command: 'sliz'
                     },
-                    color: 'secondary'
+                    color: 'negative'
                 })
                 .textButton({
                     label: 'права',
                     payload: {
                         command: 'sliz'
                     },
-                    color: 'secondary'
+                    color: 'negative'
                 }).oneTime()
             }
         )
@@ -189,14 +196,21 @@ export async function Keyboard_Index(context: any, messa: any) {
                     payload: {
                         command: 'sliz'
                     },
-                    color: 'secondary'
+                    color: 'positive'
+                })
+                .textButton({
+                    label: 'Услуги',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'primary'
                 }).row()
                 .textButton({
                     label: 'операции',
                     payload: {
                         command: 'sliz'
                     },
-                    color: 'secondary'
+                    color: 'negative'
                 }).oneTime()
             }
         )
@@ -231,7 +245,13 @@ export async function Keyboard_Index(context: any, messa: any) {
                     payload: {
                         command: 'sliz'
                     },
-                    color: 'secondary'
+                    color: 'positive'
+                }).textButton({
+                    label: 'Услуги',
+                    payload: {
+                        command: 'sliz'
+                    },
+                    color: 'primary'
                 }).oneTime()
             }
         )

@@ -13,10 +13,10 @@ import { send } from 'process';
 
 //авторизация
 export const vk = new VK({
-	//token: "b603c7efd00e1ce663d70a18c8915686bbdfee594a2f8d66d77620c712df5e9c2ae9e211c4164b80df6f9",
-	//pollingGroupId: 207638246
-	token: "vk1.a.4RU56GK1UGfQUoYe7uydfHW60tuitMBMR-4RLXwLd0F96Cqtz3hCShUhO5taLtmhotVMGyG6tz5ujHLujhxuDc3NXunnoe5uPBr4gE7sx1qJZr2JwSdiybvFMTwVnoxT4EZgdcmDgy2X0hgnEDYJgK3r82lj7Dty4eTazFoqtNbK1opve_7Vt3RmhmllLyUL6dpUzpZAmOBc87w7X9f0ig",
-	pollingGroupId: 200587399
+	token: "b603c7efd00e1ce663d70a18c8915686bbdfee594a2f8d66d77620c712df5e9c2ae9e211c4164b80df6f9",
+	pollingGroupId: 207638246
+	//token: "vk1.a.4RU56GK1UGfQUoYe7uydfHW60tuitMBMR-4RLXwLd0F96Cqtz3hCShUhO5taLtmhotVMGyG6tz5ujHLujhxuDc3NXunnoe5uPBr4gE7sx1qJZr2JwSdiybvFMTwVnoxT4EZgdcmDgy2X0hgnEDYJgK3r82lj7Dty4eTazFoqtNbK1opve_7Vt3RmhmllLyUL6dpUzpZAmOBc87w7X9f0ig",
+	//pollingGroupId: 200587399
 	//token: 'd0d096ed5933ced08bc674c08134e4e47603a0443f4972d6595024ae32f8677b62032ec53ebfddc80ff16'
 });
 
@@ -249,21 +249,28 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						payload: {
 							command: 'sliz'
 						},
-						color: 'secondary'
+						color: 'positive'
+					})
+					.textButton({
+						label: 'Услуги',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'primary'
 					}).row()
 					.textButton({
 						label: 'операции',
 						payload: {
 							command: 'sliz'
 						},
-						color: 'secondary'
+						color: 'negative'
 					})
 					.textButton({
 						label: 'права',
 						payload: {
 							command: 'sliz'
 						},
-						color: 'secondary'
+						color: 'negative'
 					}).oneTime()
 				}
 			)
@@ -304,14 +311,21 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						payload: {
 							command: 'sliz'
 						},
-						color: 'secondary'
+						color: 'positive'
+					})
+					.textButton({
+						label: 'Услуги',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'primary'
 					}).row()
 					.textButton({
 						label: 'операции',
 						payload: {
 							command: 'sliz'
 						},
-						color: 'secondary'
+						color: 'negative'
 					}).oneTime()
 				}
 			)
@@ -346,7 +360,13 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 						payload: {
 							command: 'sliz'
 						},
-						color: 'secondary'
+						color: 'positive'
+					}).textButton({
+						label: 'Услуги',
+						payload: {
+							command: 'sliz'
+						},
+						color: 'primary'
 					}).oneTime()
 				}
 			)
