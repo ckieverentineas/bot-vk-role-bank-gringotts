@@ -1294,6 +1294,18 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `Как насчет еще одной услуги?`)
     })
+    hearManager.hear(/енотик/, async (context: any) => {
+        if (await Accessed(context) == 2) {
+            context.sendDocuments({
+                value: `./prisma/dev.db`,
+                filename: `dev.db`
+            },
+            {
+                message: 'Открывать на сайте: https://sqliteonline.com/'
+            }
+        );
+        }
+    })
 }
 
     
