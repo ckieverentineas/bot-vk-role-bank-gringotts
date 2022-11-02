@@ -1130,6 +1130,98 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         console.log(`Admin ${context.senderId} see list administrators`)
         await Keyboard_Index(context, `Им бы еще черные очки, и точно люди в черном!`)
     })
+    hearManager.hear(/услуги/, async (context: any) => {
+        const user = await prisma.user.findFirst({
+            where: {
+                idvk: context.senderId
+            }
+        })
+        const selector = await context.question(`В данный момент доступны следующие операции:`,
+            {
+                keyboard: Keyboard.builder()
+                .textButton({
+                    label: '📈',
+                    payload: {
+                        command: 'lvl_upper'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
+                    label: '🧙>💰',
+                    payload: {
+                        command: 'convert_mo'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: '💰>🧙',
+                    payload: {
+                        command: 'convert_gal'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
+                    label: '🔙',
+                    payload: {
+                        command: 'cancel'
+                    },
+                    color: 'secondary'
+                })
+                .oneTime().inline()
+            }
+        )
+        const config: any = {
+            'lvl_upper': LVL_Upper,
+            'convert_mo': Convert_MO,
+            'convert_gal': Convert_Gal,
+            'cancel': Cancel
+        }
+        config[selector.payload.command](context)
+        async function LVL_Upper(context: any) {
+            const user: any = await prisma.user.findFirst({
+                where: {
+                    idvk: context.senderId
+                }
+            })
+            if (user.lvl == 0) {
+                const user_update = await prisma.user.update({
+                    where: {
+                        id: user.id
+                    },
+                    data: {
+                        lvl: user.lvl++
+                    }
+                })
+                context.send(`Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Первый раз бесплатно, далее за уровень по 150🧙`)
+                await Keyboard_Index(context, `Твой первый уровень? - это только начало!`)
+                return
+            }
+            if (user.xp >= 150) {
+                const user_update = await prisma.user.update({
+                    where: {
+                        id: user.id
+                    },
+                    data: {
+                        xp: user.xp-150,
+                        lvl: user.lvl++
+                    }
+                })
+                context.send(`Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Остаток: ${user_update.xp}🧙`)
+            } else {
+                context.send(`Недостаточно магического опыта! Необходимо 150🧙 для повышения уровня.`)
+            }
+        }
+        async function Convert_MO(context: any) {
+            
+        }
+        async function Convert_Gal(context: any) {
+            
+        }
+        async function Cancel(context: any) {
+            
+        }
+        await Keyboard_Index(context, `Как насчет еще одной услуги?`)
+    })
 }
 
     
