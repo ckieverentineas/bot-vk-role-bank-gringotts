@@ -328,7 +328,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     id: user.id
                 }
             })
-            context.send(`С вашего счета списано ${item_buy.price}, осталось галлеонов: ${money.gold}`)
+            context.send(`С вашего счета списано ${item_buy.price}💰, остаток: ${money.gold}💰`)
             const inventory = await prisma.inventory.create({
                 data: {
                     id_user: user.id,
@@ -341,7 +341,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
             context.send(`У вас уже есть ${context.messagePayload.command}! или же недостаточно средств!`)
         }
-        await Keyboard_Index(context, `Может еще что-нибуь приобрести?`)
+        await Keyboard_Index(context, `Может еще что-нибудь приобрести?`)
     })
     hearManager.hear(/операции/, async (context) => {
         if (await Accessed(context) != 2) {
