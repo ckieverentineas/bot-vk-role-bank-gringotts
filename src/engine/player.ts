@@ -1422,12 +1422,19 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     color: 'secondary'
                 })
                 .textButton({
+                    label: '🩲',
+                    payload: {
+                        command: 'underwear'
+                    },
+                    color: 'secondary'
+                }).row()
+                .textButton({
                     label: '🧙>💰',
                     payload: {
                         command: 'convert_mo'
                     },
                     color: 'secondary'
-                }).row()
+                })
                 .textButton({
                     label: '💰>🧙',
                     payload: {
@@ -1449,9 +1456,114 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             'lvl_upper': LVL_Upper,
             'convert_mo': Convert_MO,
             'convert_gal': Convert_Gal,
-            'cancel': Cancel
+            'cancel': Cancel,
+            'underwear': Underwear
         }
         config[selector.payload.command](context)
+
+        async function Underwear(context: any) {
+            const user: any = await prisma.user.findFirst({
+                where: {
+                    idvk: context.senderId
+                }
+            })
+            const trigger: any = await prisma.trigger.findFirst({
+                where: {
+                    id_user: user.id,
+                    name: 'underwear'
+                }
+            })
+            if (!trigger) {
+                const trigger_init: any = await prisma.trigger.create({
+                    data: {
+                        id_user: user.id,
+                        name: 'underwear',
+                        value: false
+                    }
+                })
+                console.log(`Init underwear for user ${context.senderId}`)
+            }
+            const trigger_check: any = await prisma.trigger.findFirst({
+                where: {
+                    id_user: user.id,
+                    name: 'underwear'
+                }
+            })
+            if (trigger_check.value == false) {
+                const answe = await context.question(`Заложить трусы`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({
+                            label: '+5💰',
+                            payload: {
+                                command: 'lvl_upper'
+                            },
+                            color: 'secondary'
+                        })
+                        .oneTime().inline()
+                    }
+                )
+                if (answe.payload) {
+                    const underwear_sold: any = await prisma.user.update({
+                        where: {
+                            id: user.id
+                        },
+                        data: {
+                            gold: user.gold+5
+                        }
+                    })
+                    const trigger_update: any = await prisma.trigger.update({
+                        where: {
+                            id: trigger_check.id
+                        },
+                        data: {
+                            value: true
+                        }
+                    })
+                    context.send(`Вы заложили свои трусы Гоблинам, держите 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
+                    console.log(`User ${context.senderId} sold self underwear`)
+                } else {
+                    context.send(`И к чему такие стеснения?...`)
+                }
+            } else {
+                const answe = await context.question(`Выкупить трусы, не хотите? - тогда не жмите по кнопке!`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({
+                            label: '-10💰',
+                            payload: {
+                                command: 'lvl_upper'
+                            },
+                            color: 'secondary'
+                        })
+                        .oneTime().inline()
+                    }
+                )
+                if (answe.payload) {
+                    const underwear_sold: any = await prisma.user.update({
+                        where: {
+                            id: user.id
+                        },
+                        data: {
+                            gold: user.gold-10
+                        }
+                    })
+                    const trigger_update: any = await prisma.trigger.update({
+                        where: {
+                            id: trigger_check.id
+                        },
+                        data: {
+                            value: false
+                        }
+                    })
+                    context.send(`Вы выкупили свои трусы у Гоблинов, держите за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n - Забирайте свои вонючие труханы, все хранилище нам завоняли!`)
+                    console.log(`User ${context.senderId} return self underwear`)
+                } else {
+                    context.send(`А как же восстановить честь?`)
+                }
+            }
+            await Keyboard_Index(context, 'Кто бы мог подумать, что дойдет до такого?')
+        }
         async function LVL_Upper(context: any) {
             const user: any = await prisma.user.findFirst({
                 where: {

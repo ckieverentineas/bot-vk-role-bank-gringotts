@@ -26,6 +26,7 @@ model User {
   Inventory Inventory[]
   role      Role        @relation(fields: [id_role], references: [id], onDelete: Cascade, onUpdate: Cascade)
   id_role   Int         @default(1)
+  Trigger   Trigger[]
 }
 
 model Role {
@@ -66,4 +67,12 @@ model Category {
   id   Int    @id @default(autoincrement())
   name String
   Item Item[]
+}
+
+model Trigger {
+  id      Int     @id @default(autoincrement())
+  name    String
+  value   Boolean
+  user    User    @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_user Int
 }
