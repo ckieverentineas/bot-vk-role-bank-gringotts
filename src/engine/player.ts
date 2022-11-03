@@ -239,8 +239,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         `)
                         const item_type: any = await context.question(`
                                 Укажите тип товара:
-                                🕐 - покупается пользователем однажды;
-                                ♾ - покупается пользователем бесконечное количество раз.
+                                🕐 — покупается пользователем однажды;
+                                ♾ — покупается пользователем бесконечное количество раз.
                             `,
                             {
                                 keyboard: Keyboard.builder()
@@ -432,8 +432,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         if (item_buy) {
             const item_type: any = await context.question(`
                     Укажите тип товара для ${item_buy.name}:
-                    🕐 - покупается пользователем однажды;
-                    ♾ - покупается пользователем бесконечное количество раз.
+                    🕐 — покупается пользователем однажды;
+                    ♾ — покупается пользователем бесконечное количество раз.
                     Текущий тип: ${item_buy.type}
                 `,
                 {
@@ -586,7 +586,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 color: 'secondary'
             })
             .textButton({
-                label: '-💰',
+                label: '—💰',
                 payload: {
                     command: 'gold_down'
                 },
@@ -600,7 +600,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 color: 'secondary'
             })
             .textButton({
-                label: '-🧙',
+                label: '—🧙',
                 payload: {
                     command: 'xp_down'
                 },
@@ -869,7 +869,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             while (trigger == false) {
                 const type: any = await context.question(`
                         Укажите для нового 🔮артефакта тип применения:
-                        🕐 - одноразовое; ♾ - многоразовое.
+                        🕐 — одноразовое; ♾ — многоразовое.
                     `,
                     {
                         keyboard: Keyboard.builder()
@@ -975,21 +975,45 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     id: id
                 }
             })
-            if (user_get) {
-                const user_del = await prisma.user.delete({
-                    where: {
-                        id: id
-                    }
-                })
-                context.send(`Удален пользователь ${user_del.name}`)
-                if (user_del) {
-                    await vk.api.messages.send({
-                        user_id: user_del.idvk,
-                        random_id: 0,
-                        message: `Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
+            const confirmq = await context.question(`Вы уверены, что хотите удалить клиента ${user_get.name}`,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({
+                        label: 'Да',
+                        payload: {
+                            command: 'confirm'
+                        },
+                        color: 'secondary'
                     })
-                }
-                console.log(`Admin ${context.senderId} deleted user: ${user_del.idvk}`)
+                    .textButton({
+                        label: 'Нет',
+                        payload: {
+                            command: 'gold_down'
+                        },
+                        color: 'secondary'
+                    })
+                    .oneTime().inline()
+                    }
+            )
+            if (confirmq.payload.command === 'confirm' && user_get) {
+                if (user_get) {
+                    const user_del = await prisma.user.delete({
+                        where: {
+                            id: id
+                        }
+                    })
+                    context.send(`Удален пользователь ${user_del.name}`)
+                    if (user_del) {
+                        await vk.api.messages.send({
+                            user_id: user_del.idvk,
+                            random_id: 0,
+                            message: `Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
+                        })
+                    }
+                    console.log(`Admin ${context.senderId} deleted user: ${user_del.idvk}`)
+                } 
+            } else {
+                context.send(`Удаление ${user_get.name} отменено.`)
             }
         }
 
@@ -1526,11 +1550,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     context.send(`И к чему такие стеснения?...`)
                 }
             } else {
-                const answe = await context.question(`Выкупить трусы, не хотите? - тогда не жмите по кнопке!`,
+                const answe = await context.question(`Выкупить трусы, не хотите? — тогда не жмите по кнопке!`,
                     {
                         keyboard: Keyboard.builder()
                         .textButton({
-                            label: '-10💰',
+                            label: '—10💰',
                             payload: {
                                 command: 'lvl_upper'
                             },
@@ -1556,7 +1580,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             value: false
                         }
                     })
-                    context.send(`Вы выкупили свои трусы у Гоблинов, держите за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n - Забирайте свои вонючие труханы, все хранилище нам завоняли!`)
+                    context.send(`Вы выкупили свои трусы у Гоблинов, держите за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n — Забирайте свои вонючие труханы, все хранилище нам завоняли!`)
                     console.log(`User ${context.senderId} return self underwear`)
                 } else {
                     context.send(`А как же восстановить честь?`)
@@ -1599,7 +1623,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 if (user_update) {
                     await context.send(`Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Первый раз бесплатно, далее за уровень по 150🧙\n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
-                    await Keyboard_Index(context, `Твой первый уровень? - это только начало!`)
+                    await Keyboard_Index(context, `Твой первый уровень? — это только начало!`)
                     console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
                     return
                 }
@@ -1616,17 +1640,17 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                 })
                 context.send(`Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Остаток: ${user_update.xp}🧙 \n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
-                await Keyboard_Index(context, `Быстрее, выше, сильнее - без ограничений!`)
+                await Keyboard_Index(context, `Быстрее, выше, сильнее — без ограничений!`)
                 console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
             } else {
                 if (user.lvl < 16) {
                     context.send(`Уровень повыше невозможно постичь...`)
-                    await Keyboard_Index(context, `Вы достигли предела, хотя бесконечность - не предел.`)
+                    await Keyboard_Index(context, `Вы достигли предела, хотя бесконечность — не предел.`)
                     console.log(`User ${context.senderId} lvl up from finally anytime`)
                     return
                 }
                 context.send(`Недостаточно магического опыта! Необходимо 150🧙 для повышения уровня.`)
-                await Keyboard_Index(context, `Ха-ха, наивно было полагать, что можно стать сильнее без достаточного магического опыта`)
+                await Keyboard_Index(context, `Ха—ха, наивно было полагать, что можно стать сильнее без достаточного магического опыта`)
                 console.log(`User ${context.senderId} have not enough MO for lvl up from ${user.lvl} to ${user.lvl++}`)
             }
         }
