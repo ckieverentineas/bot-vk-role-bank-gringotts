@@ -190,7 +190,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                         color: 'secondary'
                                     })
                                     .textButton({
-                                        label: 'Редактировать',
+                                        label: '✏Имя',
+                                        payload: {
+                                            command: `${element.name}`
+                                        },
+                                        color: 'secondary'
+                                    })
+                                    .textButton({
+                                        label: '✏Тип',
                                         payload: {
                                             command: `${element.name}`
                                         },
@@ -230,12 +237,36 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         const item_price = await context.question(`
                             Введите его ценность:
                         `)
+                        const item_type: any = await context.question(`
+                                Укажите тип товара:
+                                🕐 - покупается пользователем однажды;
+                                ♾ - покупается пользователем бесконечное количество раз.
+                            `,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({
+                                    label: '🕐',
+                                    payload: {
+                                        command: 'limited'
+                                    },
+                                    color: 'secondary'
+                                })
+                                .textButton({
+                                    label: '♾',
+                                    payload: {
+                                        command: 'unlimited'
+                                    },
+                                    color: 'secondary'
+                                })
+                                .oneTime().inline()
+                            }
+                        )
                         const item_create = await prisma.item.create({
                             data: {
                                 name: item_name.text,
                                 price: Number(item_price.text),
                                 id_category: Number(ans.payload.command),
-                                type: "Не ограничено покупок"
+                                type: item_type.payload.command
                             }
                         })
                         console.log(`User ${context.senderId} added new item ${item_create.id}`)
@@ -388,7 +419,59 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `Может еще что-нибудь приобрести?`)
     })
-    hearManager.hear(/Редактировать/, async (context) => {
+    hearManager.hear(/✏Тип/, async (context) => {
+        if (context.messagePayload == null && context.senderId != root) {
+            console.log((`stop`))
+            return
+        }
+        const item_buy:any = await prisma.item.findFirst({
+            where: {
+                name: context.messagePayload.command,
+            }
+        })
+        if (item_buy) {
+            const item_type: any = await context.question(`
+                    Укажите тип товара для ${item_buy.name}:
+                    🕐 - покупается пользователем однажды;
+                    ♾ - покупается пользователем бесконечное количество раз.
+                    Текущий тип: ${item_buy.type}
+                `,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({
+                        label: '🕐',
+                        payload: {
+                            command: 'limited'
+                        },
+                        color: 'secondary'
+                    })
+                    .textButton({
+                        label: '♾',
+                        payload: {
+                                command: 'unlimited'
+                            },
+                        color: 'secondary'
+                    })
+                    .oneTime().inline()
+                }
+            )
+            const item_update = await prisma.item.update({
+                where: {
+                    id: item_buy.id
+                },
+                data: {
+                    type: item_type.payload.command
+                }
+            })
+            console.log(`Admin ${context.senderId} edit type item ${item_buy.id}`)
+            context.send(`Тип предмета ${item_buy.name} изменен с ${item_buy.type} на ${item_update.type}`)
+        } else {
+            console.log(`Admin ${context.senderId} can't edit type item ${item_buy.id}`)
+            context.send(`Тип предмета не удалось поменять`)
+        }
+        await Keyboard_Index(context, `Вот бы всегда безлимит, и редактировать бы ничего не пришлось?`)
+    })
+    hearManager.hear(/✏Имя/, async (context) => {
         if (context.messagePayload == null && context.senderId != root) {
             console.log((`stop`))
             return
