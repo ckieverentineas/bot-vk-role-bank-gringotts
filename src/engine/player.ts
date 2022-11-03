@@ -1446,7 +1446,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     color: 'secondary'
                 })
                 .textButton({
-                    label: '🩲',
+                    label: '👙',
                     payload: {
                         command: 'underwear'
                     },
