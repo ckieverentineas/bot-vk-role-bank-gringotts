@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { HearManager } from "@vk-io/hear";
 import { randomInt } from "crypto";
 import { send } from "process";
-import { Attachment, Keyboard, KeyboardBuilder, PhotoAttachment } from "vk-io";
+import { Attachment, Context, Keyboard, KeyboardBuilder, PhotoAttachment } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
@@ -508,8 +508,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     command: 'gold_down'
                 },
                 color: 'secondary'
-            })
-            .row()
+            }).row()
             .textButton({
                 label: '+🧙',
                 payload: {
@@ -523,8 +522,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     command: 'xp_down'
                 },
                 color: 'secondary'
-            })
-            .row()
+            }).row()
             .textButton({
                 label: '➕🔮',
                 payload: {
@@ -538,8 +536,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     command: 'artefact_show'
                 },
                 color: 'secondary'
+            }).row()
+            .textButton({
+                label: '✏',
+                payload: {
+                    command: 'editor'
+                },
+                color: 'secondary'
             })
-            .row()
             .textButton({
                 label: '🔙',
                 payload: {
@@ -905,8 +909,194 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 console.log(`Admin ${context.senderId} deleted user: ${user_del.idvk}`)
             }
         }
+
+        async function Edit_Class(id: number){
+            const user: any = await prisma.user.findFirst({
+                where: {
+                    id: id
+                }
+            })
+            let answer_check = false
+            while (answer_check == false) {
+                const answer1: any = await context.question(`
+                    Укажите положение в Хогвартс Онлайн для ${user.name}, имеющего текущий статус: ${user.class}.
+                    `,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({
+                            label: 'Ученик',
+                            payload: {
+                                command: 'grif'
+                            },
+                            color: 'secondary'
+                        })
+                        .textButton({
+                            label: 'Профессор',
+                            payload: {
+                                command: 'coga'
+                            },
+                            color: 'secondary'
+                        })
+                        .textButton({
+                            label: 'Житель',
+                            payload: {
+                                command: 'sliz'
+                            },
+                            color: 'secondary'
+                        }).oneTime().inline()
+                    }
+                )
+                if (!answer1.payload) {
+                    context.send(`Жмите только по кнопкам с иконками!`)
+                } else {
+                    const update_class = await prisma.user.update({
+                        where: {
+                            id: user.id
+                        },
+                        data: {
+                            class: answer1.text
+                        }
+                    })
+                    if (update_class) {
+                        context.send(`Для пользователя 💳UID которого ${user.id}, произведена смена положения с ${user.class} на ${update_class.class}.`)
+                        await vk.api.messages.send({
+                            user_id: user.idvk,
+                            random_id: 0,
+                            message: `Ваше положение в Хогвартс Онлайн изменилось с ${user.class} на ${update_class.class}.`
+                        })
+                    }
+                    answer_check = true
+                }
+            }
+        }
+        async function Edit_Spec(id: number){
+            const user: any = await prisma.user.findFirst({
+                where: {
+                    id: id
+                }
+            })
+            let spec_check = false
+		    while (spec_check == false) {
+                const spec: any = await context.question(`
+                    Укажите специализацию в Хогвартс Онлайн. Для ${user.name}.Если он/она профессор/житель, введите должность. Если студент(ка), укажите факультет. \nТекущая специализация: ${user.spec}\nВведите новую:
+                `)
+                if (spec.text.length <= 32) {
+                    spec_check = true
+                    const update_spec = await prisma.user.update({
+                        where: {
+                            id: user.id
+                        },
+                        data: {
+                            spec: spec.text
+                        }
+                    })
+                    if (update_spec) {
+                        context.send(`Для пользователя 💳UID которого ${user.id}, произведена смена специализации с ${user.spec} на ${update_spec.spec}.`)
+                        await vk.api.messages.send({
+                            user_id: user.idvk,
+                            random_id: 0,
+                            message: `Ваша специализация в Хогвартс Онлайн изменилась с ${user.spec} на ${update_spec.spec}.`
+                        })
+                    }
+                } else {
+                    context.send(`Ввведите до 32 символов включительно!`)
+                }
+            }
+        }
+        async function Edit_Name(id: number){
+            const user: any = await prisma.user.findFirst({
+                where: {
+                    id: id
+                }
+            })
+            let name_check = false
+            while (name_check == false) {
+                const name: any = await context.question(`
+                Укажите имя в Хогвартс Онлайн. Для ${user.name}. Введите новое имя до 64 символов:
+                `)
+                if (name.text.length <= 64) {
+                    name_check = true
+                    const update_name = await prisma.user.update({
+                        where: {
+                            id: user.id
+                        },
+                        data: {
+                            name: name.text
+                        }
+                    })
+                    if (update_name) {
+                        context.send(`Для пользователя 💳UID которого ${user.id}, произведена смена имени с ${user.name} на ${update_name.name}.`)
+                        await vk.api.messages.send({
+                            user_id: user.idvk,
+                            random_id: 0,
+                            message: `Ваше имя в Хогвартс Онлайн изменилось с ${user.name} на ${update_name.name}.`
+                        })
+                    }
+                    if (name.text.length > 32) {
+                        context.send(`⚠ Новые инициалы не влезают на стандартный бланк (32 символа)! Придется использовать бланк повышенной ширины, с доплатой 1G за каждый не поместившийся символ.`)
+                    }
+                } else {
+                    context.send(`⛔ Новое ФИО не влезают на бланк повышенной ширины (64 символа), и вообще, запрещены магическим законодательством! Заставим его/ее выплатить штраф в 30G или с помощию ОМОНА переехать в Азкабан.`)
+                }
+            }
+        }
+        async function Editor(id: number) {
+            let answer_check = false
+            while (answer_check == false) {
+                const answer1: any = await context.question(`
+                    Переходим в режим редактирования данных, выберите сие злодейство:
+                    `,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({
+                            label: '✏Положение',
+                            payload: {
+                                command: 'edit_class'
+                            },
+                            color: 'secondary'
+                        }).row()
+                        .textButton({
+                            label: '✏Специализация',
+                            payload: {
+                                command: 'edit_spec'
+                            },
+                            color: 'secondary'
+                        }).row()
+                        .textButton({
+                            label: '✏ФИО',
+                            payload: {
+                                command: 'edit_name'
+                            },
+                            color: 'secondary'
+                        }).row()
+                        .textButton({
+                            label: '🔙',
+                            payload: {
+                                command: 'back'
+                            },
+                            color: 'secondary'
+                        }).oneTime().inline()
+                    }
+                )
+                if (!answer1.payload) {
+                    context.send(`Жмите только по кнопкам с иконками!`)
+                } else {
+                    if (answer1.payload && answer1.payload.command != 'back') {
+                        answer_check = true
+                        const config: any = {
+                            'edit_class': Edit_Class,
+                            'edit_spec': Edit_Spec,
+                            'edit_name': Edit_Name
+                        }
+                        await config[answer1.payload.command](id)
+                    } else {
+                        context.send(`Ошибка редактирования`)
+                    }
+                }
+            }
+        }
         if (ans.payload && ans.payload.command != 'back') {
-            const config = {
+            const config: any = {
                 'gold_up': Gold_Up,
                 'gold_down': Gold_Down,
                 'xp_up': Xp_Up,
@@ -914,7 +1104,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 'back': Back,
                 'artefact_add': Artefact_Add,
                 'artefact_show': Artefact_Show,
-                'user_delete': User_delete
+                'user_delete': User_delete,
+                'editor': Editor
             }
             const answergot = await config[ans.payload.command](Number(datas[0].id))
         } else {
@@ -923,6 +1114,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `Как насчет еще одной операции? Может позвать доктора?`)
         prisma.$disconnect()
     })
+    
     hearManager.hear(/инвентарь/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
             where: {
