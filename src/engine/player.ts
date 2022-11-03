@@ -336,7 +336,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                 return false
                             }
                             const checker = await Searcher(inventory, element.id)
-                            if (checker){
+                            if (checker && element.type == 'limited'){
                                 const buer: any= context.send(`${element.name} ${element.price}💰`,
                                     {
                                         keyboard: Keyboard.builder()
@@ -395,7 +395,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         })
         
-        if (!item_inventory && user.gold >= item_buy.price) {
+        if ((!item_inventory || item_buy.type == 'unlimited') && user.gold >= item_buy.price) {
             const money = await prisma.user.update({
                 data: {
                     gold: user.gold - item_buy.price
