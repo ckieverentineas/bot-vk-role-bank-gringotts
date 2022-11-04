@@ -1197,7 +1197,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         }
                         await config[answer1.payload.command](id)
                     } else {
-                        context.send(`Ошибка редактирования`)
+                        answer_check = true
+                        context.send(`Отмена редактирования`)
                     }
                 }
             }
@@ -1234,6 +1235,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         })
         let cart = ''
+        const underwear = await prisma.trigger.count({
+            where: {    id_user: get_user.id,
+                        name:   'underwear',
+                        value:  false         }
+        })
+        if (underwear) {
+            cart = 'Трусы Домашние;'
+        }
         let counter = 0
         await context.sendPhotos({
             value: './src/art/inventory.jpg',
@@ -1241,7 +1250,33 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         if (inventory.length == 0) {
             context.send(`Вы еще ничего не приобрели:(`)
         } else {
-            const promise = new Promise(async (resolve, reject) => {
+            for (let i = 0; i < inventory.length; i++) {
+                const element = inventory[i].id_item;
+                const item = await prisma.item.findFirst({
+                    where: {
+                        id: element
+                    }
+                })
+                cart += `${item?.name};`
+            }
+            const destructor = cart.split(';').filter(i => i)
+            let compile = []
+            for (let i = 0; i < destructor.length; i++) {
+                let counter = 0
+                for (let j = 0; j < destructor.length; j++) {
+                    if (destructor[i] != null) {
+                        if (destructor[i] == destructor[j]) {
+                            counter++
+                        }
+                    }
+                }
+                compile.push(`${destructor[i]} x ${counter}\n`)
+                counter = 0
+            }
+            let final: any = Array.from(new Set(compile));
+            console.log(cart)
+            context.send(`Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
+            /*const promise = new Promise(async (resolve, reject) => {
                 inventory.forEach(async element => {
                     const item = await prisma.item.findFirst({
                         where: {
@@ -1262,7 +1297,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 (error) => {
                 console.log(error); // вывести ошибку
                 }
-            );
+            );*/
         }
         prisma.$disconnect()
         console.log(`User ${context.senderId} see self inventory`)
@@ -1703,7 +1738,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         async function Cancel(context: any) {
             context.send(`Услуги отозваны.`)
         }
-        await Keyboard_Index(context, `Как насчет еще одной услуги?`)
+        const underwear = await prisma.trigger.count({
+            where: {    name:   'underwear',
+                        value:  true         }
+        })
+        await Keyboard_Index(context, `${underwear} человек уже заложило свои труселя, как на счёт твоих?`)
     })
     hearManager.hear(/енотик/, async (context: any) => {
         if (await Accessed(context) == 2) {
