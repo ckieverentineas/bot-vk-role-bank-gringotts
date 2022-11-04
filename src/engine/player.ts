@@ -539,33 +539,43 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         }
                     })
                     let cart = ''
+                    const underwear = await prisma.trigger.count({
+                        where: {    id_user: get_user.id,
+                                    name:   'underwear',
+                                    value:  false         }
+                    })
+                    if (underwear) {
+                        cart = 'Трусы Домашние;'
+                    }
                     let counter = 0
                     if (inventory.length == 0) {
                         context.send(`Покупки пока не совершались`)
                     } else {
-                        const promise = new Promise(async (resolve, reject) => {
-                            inventory.forEach(async element => {
-                                const item = await prisma.item.findFirst({
-                                    where: {
-                                        id: element.id_item 
-                                    }
-                                })
-                                cart += `${item?.name} \n`
-                                counter++
-                                if(inventory.length == counter){
-                                    resolve('Все прошло отлично!');
+                        for (let i = 0; i < inventory.length; i++) {
+                            const element = inventory[i].id_item;
+                            const item = await prisma.item.findFirst({
+                                where: {
+                                    id: element
                                 }
                             })
-                        });
-                        promise.then(
-                            (data) => {
-                                console.log(`Admin ${context.senderId} see inventory from user: ${get_user.idvk}`)
-                                context.send(`Были совершены следующие покупки: \n ${cart}`)
-                            },
-                            (error) => {
-                            console.log(error); // вывести ошибку
+                            cart += `${item?.name};`
+                        }
+                        const destructor = cart.split(';').filter(i => i)
+                        let compile = []
+                        for (let i = 0; i < destructor.length; i++) {
+                            let counter = 0
+                            for (let j = 0; j < destructor.length; j++) {
+                                if (destructor[i] != null) {
+                                    if (destructor[i] == destructor[j]) {
+                                        counter++
+                                    }
+                                }
                             }
-                        );
+                            compile.push(`${destructor[i]} x ${counter}\n`)
+                            counter = 0
+                        }
+                        let final: any = Array.from(new Set(compile));
+                        context.send(`Были совершены следующие покупки:: \n ${final.toString().replace(/,/g, '')}`)
                     }
                 }
 			} else {
@@ -1274,30 +1284,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 counter = 0
             }
             let final: any = Array.from(new Set(compile));
-            console.log(cart)
             context.send(`Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
-            /*const promise = new Promise(async (resolve, reject) => {
-                inventory.forEach(async element => {
-                    const item = await prisma.item.findFirst({
-                        where: {
-                            id: element.id_item 
-                        }
-                    })
-                    cart += `${item?.name} \n`
-                    counter++
-                    if(inventory.length == counter){
-                        resolve('Все прошло отлично!');
-                    }
-                })
-            });
-            promise.then(
-                (data) => {
-                    context.send(`Вы приобрели следующее: \n ${cart}`)
-                },
-                (error) => {
-                console.log(error); // вывести ошибку
-                }
-            );*/
         }
         prisma.$disconnect()
         console.log(`User ${context.senderId} see self inventory`)
