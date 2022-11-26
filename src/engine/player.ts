@@ -76,6 +76,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const shop: any = await context.question(`🧷 Введите название магазина:`)
                     const shop_create = await prisma.category.create({  data: { name: shop.text }   })
                     console.log(`User ${context.senderId} open new shop`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⚙ @id${context.senderId}(ROOT) пользователь открывает следующий магазин ${shop_create.name}`
+                    })
                     context.send(`⚙ Вы открыли следующий магазин ${shop_create.name}`)
                 }
             } else {
@@ -95,6 +100,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (ans.text == "Удалить") {
                     const shop_delete = await prisma.category.delete({ where: { id: Number(ans.payload.command) } })
                     console.log(`User ${context.senderId} close shop`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⚙ @id${context.senderId}(ROOT) пользователь закрывает следующий магазин ${shop_delete.name}`
+                    })
                     context.send(`⚙ Удален магазин ${shop_delete.name}`)
                 }
                 if (ans.payload?.command == 'new_shop') {
@@ -102,6 +112,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const shop_create: any = await prisma.category.create({ data: { name: shop.text } })
                     console.log(`User ${context.senderId} open new shop`)
                     context.send(`⚙ Вы открыли следующий магазин ${shop_create.name}`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⚙ @id${context.senderId}(ROOT) пользователь открыл следующий магазин ${shop_create.name}`
+                    })
                 }
                 if (category.find((i: any) => i.name == ans.text)) {
                     context.send(`⌛ Вы оказались в ${ans.text}`)
@@ -150,6 +165,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                                                                 id_category: Number(ans.payload.command), type: item_type.payload.command } })
                         console.log(`User ${context.senderId} added new item ${item_create.id}`)
                         context.send(`⚙ Для магазина ${ans.text} добавлен новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`)
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `⚙ @id${context.senderId}(ROOT) пользователь добавляет новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`
+                        })
                     }
                     if (ans_item.payload.command == 'continue') { context.send(`💡 Нажимайте кнопку купить у желаемого товара`) }
                 }
@@ -219,6 +239,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             })
             console.log(`Admin ${context.senderId} edit type item ${item_buy.id}`)
             context.send(`⚙ Тип предмета ${item_buy.name} изменен с ${item_buy.type} на ${item_update.type}`)
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `⚙ @id${context.senderId}(ROOT) пользователь корректирует тип предмета ${item_buy.name} с ${item_buy.type} на ${item_update.type}`
+            })
         } else {
             console.log(`Admin ${context.senderId} can't edit type item ${item_buy.id}`)
             context.send(`✉ Тип предмета не удалось поменять`)
@@ -247,6 +272,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             })
             console.log(`Admin ${context.senderId} edit name item ${item_buy.id}`)
             context.send(`⚙ Имя предмета ${item_buy.name} изменено на ${item_update.name}`)
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `⚙ @id${context.senderId}(ROOT) пользователь корректирует имя предмета с ${item_buy.name} на ${item_update.name}`
+            })
         } else {
             console.log(`Admin ${context.senderId} can't edit name item ${item_buy.id}`)
             context.send(`✉ Имя предмета не удалось поменять`)
@@ -263,7 +293,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 			const uid = await context.question(`
                 🧷 Введите 💳UID банковского счета получателя:
 			`)
-			if (uid.text) {
+			if (typeof Number(uid.text) === "number") {
                 const get_user = await prisma.user.findFirst({
                     where: {
                         id: Number(uid.text)
@@ -421,12 +451,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     gold: user_get.gold + count
                 }
             })
+            try {
+                await vk.api.messages.send({
+                    user_id: user_get.idvk,
+                    random_id: 0,
+                    message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                })
+                context.send(`⚙ Операция завершена успешно`)
+            } catch (error) {
+                console.log(`User ${user_get.idvk} blocked chating with bank`)
+            }
             await vk.api.messages.send({
-                user_id: user_get.idvk,
+                peer_id: chat_id,
                 random_id: 0,
-                message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                message: `⚙ @id${context.senderId}(Admin) > "+💰" > ${money_put.gold-count}💰+${count}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
             })
-            context.send(`⚙ Операция завершена успешно`)
             console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
         }
         async function Gold_Down(id: number) {
@@ -446,12 +485,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         gold: user_get.gold - count
                     }
                 })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                    })
+                    context.send(`⚙ Операция завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                }
                 await vk.api.messages.send({
-                    user_id: user_get.idvk,
+                    peer_id: chat_id,
                     random_id: 0,
-                    message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                    message: `⚙ @id${context.senderId}(Admin) > "-💰" > ${money_put.gold+count}💰-${count}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
                 })
-                context.send(`⚙ Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
             } else {
                 const confirmq = await context.question(`⌛ Вы хотите снять ${count} 💰галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`,
@@ -483,12 +531,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             gold: user_get.gold - count
                         }
                     })
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_get.idvk,
+                            random_id: 0,
+                            message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                        })
+                        context.send(`⚙ Операция завершена успешно`)
+                    } catch (error) {
+                        console.log(`User ${user_get.idvk} blocked chating with bank`)
+                    }
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        peer_id: chat_id,
                         random_id: 0,
-                        message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                        message: `⚙ @id${context.senderId}(Admin) > "-💰" > ${money_put.gold+count}💰-${count}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
                     })
-                    context.send(`⚙ Операция завершена успешно`)
                     console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
                 } else {
                     context.send(`💡 Нужно быть жестче! Греби бабло`)
@@ -511,12 +568,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     xp: user_get.xp + count
                 }
             })
+            try {
+                await vk.api.messages.send({
+                    user_id: user_get.idvk,
+                    random_id: 0,
+                    message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \n Уведомление: ${messa}`
+                })
+                context.send(`⚙ Операция завершена успешно`)
+            } catch (error) {
+                console.log(`User ${user_get.idvk} blocked chating with bank`)
+            }
             await vk.api.messages.send({
-                user_id: user_get.idvk,
+                peer_id: chat_id,
                 random_id: 0,
-                message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \n Уведомление: ${messa}`
+                message: `⚙ @id${context.senderId}(Admin) > "+🧙" > ${money_put.xp-count}🧙+${count}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
             })
-            context.send(`⚙ Операция завершена успешно`)
             console.log(`User ${user_get.idvk} got ${count} MO. Him/Her XP now ${money_put.xp}`)
         }
         async function Xp_Down(id: number) {
@@ -536,12 +602,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         xp: user_get.xp - count
                     }
                 })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                    })
+                    context.send(`⚙ Операция завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                }
                 await vk.api.messages.send({
-                    user_id: user_get.idvk,
+                    peer_id: chat_id,
                     random_id: 0,
-                    message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                    message: `⚙ @id${context.senderId}(Admin) > "-🧙" > ${money_put.xp+count}🧙-${count}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
                 })
-                context.send(`⚙ Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
             } else {
                 context.send(`⌛ Вы хотите снять ${count} 🧙магического опыта c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.xp}. Уверены, что хотите сделать баланс: ${user_get.xp-count}? (Автоподтверждение)`)
@@ -553,12 +628,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         xp: user_get.xp - count
                     }
                 })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                    })
+                    context.send(`⚙ Операция завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                }
                 await vk.api.messages.send({
-                    user_id: user_get.idvk,
+                    peer_id: chat_id,
                     random_id: 0,
-                    message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                    message: `⚙ @id${context.senderId}(Admin) > "-🧙" > ${money_put.xp+count}🧙-${count}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
                 })
-                context.send(`⚙ Операция завершена успешно`)
                 console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
             }
         }
@@ -615,10 +699,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                 })
                 if (user_find) {
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_find.idvk,
+                            random_id: 0,
+                            message: `⚙ Ваш артефакт ${art_del.name} изьял ОМОН!`
+                        })
+                        context.send(`⚙ Удаление артефакта успешно завершено`)
+                    } catch (error) {
+                        console.log(`User ${user_find.idvk} blocked chating with bank`)
+                    }
                     await vk.api.messages.send({
-                        user_id: user_find.idvk,
+                        peer_id: chat_id,
                         random_id: 0,
-                        message: `⚙ Ваш артефакт ${art_del.name} изьял ОМОН!`
+                        message: `⚙ @id${context.senderId}(Admin) > "🚫🔮" > артефакт ${art_del.name} изьял ОМОН! у @id${user_find.idvk}(${user_find.name})`
                     })
                 }
                 console.log(`Admin ${context.senderId} destroy artefact from user UID: ${user_find?.idvk}`)
@@ -631,7 +725,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             while (trigger == false) {
                 const name: any = await context.question(`
                     ⌛ Внимание! запущена процедура генерации Артефакта для банковского счёта 💳:${id}
-                    Укажите для нового 🔮артефакта название:
+                    🧷 Укажите для нового 🔮артефакта название:
                 `)
                 if (name.text.length <= 30) {
                     trigger = true
@@ -689,9 +783,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             const target: any = await prisma.user.findFirst({
                 where: {
                     id
-                },
-                select: {
-                    idvk: true
                 }
             })
             const artefact_create = await prisma.artefact.create({
@@ -703,12 +794,22 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     description: datas[3].description
                 }
             })
+            try {
+                await vk.api.messages.send({
+                    user_id: target.idvk,
+                    random_id: 0,
+                    message: `⚙ Поздравляем! Вы получили новый 🔮: ${artefact_create.name}
+                        ${artefact_create.label}: ${artefact_create.type}
+                    `
+                })
+                context.send(`⚙ Добавление артефакта успешно завершено`)
+            } catch (error) {
+                console.log(`User ${target.idvk} blocked chating with bank`)
+            }
             await vk.api.messages.send({
-                user_id: target.idvk,
+                peer_id: chat_id,
                 random_id: 0,
-                message: `⚙ Поздравляем! Вы получили новый 🔮: ${artefact_create.name}
-                    ${artefact_create.label}: ${artefact_create.type}
-                `
+                message: `⚙ @id${context.senderId}(Admin) > "➕🔮" > артефакт ${artefact_create.name} получает @id${target.idvk}(${target.name})`
             })
             console.log(`Admin ${context.senderId} create artefact for user: ${target.idvk}`)
             context.send(`⚙ Операция завершена успешно`)
@@ -724,7 +825,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const gold = await context.question(`
                     🧷 Введите количество для операции ${ans.text}:
                 `)
-                if (gold.text) {
+                if (typeof Number(gold.text) == "number") {
                     money_check = true
                     golden = Number(gold.text)
                 } 
@@ -780,10 +881,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     context.send(`❗ Удален пользователь ${user_del.name}`)
                     if (user_del) {
+                        try {
+                            await vk.api.messages.send({
+                                user_id: user_del.idvk,
+                                random_id: 0,
+                                message: `❗ Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
+                            })
+                            context.send(`⚙ Операция удаления пользователя завершена успешно.`)
+                        } catch (error) {
+                            console.log(`User ${user_del.idvk} blocked chating with bank`)
+                        }
                         await vk.api.messages.send({
-                            user_id: user_del.idvk,
+                            peer_id: chat_id,
                             random_id: 0,
-                            message: `❗ Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
+                            message: `⚙ @id${context.senderId}(Admin) > "🚫👤" > удаляется из банковской системы карточка @id${user_del.idvk}(${user_del.name})`
                         })
                     }
                     console.log(`Admin ${context.senderId} deleted user: ${user_del.idvk}`)
@@ -842,10 +953,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     if (update_class) {
                         context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена положения с ${user.class} на ${update_class.class}.`)
+                        try {
+                            await vk.api.messages.send({
+                                user_id: user.idvk,
+                                random_id: 0,
+                                message: `⚙ Ваше положение в Хогвартс Онлайн изменилось с ${user.class} на ${update_class.class}.`
+                            })
+                            context.send(`⚙ Операция смены положения пользователя завершена успешно.`)
+                        } catch (error) {
+                            console.log(`User ${user.idvk} blocked chating with bank`)
+                        }
                         await vk.api.messages.send({
-                            user_id: user.idvk,
+                            peer_id: chat_id,
                             random_id: 0,
-                            message: `⚙ Ваше положение в Хогвартс Онлайн изменилось с ${user.class} на ${update_class.class}.`
+                            message: `⚙ @id${context.senderId}(Admin) > "✏👤Положение" > положение изменилось с ${user.class} на ${update_class.class} для @id${user.idvk}(${user.name})`
                         })
                     }
                     answer_check = true
@@ -875,10 +996,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     if (update_spec) {
                         context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена специализации с ${user.spec} на ${update_spec.spec}.`)
+                        try {
+                            await vk.api.messages.send({
+                                user_id: user.idvk,
+                                random_id: 0,
+                                message: `⚙ Ваша специализация в Хогвартс Онлайн изменилась с ${user.spec} на ${update_spec.spec}.`
+                            })
+                            context.send(`⚙ Операция смены специализации пользователя завершена успешно.`)
+                        } catch (error) {
+                            console.log(`User ${user.idvk} blocked chating with bank`)
+                        }
                         await vk.api.messages.send({
-                            user_id: user.idvk,
+                            peer_id: chat_id,
                             random_id: 0,
-                            message: `⚙ Ваша специализация в Хогвартс Онлайн изменилась с ${user.spec} на ${update_spec.spec}.`
+                            message: `⚙ @id${context.senderId}(Admin) > "✏👤Специализация" > специализация изменилась с ${user.spec} на ${update_spec.spec} для @id${user.idvk}(${user.name})`
                         })
                     }
                 } else {
@@ -909,10 +1040,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     if (update_name) {
                         context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена имени с ${user.name} на ${update_name.name}.`)
+                        try {
+                            await vk.api.messages.send({
+                                user_id: user.idvk,
+                                random_id: 0,
+                                message: `⚙ Ваше имя в Хогвартс Онлайн изменилось с ${user.name} на ${update_name.name}.`
+                            })
+                            context.send(`⚙ Операция смены имени пользователя завершена успешно.`)
+                        } catch (error) {
+                            console.log(`User ${user.idvk} blocked chating with bank`)
+                        }
                         await vk.api.messages.send({
-                            user_id: user.idvk,
+                            peer_id: chat_id,
                             random_id: 0,
-                            message: `⚙ Ваше имя в Хогвартс Онлайн изменилось с ${user.name} на ${update_name.name}.`
+                            message: `⚙ @id${context.senderId}(Admin) > "✏👤ФИО" > имя изменилось с ${user.name} на ${update_name.name} для @id${user.idvk}(${user.name})`
                         })
                     }
                     if (name.text.length > 32) {
@@ -996,7 +1137,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             context.send(`⚙ Операция отменена пользователем.`)
         }
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
-        prisma.$disconnect()
     })
     
     hearManager.hear(/инвентарь/, async (context) => {
@@ -1017,7 +1157,15 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         value:  false         }
         })
         if (underwear) {
-            cart = '👜 Трусы Домашние;'
+            cart += '👜 Трусы Домашние; '
+        }
+        const beer = await prisma.trigger.count({
+            where: {    id_user: get_user.id,
+                        name:   'beer',
+                        value:  true        }
+        })
+        if (beer) {
+            cart += '👜 Сливочное пиво из Хогсмида; '
         }
         let counter = 0
         await context.sendPhotos({
@@ -1052,7 +1200,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let final: any = Array.from(new Set(compile));
             context.send(`✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
         }
-        prisma.$disconnect()
         console.log(`User ${context.senderId} see self inventory`)
         await Keyboard_Index(context, `💡 Что ж, имущества много не бывает, но как насчет подзаработать еще галлеонов?`)
     })
@@ -1078,6 +1225,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 context.send(`⚙ Ошибка`)
             }
         }
+        await vk.api.messages.send({
+            peer_id: chat_id,
+            random_id: 0,
+            message: `⚙ @id${context.senderId}(Root) становится администратором!)`
+        })
         console.log(`Super user ${context.senderId} got root`)
         await Keyboard_Index(context, `💡 Захват мира снова в теме!`)
     })
@@ -1157,10 +1309,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             })
                             if (lvlup) {
                                 context.send(`⚙ Администратором становится ${get_user.name}`)
+                                try {
+                                    await vk.api.messages.send({
+                                        user_id: get_user.idvk,
+                                        random_id: 0,
+                                        message: `⚙ Вас назначили администратором`
+                                    })
+                                    context.send(`⚙ Операция назначения администратора завершена успешно.`)
+                                } catch (error) {
+                                    console.log(`User ${get_user.idvk} blocked chating with bank`)
+                                }
                                 await vk.api.messages.send({
-                                    user_id: get_user.idvk,
+                                    peer_id: chat_id,
                                     random_id: 0,
-                                    message: `⚙ Вас назначили администратором`
+                                    message: `⚙ @id${context.senderId}(Root) > делает администратором @id${get_user.idvk}(${get_user.name})`
                                 })
                                 console.log(`Admin ${context.senderId} set status admin for ${get_user.idvk}`)
                             } else {
@@ -1178,10 +1340,20 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             })
                             if (lvlup) {
                                 context.send(`⚙ Обычным пользователем становится ${get_user.name}`)
+                                try {
+                                    await vk.api.messages.send({
+                                        user_id: get_user.idvk,
+                                        random_id: 0,
+                                        message: `⚙ Вас понизили до обычного пользователя`
+                                    })
+                                    context.send(`⚙ Операция назначения пользователем завершена успешно.`)
+                                } catch (error) {
+                                    console.log(`User ${get_user.idvk} blocked chating with bank`)
+                                }
                                 await vk.api.messages.send({
-                                    user_id: get_user.idvk,
+                                    peer_id: chat_id,
                                     random_id: 0,
-                                    message: `⚙ Вас понизили до обычного пользователя`
+                                    message: `⚙ @id${context.senderId}(Root) > делает обычным пользователем @id${get_user.idvk}(${get_user.name})`
                                 })
                                 console.log(`Admin ${context.senderId} drop status admin for ${get_user.idvk}`)
                             } else {
@@ -1197,7 +1369,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 				context.send(`💡 Нет такого банковского счета!`)
 			}
         }
-        prisma.$disconnect
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
     hearManager.hear(/админы/, async (context: any) => {
@@ -1298,7 +1469,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     {   keyboard: Keyboard.builder()
                         .textButton({ label: '-5💰', payload: { command: 'beer' }, color: 'secondary' }).oneTime().inline()    }
                 )
-                if (answe.payload) {
+                if (answe.payload && user.gold >= 5) {
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-5 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
                     context.send(`⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
@@ -1359,7 +1530,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (answe.payload) {
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
-                    context.send(`⚙ Даже ваш староста зауважает вас, если узнает, что вы за эокологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`)
+                    context.send(`⚙ Даже ваш староста зауважает вас, если узнает, что вы за экологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`)
                     console.log(`User ${context.senderId} return self underwear`)
                 } else { context.send(`💡 А как же восстановить честь?`) }
             }
@@ -1382,6 +1553,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+5 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
                     context.send(`⚙ Вы заложили свои трусы Гоблинам, держите 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⌛ Кто-то заложил свои трусы...`
+                    })
                     console.log(`User ${context.senderId} sold self underwear`)
                 } else { context.send(`💡 И к чему такие стеснения?...`) }
             } else {
@@ -1392,10 +1568,15 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                         color: 'secondary'                  })
                         .oneTime().inline()                                     }
                 )
-                if (answe.payload) {
+                if (answe.payload && user.gold >= 10) {
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-10 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
                     context.send(`⚙ Вы выкупили свои трусы у Гоблинов, держите за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n — Забирайте свои вонючие труханы, все хранилище нам завоняли!`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⌛ Кто-то выкупил свои трусы...`
+                    })
                     console.log(`User ${context.senderId} return self underwear`)
                 } else { context.send(`💡 А как же восстановить честь?`) }
             }
@@ -1438,6 +1619,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await context.send(`⚙ Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Первый раз бесплатно, далее за уровень по 150🧙\n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
                     await Keyboard_Index(context, `💡 Твой первый уровень? — это только начало!`)
                     console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `📈 @id${user.idvk}(${user.name}) повышает уровень с ${user.lvl} до ${user_update.lvl}.`
+                    })
                     return
                 }
                 
@@ -1453,6 +1639,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                 })
                 context.send(`⚙ Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Остаток: ${user_update.xp}🧙 \n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `📈 @id${user.idvk}(${user.name}) повышает уровень с ${user.lvl} до ${user_update.lvl}.`
+                })
                 await Keyboard_Index(context, `💡 Неужели можно стать еще мощнее?`)
                 console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
             } else {
@@ -1486,9 +1677,15 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 console.log(`User ${context.senderId} converted ${Math.floor(count.text/15)*15}MO in ${Math.floor(count.text/15)*15/3}G`)
                 context.send(`⌛ Конвертирование ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰 произошло успешно`)
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰.`
+                })
             } else {
                 context.send(`💡 Ошибка конвертации`)
             }
+            await Keyboard_Index(context, `💡 А кто говорил, что конвертация магического опыта будет выгодной?`)
         }
         async function Convert_Gal(context: any) {
             const user: any = await prisma.user.findFirst({
@@ -1509,9 +1706,15 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 console.log(`User ${context.senderId} converted ${count.text} G in ${count.text*2}MO`)
                 context.send(`⌛ Конвертирование ${count.text}💰 в ${count.text*2}🧙 произошло успешно`)
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${count.text}💰 в ${count.text*2}🧙.`
+                })
             } else {
                 context.send(`💡 Ошибка конвертации`)
             }
+            await Keyboard_Index(context, `💡 А кто говорил, что конвертация галлеонов будет выгодной?`)
         }
         async function Cancel(context: any) {
             context.send(`💡 Услуги отозваны.`)
@@ -1524,14 +1727,12 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     hearManager.hear(/енотик/, async (context: any) => {
         if (await Accessed(context) == 2) {
-            context.sendDocuments({
-                value: `./prisma/dev.db`,
-                filename: `dev.db`
-            },
-            {
-                message: '💡 Открывать на сайте: https://sqliteonline.com/'
-            }
-        );
+            await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `‼ @id${context.senderId}(Admin) делает бекап баз данных dev.db.`
+            })
         }
     })
 }
