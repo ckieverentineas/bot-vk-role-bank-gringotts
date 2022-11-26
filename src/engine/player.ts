@@ -311,7 +311,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                     id: element
                                 }
                             })
-                            cart += `${item?.name};`
+                            cart += `👜 ${item?.name};`
                         }
                         const destructor = cart.split(';').filter(i => i)
                         let compile = []
