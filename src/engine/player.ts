@@ -1259,6 +1259,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     color: 'secondary'
                 }).row()
                 .textButton({
+                    label: '🍺',
+                    payload: {
+                        command: 'beer'
+                    },
+                    color: 'secondary'
+                })
+                .textButton({
                     label: '🔙',
                     payload: {
                         command: 'cancel'
@@ -1273,110 +1280,124 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             'convert_mo': Convert_MO,
             'convert_gal': Convert_Gal,
             'cancel': Cancel,
-            'underwear': Underwear
+            'underwear': Underwear,
+            'beer': Beer
         }
         config[selector.payload.command](context)
-
-        async function Underwear(context: any) {
-            const user: any = await prisma.user.findFirst({
-                where: {
-                    idvk: context.senderId
-                }
-            })
-            const trigger: any = await prisma.trigger.findFirst({
-                where: {
-                    id_user: user.id,
-                    name: 'underwear'
-                }
-            })
-            if (!trigger) {
-                const trigger_init: any = await prisma.trigger.create({
-                    data: {
-                        id_user: user.id,
-                        name: 'underwear',
-                        value: false
+        
+        async function Beer(context: any) {
+            const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+            const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
+            if (!trigger) { 
+                const trigger_init: any = await prisma.trigger.create({ data: { id_user: user.id, name: 'beer', value: false } })
+                console.log(`Init beer for user ${context.senderId}`)
+            }
+            const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
+            if (trigger_check.value == false) {
+                const answe = await context.question(`🍺 Желаете сливочного пива прямиком из Хогсмида с доставкой на дом, всего лишь за 5💰?`, 
+                    {   keyboard: Keyboard.builder()
+                        .textButton({ label: '-5💰', payload: { command: 'beer' }, color: 'secondary' }).oneTime().inline()    }
+                )
+                if (answe.payload) {
+                    const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-5 } })
+                    const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
+                    context.send(`⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
+                    console.log(`User ${context.senderId} sold self underwear`)
+                    const user_list: any = await prisma.user.findMany({})
+                    const location_list: any = {
+                        "Хогвартс": [ "Большой Зал", "Астрономическая Башня", "Гремучая Ива", "Часовая Башня", "Кухня", "Туалет Плаксы Миртл", "Кухня", "Зал Наказаний", "Внутренний Двор", "Запретный лес", "Правый коридор | Пятый этаж", "Деревянный мост", "Совятня", "Выручай-комната", "Комната Пивза", "Чердак", "Больничное крыло", "Вестибюль", "Опушка леса", "Библиотека Хогвартса", "Чёрное Озеро", "Лестничные пролёты", "Каменный Круг", "Кабинет Зельеварения", "Подземелья Хогвартса", "Прачечная", "Зал Славы", "Учебный Зал", "Теплицы", "Тайная Комната", "Кладбище", "Лодочный сарай", "Кабинет школьного психолога", "Коридор Одноглазой Ведьмы", "Комната 234-00", "Учительская", "Хижина Хагрида", "Коридоры", "Учительская"],
+                        "Бристон": [ 'Стрип-клуб "MurMur angels-club"', "Филиал Некромантии и Бесоизгнания", "Суд", "ЗаМУРчательное кафе", "Парк", "Больница", "Мракоборческий участок", "Заповедник", "Торговый центр", "Лавка зелий и артефактов", 'Бар "У Пьюси и Винтер"', "Магическая аптека", "Бухта Ингернах", "Филиал Гильдии Артефакторов", 'Отель "Меллоу Брук"', "Закрытая пиццерия", "Волшебный зверинец",],
+                        "Пиво из Хогсмида": [ 'Паб "Три метлы"', 'Трактир "Кабанья голова"']
                     }
-                })
+                    const location_name : any = ["Хогвартс", "Бристон", "Пиво из Хогсмида"]
+                    const selector = randomInt(0, location_name.length)
+                    const tara = randomInt(0, location_list[location_name[selector]].length)
+                    const rana = randomInt(0, user_list.length)
+                    await context.send(`⌛ Загружается новое событие...`)
+                    const reward: number = randomInt(1, 4)
+                    await context.send(`
+                        🍻Как насчет выпить с @id${user_list[rana].idvk}(${user_list[rana].name}) в:
+                        🌐: ${location_name[selector]}
+                        👣: ${location_list[location_name[selector]][tara]}
+                        ⚡: Божественный напиток
+                        🏆: ${reward}🧙
+                    `)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⌛ Назначено культурное🍻 мероприятие 👤@id${user.idvk}(${user.name}) c 👥@id${user_list[rana].idvk}(${user_list[rana].name}) в 🌐"${location_name[selector]}" на 👣"${location_list[location_name[selector]][tara]}" по теме ⚡"Божественный напиток" за 🏆"${reward}🧙"`
+                    })
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_list[rana].idvk,
+                            random_id: 0,
+                            message: `⌛ Загружается новое событие...`
+                        })
+                        await vk.api.messages.send({
+                            user_id: user_list[rana].idvk,
+                            random_id: 0,
+                            message: `
+                                👥Как насчет выпить с @id${user.idvk}(${user.name}):
+                                🌐Место: ${location_name[selector]}
+                                👣Локация: ${location_list[location_name[selector]][tara]}
+                                ⚡Тема: Божественный напиток
+                                🏆Награда: ${reward}🧙
+                            `
+                        })
+                    } catch (error) {
+                        console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)
+                    }
+                } else { context.send(`💡 Будете ждать, пока вас кто-нибудь сам угостит?`) }
+            } else {
+                const answe = await context.question(`🍺 Вы точно хотите, сдать бутылку 1.5 литра за 1💰?`,
+                    {   keyboard: Keyboard.builder()
+                        .textButton({   label: '+1💰',
+                                        payload: { command: 'beer' },
+                                        color: 'secondary'                  })
+                        .oneTime().inline()                                     }
+                )
+                if (answe.payload) {
+                    const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
+                    const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
+                    context.send(`⚙ Даже ваш староста зауважает вас, если узнает, что вы за эокологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`)
+                    console.log(`User ${context.senderId} return self underwear`)
+                } else { context.send(`💡 А как же восстановить честь?`) }
+            }
+            await Keyboard_Index(context, '💡 Кто бы мог подумать, что дойдет до такого?')
+        }
+        async function Underwear(context: any) {
+            const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+            const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'underwear' } })
+            if (!trigger) { 
+                const trigger_init: any = await prisma.trigger.create({ data: { id_user: user.id, name: 'underwear', value: false } })
                 console.log(`Init underwear for user ${context.senderId}`)
             }
-            const trigger_check: any = await prisma.trigger.findFirst({
-                where: {
-                    id_user: user.id,
-                    name: 'underwear'
-                }
-            })
+            const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'underwear' } })
             if (trigger_check.value == false) {
-                const answe = await context.question(`✉ Заложить трусы`,
-                    {
-                        keyboard: Keyboard.builder()
-                        .textButton({
-                            label: '+5💰',
-                            payload: {
-                                command: 'lvl_upper'
-                            },
-                            color: 'secondary'
-                        })
-                        .oneTime().inline()
-                    }
+                const answe = await context.question(`✉ Заложить трусы`, 
+                    {   keyboard: Keyboard.builder()
+                        .textButton({ label: '+5💰', payload: { command: 'lvl_upper' }, color: 'secondary' }).oneTime().inline()    }
                 )
                 if (answe.payload) {
-                    const underwear_sold: any = await prisma.user.update({
-                        where: {
-                            id: user.id
-                        },
-                        data: {
-                            gold: user.gold+5
-                        }
-                    })
-                    const trigger_update: any = await prisma.trigger.update({
-                        where: {
-                            id: trigger_check.id
-                        },
-                        data: {
-                            value: true
-                        }
-                    })
+                    const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+5 } })
+                    const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
                     context.send(`⚙ Вы заложили свои трусы Гоблинам, держите 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
                     console.log(`User ${context.senderId} sold self underwear`)
-                } else {
-                    context.send(`💡 И к чему такие стеснения?...`)
-                }
+                } else { context.send(`💡 И к чему такие стеснения?...`) }
             } else {
                 const answe = await context.question(`✉ Выкупить трусы, не хотите? — тогда не жмите по кнопке!`,
-                    {
-                        keyboard: Keyboard.builder()
-                        .textButton({
-                            label: '—10💰',
-                            payload: {
-                                command: 'lvl_upper'
-                            },
-                            color: 'secondary'
-                        })
-                        .oneTime().inline()
-                    }
+                    {   keyboard: Keyboard.builder()
+                        .textButton({   label: '—10💰',
+                                        payload: { command: 'lvl_upper' },
+                                        color: 'secondary'                  })
+                        .oneTime().inline()                                     }
                 )
                 if (answe.payload) {
-                    const underwear_sold: any = await prisma.user.update({
-                        where: {
-                            id: user.id
-                        },
-                        data: {
-                            gold: user.gold-10
-                        }
-                    })
-                    const trigger_update: any = await prisma.trigger.update({
-                        where: {
-                            id: trigger_check.id
-                        },
-                        data: {
-                            value: false
-                        }
-                    })
+                    const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-10 } })
+                    const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
                     context.send(`⚙ Вы выкупили свои трусы у Гоблинов, держите за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n — Забирайте свои вонючие труханы, все хранилище нам завоняли!`)
                     console.log(`User ${context.senderId} return self underwear`)
-                } else {
-                    context.send(`💡 А как же восстановить честь?`)
-                }
+                } else { context.send(`💡 А как же восстановить честь?`) }
             }
             await Keyboard_Index(context, '💡 Кто бы мог подумать, что дойдет до такого?')
         }
