@@ -304,3 +304,154 @@ export async function Keyboard_Index(context: any, messa: any) {
         }
     }
 }
+
+async function Searcher(data: any, target: number) {
+    let counter = 0
+    while (data.length != counter) {
+        if (data[counter].id_item == target) {
+            return true
+        }
+        counter++
+    }
+    return false
+}
+
+export async function Gen_Inline_Button_Item(category: any, context: any) {
+    await context.send(`Вы оказались в ${category.name}`)
+    const user: any = await prisma.user.findFirst({ where: {    idvk: context.senderId  }   })
+    const data: any= await prisma.item.findMany({   where: {    id_category: Number(category.id)    }   })
+    let stopper = false
+	let modif = 0
+	const lim = 3 
+    while (stopper == false) {
+        let i = modif
+        let counter = 0
+        const inventory: any = await prisma.inventory.findMany({    where: {    id_user: user.id    }   })
+        while (i < data.length && counter <lim) {
+            const checker = await Searcher(inventory, data[i].id)
+            let keyboard = Keyboard.builder()
+            if (checker && data[i].type != 'unlimited') {
+                keyboard
+                .textButton({   label: 'Куплено',
+                                payload: {  command: `null`  },
+                                color: 'positive'                           })
+                .oneTime().inline() 
+            } else {
+                keyboard
+                .textButton({   label: 'Купить',
+                                payload: {  command: `${i}`  },
+                                color: 'secondary'                          })
+                .oneTime().inline()                                                                                
+            }
+            context.question(`${data[i].name} ${data[i].price}💰`, { keyboard: keyboard } )
+            counter++
+            i++
+        }
+        const  push = await context.question('Быстрый доступ',
+            { keyboard: Keyboard.builder()
+                .textButton({   label: '<',
+                                payload: { command: "left" },
+                                color: 'primary'              })
+                .textButton({   label: `${(modif+3)/3}/${Math.round(data.length/3)}`,
+                                payload: { command: "left" },
+                                color: 'primary'              })
+                .textButton({   label: '>',
+                                payload: { command: 'right' },
+                                color: 'primary'              }).row()
+                .textButton({   label: 'Назад',
+                                payload: { command: 'back' },
+                                color: 'primary'              })
+                .textButton({   label: 'Закончить',
+                                payload: { command: 'end' },
+                                color: 'primary'              })
+                
+                .oneTime() }
+        )
+        if (push.payload) {
+            if (push.text == 'Купить') {
+                const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+                const item_buy:any = data[push.payload.command]
+                const item_inventory:any = await prisma.inventory.findFirst({ where: { id_item: item_buy.id, id_user: user.id } })
+                if ((!item_inventory || item_buy.type == 'unlimited') && user.gold >= item_buy.price) {
+                    const money = await prisma.user.update({ data: { gold: user.gold - item_buy.price }, where: { id: user.id } })
+                    context.send(`С вашего счета списано ${item_buy.price}💰, остаток: ${money.gold}💰`)
+                    const inventory = await prisma.inventory.create({ data: { id_user: user.id, id_item: item_buy.id } })
+                    console.log(`User ${context.senderId} bought new item ${item_buy.id}`)
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `@id${user.idvk}(${user.name}) покупает ${item_buy.name} в "${category.name}" Косого переулка`
+                    })
+                    context.send(`Ваша покупка доставлена: ${item_buy.name}`)
+                } else {
+                    console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
+                    context.send(`У вас уже есть ${item_buy.name}! или же недостаточно средств!`)
+                }
+                await Keyboard_Index(context, `Может еще что-нибудь приобрести?`)
+            }
+            if (push.text == 'Назад') { await context.send(`⌛ Возврат в Косой переулок...`); return false }
+            if (push.text == 'Закончить') { await context.send(`⌛ Шоппинг успешно завершен`); return true }
+            if (push.text == '>') { if (modif+lim < data.length) { modif += lim } }
+            if (push.text == '<') { if (modif-lim >= 0) { modif -= lim } }
+        }
+    }
+}
+
+export async function Gen_Inline_Button_Category(context: any, weapon_type: any, mesa: string) {
+    await context.sendPhotos({
+        value: './src/art/shop.jpg',
+    });
+    let checker = false
+    let counter = 0
+    let current = 0
+    let modif = 0
+    while (checker == false) {
+        let keyboard = Keyboard.builder()
+        counter = 0
+        current = modif
+        const limit = 5
+        let weapon_list = ''
+        while (current < weapon_type.length && counter < limit ) {
+            keyboard.textButton({   label: weapon_type[current].name,
+                                    payload: {  command: weapon_type[current]   },
+                                    color: 'primary'
+            }).row()
+            weapon_list += `${weapon_type[current].id} ${weapon_type[current].name} \n`
+            counter++
+            current++
+        }
+        keyboard.row()
+        .textButton({   label: '<',
+                        payload: { command: "left" },
+                        color: 'primary'              })
+        .textButton({   label: 'Стоп',
+                        payload: { command: 'back' },
+                        color: 'primary'              })
+        .textButton({   label: '>',
+                        payload: { command: 'right' },
+                        color: 'primary'              })
+        const skill = await context.question(
+            `${mesa}\n${weapon_list}`,
+            { keyboard: keyboard.inline() }
+        )
+        if (!skill.payload) {
+            context.send('Жмите по inline кнопкам!')
+        } else {
+            if (skill.payload.command == 'back') {
+                context.send('Шоппинг успешно отменено')
+                modif = 0
+                return false
+            }
+            if (skill.payload.command == 'left') {
+                modif-limit >= 0 && modif < weapon_type.length ? modif-=limit : context.send('Позади ничего нет!')
+                continue
+            }
+            if (skill.payload.command == 'right') {
+                modif+limit < weapon_type.length ? modif+=limit: context.send('Впереди ничего нет')
+                continue
+            }
+            checker = true
+            return skill.payload.command
+        }
+    }
+}

@@ -7,7 +7,7 @@ import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
 import { chat_id, prisma, root, vk } from '../index';
-import { Accessed, Keyboard_Index } from "./core/helper";
+import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
@@ -245,121 +245,22 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         } else {
             console.log(`User ${context.senderId} enter in shopping`)
-            const category:any = await prisma.category.findMany({})
-            if (category.length == 0) {
+            const categorys:any = await prisma.category.findMany({})
+            if (categorys.length == 0) {
                 const ans: any = await context.send(`Магазинов еще нет`)
-            } else {
-                let keyboard = Keyboard.builder()
-                category.forEach(async element => {
-                    keyboard.textButton({
-                        label: element.name,
-                        payload: {
-                            command: `${element.id}`
-                        }
-                    }).row()
-                })
-                await context.sendPhotos({
-                    value: './src/art/shop.jpg',
-                });
-                const ans: any = await context.question(
-                    `Куда пойдем?`,
-                    {   keyboard: keyboard
-                        .oneTime().inline() }
-                )
-                if (category.find((i: { name: any; }) => i.name == ans.text)) {
-                    context.send(`Вы оказались в ${ans.text}`)
-                    const item: any= await prisma.item.findMany({   where: {    id_category: Number(ans.payload.command)    }   })
-                    const user: any = await prisma.user.findFirst({ where: {    idvk: context.senderId  }   })
-                    const inventory: any = await prisma.inventory.findMany({    where: {    id_user: user.id    }   })
-                    if (item.length == 0) {
-                        context.send(`К сожалению приалвки пока что пусты=/`)
-                    } else {
-                        item.forEach(async element => {
-                            async function Searcher(data: any, target: number) {
-                                let counter = 0
-                                while (data.length != counter) {
-                                    if (data[counter].id_item == target) {
-                                        return true
-                                    }
-                                    counter++
-                                }
-                                return false
-                            }
-                            const checker = await Searcher(inventory, element.id)
-                            if (checker && element.type == 'limited'){
-                                const buer: any= context.send(`${element.name} ${element.price}💰`,
-                                    {   keyboard: Keyboard.builder()
-                                        .textButton({   label: 'Куплено',
-                                                        payload: {  command: `${element.name}`  },
-                                                        color: 'positive'                           })
-                                        .oneTime().inline()                                             }
-                                )
-                            } else {
-                                const buer: any= context.send(`${element.name} ${element.price}💰`,
-                                    {   keyboard: Keyboard.builder()
-                                        .textButton({   label: 'Купить',
-                                                        payload: {  command: `${element.name}`  },
-                                                        color: 'secondary'                          })
-                                        .oneTime().inline()                                             }
-                                )
-                            }
-                            
-                        })
-                    }
-                }
+                return
+            } 
+            let cat_stop = false
+            while (cat_stop == false) {
+                const category = await prisma.category.findMany({})
+                const skill = await  Gen_Inline_Button_Category(context, category, 'Куда пойдем?')
+                if (!skill) {return cat_stop = true}
+                const skill_sel = await Gen_Inline_Button_Item(skill, context)
+                if (skill_sel) {return cat_stop = true}
             }
+            await Keyboard_Index(context, `💡 Косой переулок открыт для всех в любое время!`)
         }
-        await Keyboard_Index(context, `Счастливых покупок, жмите кнопку "Купить" на понравившихся товарах`)
-    })
-    hearManager.hear(/Купить/, async (context) => {
-        if (context.messagePayload == null) {
-            return
-        }
-        const user: any = await prisma.user.findFirst({
-            where: {
-                idvk: context.senderId
-            }
-        })
-        const item_buy:any = await prisma.item.findFirst({
-            where: {
-                name: context.messagePayload.command,
-            }
-        })
-        const item_inventory:any = await prisma.inventory.findFirst({
-            where: {
-                id_item: item_buy.id,
-                id_user: user.id
-            }
-        })
-        
-        if ((!item_inventory || item_buy.type == 'unlimited') && user.gold >= item_buy.price) {
-            const money = await prisma.user.update({
-                data: {
-                    gold: user.gold - item_buy.price
-                },
-                where: {
-                    id: user.id
-                }
-            })
-            context.send(`С вашего счета списано ${item_buy.price}💰, остаток: ${money.gold}💰`)
-            const inventory = await prisma.inventory.create({
-                data: {
-                    id_user: user.id,
-                    id_item: item_buy.id
-                }
-            })
-            console.log(`User ${context.senderId} bought new item ${item_buy.id}`)
-            await vk.api.messages.send({
-                peer_id: chat_id,
-                random_id: 0,
-                message: `@id${user.idvk}(${user.name}) покупает ${context.messagePayload.command} в Косом переулке`
-            })
-            context.send(`Ваша покупка доставлена: ${context.messagePayload.command}`)
-        } else {
-            console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
-            context.send(`У вас уже есть ${context.messagePayload.command}! или же недостаточно средств!`)
-        }
-        await Keyboard_Index(context, `Может еще что-нибудь приобрести?`)
+        await Keyboard_Index(context, `💡 А может быть в косом переулке есть подполье?`)
     })
     hearManager.hear(/✏Тип/, async (context) => {
         if (context.messagePayload == null && context.senderId != root) {
