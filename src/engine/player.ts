@@ -6,50 +6,33 @@ import { Attachment, Context, Keyboard, KeyboardBuilder, PhotoAttachment } from 
 import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
-import { root, vk } from '../index';
+import { chat_id, prisma, root, vk } from '../index';
 import { Accessed, Keyboard_Index } from "./core/helper";
-const prisma = new PrismaClient()
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
-	/*hearManager.hear(/deleted/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({
-            where: {
-                idvk: context.senderId
-            }
-        })
-        const delatt = await prisma.user.delete({
-            where: {
-                id: get_user?.id
-            }
-        })
-        if (delatt) {
-            context.send(`Вас удалили ${get_user.name}. Возвращайтесь к нам снова!`)
-            console.log(`Deleted ${get_user.name}`)
-        }
-        prisma.$disconnect()
-    })*/
     hearManager.hear(/карта/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({
-            where: {
-                idvk: context.senderId
-            }
-        })
-        const artefact_counter = await prisma.artefact.count({
-            where: {
-                id_user: get_user.id
-            }
-        })
+        if (context.peerType == 'chat') { return }
+        const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+        const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
         context.send(`
-            Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:
-            💳UID: ${get_user.id}
-            💰Галлеоны: ${get_user.gold}
-            🧙Магический опыт: ${get_user.xp}
-            📈Уровень: ${get_user.lvl}
-            🔮Количество артефактов: ${artefact_counter}
+            Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n
+            💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp}
+            📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter}
         `)
-        prisma.$disconnect()
         console.log(`User ${get_user.idvk} see card`)
-        await Keyboard_Index(context, `Карточку посмотрели, что дальше?`)
+        const user_list: any = await prisma.user.findMany({})
+        const rana = randomInt(0, user_list.length)
+        let ii = `🔔 А вы знали, что @id${user_list[rana].idvk}(${user_list[rana].name}) `
+        if (randomInt(0,2) == 0) {
+            if (get_user.gold > user_list[rana].gold) { ii += `беднее вас в ${(get_user.gold/user_list[rana].gold).toFixed(2)} раз?` }
+            else if (get_user.gold < user_list[rana].gold) { ii += `богаче вас в ${(user_list[rana].gold/get_user.gold).toFixed(2)} раз?` }
+            else { ii = '💡 Вы взгляную на свою банковскую карту, что дальше?' }
+        } else {
+            if (get_user.lvl > user_list[rana].lvl) { ii += `отстает на ${get_user.lvl -user_list[rana].lvl} уровней от вас?` }
+            else if (get_user.lvl < user_list[rana].lvl) { ii += `имеет на ${user_list[rana].lvl - get_user.lvl} уровней больше, чем вы?` }
+            else { ii = '💡 Ваше отражение промелькнуло невзначай, что дальше?' }
+        }
+        await Keyboard_Index(context, `${ii}`)
     })
     hearManager.hear(/артефакты/, async (context) => {
         const get_user:any = await prisma.user.findFirst({
@@ -89,30 +72,17 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             console.log(`Admin ${context.senderId} enter in shopping`)
             const category:any = await prisma.category.findMany({})
             if (category.length == 0) {
-                const ans: any = await context.question(`
-                        Магазинов еще нет
-                    `,
-                    {
-                        keyboard: Keyboard.builder()
-                        .textButton({
-                            label: 'Добавить магазин',
-                            payload: {
-                                command: 'new_shop'
-                            },
-                            color: 'secondary'
-                        })
-                        .oneTime().inline()
-                    }
+                const ans: any = await context.question(
+                    `Магазинов еще нет`,
+                    {   keyboard: Keyboard.builder()
+                        .textButton({   label: 'Добавить магазин',
+                                        payload: {  command: 'new_shop' },
+                                        color: 'secondary'                  })
+                        .oneTime().inline()                                     }
                 )
                 if (ans.payload.command == 'new_shop') {
-                    const shop = await context.question(`
-                        Введите название магазина:
-                    `)
-                    const shop_create = await prisma.category.create({
-                        data: {
-                            name: shop.text
-                        }
-                    })
+                    const shop: any = await context.question(`Введите название магазина:`)
+                    const shop_create = await prisma.category.create({  data: { name: shop.text }   })
                     console.log(`User ${context.senderId} open new shop`)
                     context.send(`Вы открыли следующий магазин ${shop_create.name}`)
                 }
@@ -295,32 +265,16 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await context.sendPhotos({
                     value: './src/art/shop.jpg',
                 });
-                const ans: any = await context.question(`
-                        Куда пойдем?
-                    `,
-                    {
-                        keyboard: keyboard
-                        .oneTime().inline()
-                    }
-                    
+                const ans: any = await context.question(
+                    `Куда пойдем?`,
+                    {   keyboard: keyboard
+                        .oneTime().inline() }
                 )
-                if (category.find(i => i.name == ans.text)) {
+                if (category.find((i: { name: any; }) => i.name == ans.text)) {
                     context.send(`Вы оказались в ${ans.text}`)
-                    const item: any= await prisma.item.findMany({
-                        where: {
-                            id_category: Number(ans.payload.command)
-                        }
-                    })
-                    const user: any = await prisma.user.findFirst({
-                        where: {
-                            idvk: context.senderId
-                        }
-                    })
-                    const inventory: any = await prisma.inventory.findMany({
-                        where: {
-                            id_user: user.id
-                        }
-                    })
+                    const item: any= await prisma.item.findMany({   where: {    id_category: Number(ans.payload.command)    }   })
+                    const user: any = await prisma.user.findFirst({ where: {    idvk: context.senderId  }   })
+                    const inventory: any = await prisma.inventory.findMany({    where: {    id_user: user.id    }   })
                     if (item.length == 0) {
                         context.send(`К сожалению приалвки пока что пусты=/`)
                     } else {
@@ -338,31 +292,19 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             const checker = await Searcher(inventory, element.id)
                             if (checker && element.type == 'limited'){
                                 const buer: any= context.send(`${element.name} ${element.price}💰`,
-                                    {
-                                        keyboard: Keyboard.builder()
-                                        .textButton({
-                                            label: 'Куплено',
-                                            payload: {
-                                                command: `${element.name}`
-                                            },
-                                            color: 'positive'
-                                        })
-                                        .oneTime().inline()
-                                    }
+                                    {   keyboard: Keyboard.builder()
+                                        .textButton({   label: 'Куплено',
+                                                        payload: {  command: `${element.name}`  },
+                                                        color: 'positive'                           })
+                                        .oneTime().inline()                                             }
                                 )
                             } else {
                                 const buer: any= context.send(`${element.name} ${element.price}💰`,
-                                    {
-                                        keyboard: Keyboard.builder()
-                                        .textButton({
-                                            label: 'Купить',
-                                            payload: {
-                                                command: `${element.name}`
-                                            },
-                                            color: 'secondary'
-                                        })
-                                        .oneTime().inline()
-                                    }
+                                    {   keyboard: Keyboard.builder()
+                                        .textButton({   label: 'Купить',
+                                                        payload: {  command: `${element.name}`  },
+                                                        color: 'secondary'                          })
+                                        .oneTime().inline()                                             }
                                 )
                             }
                             
@@ -371,7 +313,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 }
             }
         }
-        prisma.$disconnect()
         await Keyboard_Index(context, `Счастливых покупок, жмите кнопку "Купить" на понравившихся товарах`)
     })
     hearManager.hear(/Купить/, async (context) => {
@@ -412,6 +353,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 }
             })
             console.log(`User ${context.senderId} bought new item ${item_buy.id}`)
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `@id${user.idvk}(${user.name}) покупает ${context.messagePayload.command} в Косом переулке`
+            })
             context.send(`Ваша покупка доставлена: ${context.messagePayload.command}`)
         } else {
             console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
