@@ -35,37 +35,33 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `${ii}`)
     })
     hearManager.hear(/артефакты/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({
-            where: {
-                idvk: context.senderId
-            }
-        })
-        await context.sendPhotos({
-            value: './src/art/artefact.jpg',
-        });
-        context.send(`
-            Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}:
-            `
-        )
-        const artefact = await prisma.artefact.findMany({
-            where: {
-                id_user: get_user.id
-            }
-        })
+        const get_user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+        await context.sendPhotos({ value: './src/art/artefact.jpg' });
+        context.send(` Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: `)
+        const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
         if (artefact.length > 0) {
-            artefact.forEach(async element => {
-                context.send(`
-                    Название: ${element.name}
-                    ${element.label}:  ${element.type}
-                    Подробнее о артефакте:  ${element.description}
-                `)
-            });
-        } else {
-            context.send(`У Вас еще нет артефактов =(`)
-        }
-        prisma.$disconnect()
+            let artefact_list: String = ''
+            for (const i in artefact) { artefact_list += `Название: ${artefact[i].name} \n ${artefact[i].label}:  ${artefact[i].type} \n Подробнее о артефакте:  ${artefact[i].description}` }
+            context.send(`${artefact_list}`)
+        } else { context.send(`У Вас еще нет артефактов =(`) }
         console.log(`User ${get_user.idvk} see artefacts`)
-        await Keyboard_Index(context, `Артефактов много не бывает, как насчет еще чего-нибудь?`)
+        const artefact_list: any = await prisma.artefact.findMany({include: { user: true }})
+        if (artefact_list.length > 0) {
+            const seler = randomInt(0, artefact_list.length)
+            let ii = `🔔 А вы знали, что @id${artefact_list[seler].user.idvk}(${artefact_list[seler].user.name}) `
+            let trig = false
+            for (const i in artefact) { 
+                if (artefact[i].description == artefact_list[seler].description) { 
+                    ii += `всеравно не победит вас своим 🔮${artefact_list[seler].name}!`
+                    trig = true
+                    break
+                } 
+            }
+            if (!trig) {
+                ii += `уже имеет в наличии 🔮${artefact_list[seler].name}!`
+            }
+            await Keyboard_Index(context, `${ii}`)
+        } else { await Keyboard_Index(context, `Может быть вам скоро тоже дадут артефакт?`)}
     })
     hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {
