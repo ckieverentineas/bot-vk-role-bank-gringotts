@@ -11,19 +11,16 @@ import { registerUserRoutes } from './engine/player'
 import { InitGameRoutes } from './engine/init';
 import { send } from 'process';
 import { Keyboard_Index } from './engine/core/helper';
+import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+import { env } from 'process';
+dotenv.config()
 
-export const root = 590776444 //root user
-export const chat_id = 2000000002 //chat for logs
-const group_id = 207638246 //clear chat group
+export const token: string = String(process.env.token)
+export const root: number = Number(process.env.root) //root user
+export const chat_id: number = Number(process.env.chat_id) //chat for logs
+export const group_id: number = Number(process.env.group_id)//clear chat group
 //авторизация
-export const vk = new VK({
-	token: "b603c7efd00e1ce663d70a18c8915686bbdfee594a2f8d66d77620c712df5e9c2ae9e211c4164b80df6f9",
-	pollingGroupId: 207638246
-	//token: "vk1.a.4RU56GK1UGfQUoYe7uydfHW60tuitMBMR-4RLXwLd0F96Cqtz3hCShUhO5taLtmhotVMGyG6tz5ujHLujhxuDc3NXunnoe5uPBr4gE7sx1qJZr2JwSdiybvFMTwVnoxT4EZgdcmDgy2X0hgnEDYJgK3r82lj7Dty4eTazFoqtNbK1opve_7Vt3RmhmllLyUL6dpUzpZAmOBc87w7X9f0ig",
-	//pollingGroupId: 200587399
-	//token: 'd0d096ed5933ced08bc674c08134e4e47603a0443f4972d6595024ae32f8677b62032ec53ebfddc80ff16'
-});
-
+export const vk = new VK({ token: token, pollingGroupId: group_id });
 //инициализация
 const questionManager = new QuestionManager();
 const hearManager = new HearManager<IQuestionMessageContext>();

@@ -1240,21 +1240,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
     hearManager.hear(/админы/, async (context: any) => {
-        const user = await prisma.user.findFirst({
-            where: {
-                idvk: context.senderId
-            }
-        })
+        const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         if (user?.id_role == 2) {
-            const users = await prisma.user.findMany({
-                where: {
-                    id_role: 2
-                }
-            })
+            const users = await prisma.user.findMany({ where: { id_role: 2 } })
             let puller = '⌛ Загрузка списка рабов... \n'
-            for (const i in users) {
-                puller += `👤${users[i].id} - @id${users[i].idvk}(${users[i].name}) \n`
-            }
+            for (const i in users) { puller += `👤 ${users[i].id} - @id${users[i].idvk}(${users[i].name}) \n` }
             context.send(`${puller}`)
         }
         console.log(`Admin ${context.senderId} see list administrators`)
