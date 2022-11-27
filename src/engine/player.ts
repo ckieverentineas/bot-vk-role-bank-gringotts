@@ -12,6 +12,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
+        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/card.jpg' } }) });
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
         context.send(`✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} `)
@@ -1011,65 +1012,34 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     
     hearManager.hear(/инвентарь/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({
-            where: {
-                idvk: context.senderId
-            }
-        })
-        const inventory = await prisma.inventory.findMany({
-            where: {
-                id_user: get_user.id
-            }
-        })
+        context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/inventory.jpg' }  }) });
+        const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId }, include: { Trigger: true }, })
+        const inventory = await prisma.inventory.findMany({ where: { id_user: get_user.id }, include: { item: true } })
         let cart = ''
-        const underwear = await prisma.trigger.count({
-            where: {    id_user: get_user.id,
-                        name:   'underwear',
-                        value:  false         }
-        })
-        if (underwear) {
-            cart += '👜 Трусы Домашние; '
+        for (const i in get_user.Trigger) {
+            if (get_user.Trigger[i].value == false && get_user.Trigger[i].name == 'underwear') { cart += '👜 Трусы Домашние; ' }
+            if (get_user.Trigger[i].value == true && get_user.Trigger[i].name == 'beer') { cart += '👜 Сливочное пиво из Хогсмида; ' }
         }
-        const beer = await prisma.trigger.count({
-            where: {    id_user: get_user.id,
-                        name:   'beer',
-                        value:  true        }
-        })
-        if (beer) {
-            cart += '👜 Сливочное пиво из Хогсмида; '
-        }
-        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/inventory.jpg' } }) });
         if (inventory.length == 0) {
             context.send(`✉ Вы еще ничего не приобрели:(`)
-        } else {
-            for (let i = 0; i < inventory.length; i++) {
-                const element = inventory[i].id_item;
-                const item = await prisma.item.findFirst({
-                    where: {
-                        id: element
-                    }
-                })
-                cart += `👜 ${item?.name};`
-            }
-            const destructor = cart.split(';').filter(i => i)
-            let compile = []
-            for (let i = 0; i < destructor.length; i++) {
-                let counter = 0
-                for (let j = 0; j < destructor.length; j++) {
-                    if (destructor[i] != null) {
-                        if (destructor[i] == destructor[j]) {
-                            counter++
-                        }
-                    }
-                }
-                compile.push(`${destructor[i]} x ${counter}\n`)
-                counter = 0
-            }
-            let final: any = Array.from(new Set(compile));
-            context.send(`✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
+            await Keyboard_Index(context, `💡 Как можно было так лохануться?`)
+            return
         }
+        for (const i in inventory) {
+            cart += `👜 ${inventory[i].item.name};`
+        }
+        const destructor = cart.split(';').filter(i => i)
+        let compile = []
+        for (const i in destructor) {
+            let counter = 0
+            for (const j in destructor) { if (destructor[i] != null) { if (destructor[i] == destructor[j]) { counter++ } } }
+            compile.push(`${destructor[i]} x ${counter}\n`)
+            counter = 0
+        }
+        let final: any = Array.from(new Set(compile));
+        context.send(`✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
         console.log(`User ${context.senderId} see self inventory`)
-        await Keyboard_Index(context, `💡 Что ж, имущества много не бывает, но как насчет подзаработать еще галлеонов?`)
+        await Keyboard_Index(context, `💡 Что ж, имущества много не бывает, на что вообще жить??`)
     })
 
     hearManager.hear(/админка/, async (context: any) => {
@@ -1240,6 +1210,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
     hearManager.hear(/админы/, async (context: any) => {
+        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/admin.jpg' } }) });
         const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         if (user?.id_role == 2) {
             const users = await prisma.user.findMany({ where: { id_role: 2 } })
@@ -1251,6 +1222,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `💡 Им бы еще черные очки, и точно люди в черном!`)
     })
     hearManager.hear(/Услуги/, async (context: any) => {
+        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/service.jpg' } }) });
         const user = await prisma.user.findFirst({
             where: {
                 idvk: context.senderId
