@@ -161,8 +161,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                                 color: 'secondary'                  })
                                 .oneTime().inline()                                     }
                         )
-                        const item_create = await prisma.item.create({ data: {  name: item_name.text, price: Number(item_price.text),
-                                                                                id_category: Number(ans.payload.command), type: item_type.payload.command } })
+                        const item_create = await prisma.item.create({ data: {  name: item_name.text, price: Number(item_price.text), id_category: Number(ans.payload.command), type: item_type.payload.command } })
                         console.log(`User ${context.senderId} added new item ${item_create.id}`)
                         context.send(`⚙ Для магазина ${ans.text} добавлен новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`)
                         await vk.api.messages.send({
@@ -204,39 +203,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         })
         if (item_buy) {
-            const item_type: any = await context.question(`
-                    🧷 Укажите тип товара для ${item_buy.name}:
-                    🕐 — покупается пользователем однажды;
-                    ♾ — покупается пользователем бесконечное количество раз.
-                    Текущий тип: ${item_buy.type}
-                `,
-                {
-                    keyboard: Keyboard.builder()
-                    .textButton({
-                        label: '🕐',
-                        payload: {
-                            command: 'limited'
-                        },
-                        color: 'secondary'
-                    })
-                    .textButton({
-                        label: '♾',
-                        payload: {
-                                command: 'unlimited'
-                            },
-                        color: 'secondary'
-                    })
-                    .oneTime().inline()
-                }
+            const item_type: any = await context.question( `🧷 Укажите тип товара для ${item_buy.name}: \n 🕐 — покупается пользователем однажды; \n ♾ — покупается пользователем бесконечное количество раз. \n Текущий тип: ${item_buy.type}`,
+                {   keyboard: Keyboard.builder()
+                    .textButton({ label: '🕐', payload: { command: 'limited' }, color: 'secondary' })
+                    .textButton({ label: '♾', payload: { command: 'unlimited' }, color: 'secondary' })
+                    .oneTime().inline()                                                                 }
             )
-            const item_update = await prisma.item.update({
-                where: {
-                    id: item_buy.id
-                },
-                data: {
-                    type: item_type.payload.command
-                }
-            })
+            const item_update = await prisma.item.update({ where: { id: item_buy.id }, data: { type: item_type.payload.command } })
             console.log(`Admin ${context.senderId} edit type item ${item_buy.id}`)
             context.send(`⚙ Тип предмета ${item_buy.name} изменен с ${item_buy.type} на ${item_update.type}`)
             await vk.api.messages.send({
@@ -255,21 +228,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             console.log((`stop`))
             return
         }
-        const item_buy:any = await prisma.item.findFirst({
-            where: {
-                name: context.messagePayload.command,
-            }
-        })
+        const item_buy:any = await prisma.item.findFirst({ where: { name: context.messagePayload.command } })
         if (item_buy) {
             const name: any = await context.question(`🧷 Предмет: ${item_buy.name}.\nВведите новое имя для товара:`)
-            const item_update = await prisma.item.update({
-                where: {
-                    id: item_buy.id
-                },
-                data: {
-                    name: name.text
-                }
-            })
+            const item_update = await prisma.item.update({ where: { id: item_buy.id }, data: { name: name.text } })
             console.log(`Admin ${context.senderId} edit name item ${item_buy.id}`)
             context.send(`⚙ Имя предмета ${item_buy.name} изменено на ${item_update.name}`)
             await vk.api.messages.send({
@@ -306,39 +268,17 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             id_user: Number(uid.text)
                         }
                     })
-                    context.send(`
-                        🏦Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}:
-                        https://vk.com/id${get_user.idvk}
-                        💳UID: ${get_user.id}
-                        💰Галлеоны: ${get_user.gold}
-                        🧙Магический опыт: ${get_user.xp}
-                        📈Уровень: ${get_user.lvl}
-                        🔮Количество артефактов: ${artefact_counter}
-                    `)
-                    const inventory = await prisma.inventory.findMany({
-                        where: {
-                            id_user: get_user?.id
-                        }
-                    })
+                    context.send(`🏦 Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}: \n https://vk.com/id${get_user.idvk} \n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter}` )
+                    const inventory = await prisma.inventory.findMany({ where: { id_user: get_user?.id } })
                     let cart = ''
-                    const underwear = await prisma.trigger.count({
-                        where: {    id_user: get_user.id,
-                                    name:   'underwear',
-                                    value:  false         }
-                    })
-                    if (underwear) {
-                        cart = '👜 Трусы Домашние;'
-                    }
+                    const underwear = await prisma.trigger.count({ where: {    id_user: get_user.id, name:   'underwear', value:  false } })
+                    if (underwear) { cart = '👜 Трусы Домашние;' }
                     if (inventory.length == 0) {
                         context.send(`✉ Покупки пока не совершались`)
                     } else {
                         for (let i = 0; i < inventory.length; i++) {
                             const element = inventory[i].id_item;
-                            const item = await prisma.item.findFirst({
-                                where: {
-                                    id: element
-                                }
-                            })
+                            const item = await prisma.item.findFirst({ where: { id: element } })
                             cart += `👜 ${item?.name};`
                         }
                         const destructor = cart.split(';').filter(i => i)
@@ -365,90 +305,23 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 		}
 
         const ans: any = await context.question( `✉ Доступны следующие операции с 💳UID: ${datas[0].id}`,
-            {
-            keyboard: Keyboard.builder()
-            .textButton({
-                label: '+💰',
-                payload: {
-                    command: 'gold_up'
-                },
-                color: 'secondary'
-            })
-            .textButton({
-                label: '—💰',
-                payload: {
-                    command: 'gold_down'
-                },
-                color: 'secondary'
-            }).row()
-            .textButton({
-                label: '+🧙',
-                payload: {
-                    command: 'xp_up'
-                },
-                color: 'secondary'
-            })
-            .textButton({
-                label: '—🧙',
-                payload: {
-                    command: 'xp_down'
-                },
-                color: 'secondary'
-            }).row()
-            .textButton({
-                label: '➕🔮',
-                payload: {
-                    command: 'artefact_add'
-                },
-                color: 'secondary'
-            })
-            .textButton({
-                label: '👁🔮',
-                payload: {
-                    command: 'artefact_show'
-                },
-                color: 'secondary'
-            }).row()
-            .textButton({
-                label: '✏',
-                payload: {
-                    command: 'editor'
-                },
-                color: 'secondary'
-            })
-            .textButton({
-                label: '🔙',
-                payload: {
-                    command: 'back'
-                },
-                color: 'secondary'
-            })
-            .textButton({
-                label: '☠',
-                payload: {
-                    command: 'user_delete'
-                },
-                color: 'secondary'
-            })
-            .oneTime().inline()
-            }
+            {   keyboard: Keyboard.builder()
+                .textButton({ label: '+💰', payload: { command: 'gold_up' }, color: 'secondary' })
+                .textButton({ label: '—💰', payload: { command: 'gold_down' }, color: 'secondary' }).row()
+                .textButton({ label: '+🧙', payload: { command: 'xp_up' }, color: 'secondary' })
+                .textButton({ label: '—🧙', payload: { command: 'xp_down' }, color: 'secondary' }).row()
+                .textButton({ label: '➕🔮', payload: { command: 'artefact_add' }, color: 'secondary' })
+                .textButton({ label: '👁🔮', payload: { command: 'artefact_show' }, color: 'secondary' }).row()
+                .textButton({ label: '✏', payload: { command: 'editor' }, color: 'secondary' })
+                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                .textButton({ label: '☠', payload: { command: 'user_delete' }, color: 'secondary' })
+                .oneTime().inline()                                                                             }
         )
         async function Gold_Up(id: number) {
             const count: number = await Ipnut_Gold() 
             const messa: string = await Ipnut_Message()
-            const user_get: any = await prisma.user.findFirst({
-                where: {
-                    id
-                }
-            })
-            const money_put = await prisma.user.update({
-                where: {
-                    id: user_get.id
-                },
-                data: {
-                    gold: user_get.gold + count
-                }
-            })
+            const user_get: any = await prisma.user.findFirst({ where: { id } })
+            const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold + count } })
             try {
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
