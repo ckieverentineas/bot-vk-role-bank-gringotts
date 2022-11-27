@@ -70,4 +70,5 @@ model Trigger {
   value   Boolean
   user    User    @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
   id_user Int
+  crdate DateTime @default(now())
 }

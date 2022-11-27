@@ -270,17 +270,13 @@ export async function Keyboard_Index(context: any, messa: any) {
         const rana = randomInt(0, user_list.length)
         await context.send(`⌛ Загружается новое событие...`)
         const reward: number = randomInt(1,16)
-        await context.send(`
-            👥Как насчет поролить с @id${user_list[rana].idvk}(${user_list[rana].name}):
-            🌐Место: ${location_name[selector]}
-            👣Локация: ${location_list[location_name[selector]][tara]}
-            ⚡Тема: Свободный стиль
-            🏆Награда: ${reward}🧙
-        `)
+        const reward2: number = randomInt(1,5)
+        const task = "Задача отсутствует"
+        await context.send( `👥 Как насчет поролить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙` )
         await vk.api.messages.send({
             peer_id: chat_id,
             random_id: 0,
-            message: `⌛ Создано предложение для отрола 👤@id${user_check.idvk}(${user_check.name}) c 👥@id${user_list[rana].idvk}(${user_list[rana].name}) в 🌐"${location_name[selector]}" на 👣"${location_list[location_name[selector]][tara]}" по теме ⚡"Свободный стиль" за 🏆"${reward}🧙"`
+            message: `⌛ Обнаружен отрол: \n 👤@id${user_check.idvk}(${user_check.name}) \n 👥@id${user_list[rana].idvk}(${user_list[rana].name})  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
         })
         try {
             await vk.api.messages.send({
@@ -291,13 +287,7 @@ export async function Keyboard_Index(context: any, messa: any) {
             await vk.api.messages.send({
                 user_id: user_list[rana].idvk,
                 random_id: 0,
-                message: `
-                    👥Как насчет поролить с @id${user_check.idvk}(${user_check.name}):
-                    🌐Место: ${location_name[selector]}
-                    👣Локация: ${location_list[location_name[selector]][tara]}
-                    ⚡Тема: Свободный стиль
-                    🏆Награда: ${reward}🧙
-                `
+                message: `👥 Как насчет поролить с 👤@id${user_check.idvk}(${user_check.name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
             })
         } catch (error) {
             console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)

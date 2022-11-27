@@ -8,6 +8,7 @@ import * as xlsx from 'xlsx';
 import * as fs from 'fs';
 import { chat_id, prisma, root, vk } from '../index';
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
+import { readFile, writeFile, mkdir } from 'fs/promises';
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
@@ -289,10 +290,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         let name_check = false
 		let datas: any = []
 		while (name_check == false) {
-			const uid = await context.question(`
-                🧷 Введите 💳UID банковского счета получателя:
-			`)
-			if (typeof Number(uid.text) === "number") {
+			const uid: any = await context.question( `🧷 Введите 💳UID банковского счета получателя:` )
+			if (/^(0|-?[1-9]\d{0,5})$/.test(uid.text)) {
                 const get_user = await prisma.user.findFirst({
                     where: {
                         id: Number(uid.text)
@@ -359,9 +358,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         let final: any = Array.from(new Set(compile));
                         context.send(`✉ Были совершены следующие покупки:: \n ${final.toString().replace(/,/g, '')}`)
                     }
-                }
+                } else { context.send(`💡 Нет такого банковского счета!`) }
 			} else {
-				context.send(`💡 Нет такого банковского счета!`)
+				context.send(`💡 Необходимо ввести корректный UID!`)
 			}
 		}
 
@@ -1469,7 +1468,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-5 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
                     context.send(`⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
-                    console.log(`User ${context.senderId} sold self underwear`)
+                    console.log(`User ${context.senderId} sold self beer`)
                     const user_list: any = await prisma.user.findMany({})
                     const location_list: any = {
                         "Хогвартс": [ "Большой Зал", "Астрономическая Башня", "Гремучая Ива", "Часовая Башня", "Кухня", "Туалет Плаксы Миртл", "Кухня", "Зал Наказаний", "Внутренний Двор", "Запретный лес", "Правый коридор | Пятый этаж", "Деревянный мост", "Совятня", "Выручай-комната", "Комната Пивза", "Чердак", "Больничное крыло", "Вестибюль", "Опушка леса", "Библиотека Хогвартса", "Чёрное Озеро", "Лестничные пролёты", "Каменный Круг", "Кабинет Зельеварения", "Подземелья Хогвартса", "Прачечная", "Зал Славы", "Учебный Зал", "Теплицы", "Тайная Комната", "Кладбище", "Лодочный сарай", "Кабинет школьного психолога", "Коридор Одноглазой Ведьмы", "Комната 234-00", "Учительская", "Хижина Хагрида", "Коридоры", "Учительская"],
@@ -1480,19 +1479,15 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const selector = randomInt(0, location_name.length)
                     const tara = randomInt(0, location_list[location_name[selector]].length)
                     const rana = randomInt(0, user_list.length)
+                    const task = "Божественный напиток"
                     await context.send(`⌛ Загружается новое событие...`)
-                    const reward: number = randomInt(1, 4)
-                    await context.send(`
-                        🍻Как насчет выпить с @id${user_list[rana].idvk}(${user_list[rana].name}) в:
-                        🌐: ${location_name[selector]}
-                        👣: ${location_list[location_name[selector]][tara]}
-                        ⚡: Божественный напиток
-                        🏆: ${reward}🧙
-                    `)
+                    const reward: number = randomInt(1, 10) //15МО = 5Г => 3MO = 1 G \2G
+                    const reward2: number = randomInt(1, 3) //2G
+                    await context.send( `🍻Как насчет выпить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`)
                     await vk.api.messages.send({
                         peer_id: chat_id,
                         random_id: 0,
-                        message: `⌛ Назначено культурное🍻 мероприятие 👤@id${user.idvk}(${user.name}) c 👥@id${user_list[rana].idvk}(${user_list[rana].name}) в 🌐"${location_name[selector]}" на 👣"${location_list[location_name[selector]][tara]}" по теме ⚡"Божественный напиток" за 🏆"${reward}🧙"`
+                        message: `🍻 Обнаружен отрол: \n 👤@id${user.idvk}(${user.name}) \n 👥@id${user_list[rana].idvk}(${user_list[rana].name})  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
                     })
                     try {
                         await vk.api.messages.send({
@@ -1503,19 +1498,22 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await vk.api.messages.send({
                             user_id: user_list[rana].idvk,
                             random_id: 0,
-                            message: `
-                                👥Как насчет выпить с @id${user.idvk}(${user.name}):
-                                🌐Место: ${location_name[selector]}
-                                👣Локация: ${location_list[location_name[selector]][tara]}
-                                ⚡Тема: Божественный напиток
-                                🏆Награда: ${reward}🧙
-                            `
+                            message: `🍻Как насчет выпить с 👤@id${user.idvk}(${user.name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
                         })
                     } catch (error) {
                         console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)
                     }
-                } else { context.send(`💡 Будете ждать, пока вас кто-нибудь сам угостит?`) }
+                } else { context.send(`💡 Будете ждать, пока вас кто-нибудь угостит?`) }
             } else {
+                const datenow: any = new Date()
+                const dateold: any = new Date(trigger_check.crdate)
+                if (datenow-trigger_check.crdate > 86400000) {
+                    const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
+                } else {
+                    await context.send(`🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`)
+                    await Keyboard_Index(context, '💡 Что, уже не терпится еще по одной?')
+                    return
+                }
                 const answe = await context.question(`🍺 Вы точно хотите, сдать бутылку 1.5 литра за 1💰?`,
                     {   keyboard: Keyboard.builder()
                         .textButton({   label: '+1💰',
@@ -1527,10 +1525,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
                     context.send(`⚙ Даже ваш староста зауважает вас, если узнает, что вы за экологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`)
-                    console.log(`User ${context.senderId} return self underwear`)
+                    console.log(`User ${context.senderId} return self beer`)
                 } else { context.send(`💡 А как же восстановить честь?`) }
             }
-            await Keyboard_Index(context, '💡 Кто бы мог подумать, что дойдет до такого?')
+            await Keyboard_Index(context, '💡 Интересно, и зачем нужен паспорт?')
         }
         async function Underwear(context: any) {
             const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
@@ -1624,7 +1622,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 }
                 
             }
-            if (user.xp >= 150 && user.lvl < 16) {
+            if (user.xp >= 150 && user.lvl < 15) {
                 const user_update = await prisma.user.update({
                     where: {
                         id: user.id
