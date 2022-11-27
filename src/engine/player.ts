@@ -11,7 +11,6 @@ import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
-        if (context.peerType == 'chat') { return }
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
         context.send(`✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} `)
