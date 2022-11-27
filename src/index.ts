@@ -36,6 +36,10 @@ export const prisma = new PrismaClient()
 	return next(params)
 })*/
 
+//настройка
+vk.updates.use(questionManager.middleware);
+vk.updates.on('message_new', hearManager.middleware);
+
 //регистрация роутов из других классов
 InitGameRoutes(hearManager)
 registerUserRoutes(hearManager)
@@ -316,8 +320,5 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	}
 	return next();
 })
-//настройка
-vk.updates.use(questionManager.middleware);
-vk.updates.on('message_new', hearManager.middleware);
 
 vk.updates.start().catch(console.error);

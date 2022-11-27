@@ -333,13 +333,13 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
             if (checker && data[i].type != 'unlimited') {
                 keyboard
                 .textButton({   label: 'Куплено',
-                                payload: {  command: `null`  },
+                                payload: {  command: `null`, operation: 'cant byuing'  },
                                 color: 'positive'                           })
                 .oneTime().inline() 
             } else {
                 keyboard
                 .textButton({   label: 'Купить',
-                                payload: {  command: `${i}`  },
+                                payload: {  command: `${i}`, operation: 'byuing'  },
                                 color: 'secondary'                          })
                 .oneTime().inline()                                                                                
             }
@@ -353,7 +353,7 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                                 payload: { command: "left" },
                                 color: 'primary'              })
                 .textButton({   label: `${(modif+3)/3}/${Math.round(data.length/3)}`,
-                                payload: { command: "left" },
+                                payload: { command: "terminal" },
                                 color: 'primary'              })
                 .textButton({   label: '>',
                                 payload: { command: 'right' },
@@ -368,7 +368,7 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                 .oneTime() }
         )
         if (push.payload) {
-            if (push.text == 'Купить') {
+            if (push.payload.operation == 'byuing') {
                 const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
                 const item_buy:any = data[push.payload.command]
                 const item_inventory:any = await prisma.inventory.findFirst({ where: { id_item: item_buy.id, id_user: user.id } })
@@ -385,22 +385,19 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                     context.send(`⚙ Ваша покупка доставлена: ${item_buy.name}`)
                 } else {
                     console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
-                    context.send(`💡 У вас уже есть ${item_buy.name}! или же недостаточно средств!`)
+                    !item_inventory ? context.send(`💡 У вас  недостаточно средств для покупки ${item_buy.name}!!`) : context.send(`💡 У вас уже есть ${item_buy.name}!`)
                 }
-                await Keyboard_Index(context, `💡 Может еще что-нибудь приобрести?`)
             }
-            if (push.text == 'Назад') { await context.send(`⌛ Возврат в Косой переулок...`); return false }
-            if (push.text == 'Закончить') { await context.send(`⌛ Шоппинг успешно завершен`); return true }
-            if (push.text == '>') { if (modif+lim < data.length) { modif += lim } }
-            if (push.text == '<') { if (modif-lim >= 0) { modif -= lim } }
+            if (push.payload.command == 'back') { await context.send(`⌛ Возврат в Косой переулок...`); return false }
+            if (push.payload.command == 'end') { await context.send(`⌛ Шоппинг успешно завершен`); return true }
+            if (push.payload.command == 'right') { if (modif+lim < data.length) { modif += lim } }
+            if (push.payload.command == 'left') { if (modif-lim >= 0) { modif -= lim } }
         }
     }
 }
 
 export async function Gen_Inline_Button_Category(context: any, weapon_type: any, mesa: string) {
-    await context.sendPhotos({
-        value: './src/art/shop.jpg',
-    });
+    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/shop.jpg' } }) });
     let checker = false
     let counter = 0
     let current = 0

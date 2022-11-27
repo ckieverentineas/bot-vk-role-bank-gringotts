@@ -31,7 +31,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     hearManager.hear(/артефакты/, async (context) => {
         const get_user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-        await context.sendPhotos({ value: './src/art/artefact.jpg' });
+        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/artefact.jpg' } }) });
         context.send(`✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: `)
         const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
         if (artefact.length > 0) {
@@ -1166,10 +1166,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         if (beer) {
             cart += '👜 Сливочное пиво из Хогсмида; '
         }
-        let counter = 0
-        await context.sendPhotos({
-            value: './src/art/inventory.jpg',
-        });
+        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/inventory.jpg' } }) });
         if (inventory.length == 0) {
             context.send(`✉ Вы еще ничего не приобрели:(`)
         } else {
