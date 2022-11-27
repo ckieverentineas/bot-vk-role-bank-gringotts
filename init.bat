@@ -1,3 +1,6 @@
-@echo off
+@echo on
 cd %~dp0
-npm i
+call npm i
+echo 'Stop'
+pause
+cmd /k
