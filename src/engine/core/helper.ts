@@ -484,7 +484,7 @@ export async function Gen_Inline_Button_Category(context: any, weapon_type: any,
             context.send('💡 Жмите по inline кнопкам!')
         } else {
             if (skill.payload.command == 'back') {
-                context.send('💡 Шоппинг успешно отменено')
+                context.send('💡 Шоппинг успешно отменен')
                 modif = 0
                 return false
             }
