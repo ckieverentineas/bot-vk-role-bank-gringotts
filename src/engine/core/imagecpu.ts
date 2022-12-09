@@ -4,17 +4,20 @@ import { UploadAllowedSource } from "vk-io";
 import { vk } from "../..";
 
 
-async function Gen_Image(image_path: string, x: number, y: number, text: string, idvk: number) {
-    const lenna: any = await Jimp.read(image_path)
+export async function Image_Text_Add(context: any, image_path: string, x: number, y: number, text: string) {
     const font = await Jimp.loadFont('./src/art/font/harlow.fnt')
-    const res = await lenna.print(font, x, y, text);
-    const link: any = `./src/art/temp/${idvk}_card.jpg`
-    await lenna.writeAsync(link);
-    return link
+    const lenna: any = await Jimp.read(image_path)
+    const res = await lenna.print(font, x, y, text).quality(0).dither565(); 
+    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
 }
-
-export async function Image_Processor(context: any, image_path: string, x: number, y: number, text: string) {
-    const link  = await Gen_Image(image_path, x, y, text, context.senderId)
-    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: link } }) });
-    unlink(link, (err) => { if (err) throw err; console.log(`successfully deleted ${link}`); });
+export async function Image_Composer() {
+    // Reading Image
+    const image1 = await Jimp.read
+    ('./src/art/inventory.jpg');
+    const image2 = await Jimp.read
+    ('./src/art/admin.jpg');
+    const image3 = await Jimp.read
+    ('./src/art/artefact.jpg');
+    image1.blit(image2, 100, 150).blit(image3, 300, 250)
+    .write('./src/art/temp/test.jpg')
 }
