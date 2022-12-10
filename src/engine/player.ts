@@ -9,13 +9,14 @@ import * as fs from 'fs';
 import { chat_id, prisma, root, vk } from '../index';
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { Image_Composer, Image_Composer2, Image_Text_Add } from "./core/imagecpu";
+import { Image_Composer, Image_Composer2, Image_Interface, Image_Text_Add } from "./core/imagecpu";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         await Image_Text_Add(context, './src/art/card.jpg', 100, 920, get_user.name)
         await Image_Composer2()
+        await Image_Interface([{ name: 'Серый кот', price: '10G'}, { name: 'Метла', price: '7G'}, { name: 'Стандартный набор учебников', price: '30G'}], context)
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
         context.send(`✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} `)
         console.log(`User ${get_user.idvk} see card`)
