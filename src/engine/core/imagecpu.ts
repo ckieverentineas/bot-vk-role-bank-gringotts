@@ -4,10 +4,14 @@ import { UploadAllowedSource } from "vk-io";
 import { vk } from "../..";
 import { promises as fs } from 'fs';
 
-export async function Image_Text_Add(context: any, image_path: string, x: number, y: number, text: string) {
-    const font = await Jimp.loadFont('./src/art/font/harlow.fnt')
+export async function Image_Text_Add(context: any, image_path: string, x: number, y: number, text: any) {
+    const font = await Jimp.loadFont('./src/art/font/impact_medium/impact.fnt')
+    const font_big = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt')
     const lenna: any = await Jimp.read(image_path)
-    const res = await lenna.print(font, x, y, text).quality(0).dither565(); 
+    const res = await lenna.print(font_big, x, y, ('0000000000000000'+text.id).slice(-16).replace(/\d{4}(?=.)/g, '$& ').replace(/ /g, `${' '.repeat(6)}`))
+    .print(font, x, y+200, text.name, 1600)
+    .print(font, lenna.getWidth()-400, y+200, text.crdate.toLocaleDateString('de-DE') )
+    
     await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
 }
 export async function Image_Composer() {
