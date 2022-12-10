@@ -15,7 +15,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     hearManager.hear(/карта/, async (context) => {
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         
-        await Image_Text_Add(context, './src/art/card.jpg', 100, 650, get_user)
+        await Image_Text_Add(context, './src/art/card.jpg', 50, 650, get_user)
         //await Image_Composer2()
         //await Image_Interface([{ name: 'Серый кот', price: '10G'}, { name: 'Метла', price: '7G'}, { name: 'Стандартный набор учебников', price: '30G'}], context)
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })

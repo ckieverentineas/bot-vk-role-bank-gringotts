@@ -8,9 +8,9 @@ export async function Image_Text_Add(context: any, image_path: string, x: number
     const font = await Jimp.loadFont('./src/art/font/impact_medium/impact.fnt')
     const font_big = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt')
     const lenna: any = await Jimp.read(image_path)
-    const res = await lenna.print(font_big, x, y, ('0000000000000000'+text.id).slice(-16).replace(/\d{4}(?=.)/g, '$& ').replace(/ /g, `${' '.repeat(6)}`))
-    .print(font, x, y+200, text.name, 1600)
-    .print(font, lenna.getWidth()-400, y+200, text.crdate.toLocaleDateString('de-DE') )
+    const res = await lenna.print(font_big, x, y, ('0000000000000000'+text.id).slice(-16).replace(/\d{4}(?=.)/g, '$& ').replace(/ /g, `${' '.repeat(7)}`))
+    .print(font, x, y+200, text.name, 1200)
+    .print(font, lenna.getWidth()-370, y+200, text.crdate.toLocaleDateString('de-DE') )
     
     await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
 }
