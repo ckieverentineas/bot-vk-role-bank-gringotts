@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client"
 import { randomInt } from "crypto"
 import { Attachment, Keyboard } from "vk-io"
 import { chat_id, root, vk } from "../.."
+import { Image_Interface } from "./imagecpu"
 
 const prisma = new PrismaClient()
 
@@ -370,12 +371,18 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
     const user: any = await prisma.user.findFirst({ where: {    idvk: context.senderId  }   })
     const data: any= await prisma.item.findMany({   where: {    id_category: Number(category.id)    }   })
     let stopper = false
-	let modif = 0
+	let modif: number = 0
 	const lim = 3 
     while (stopper == false) {
         let i = modif
         let counter = 0
         const inventory: any = await prisma.inventory.findMany({    where: {    id_user: user.id    }   })
+        const item_render = []
+        for (let j = modif; j < modif+3 && j < data.length; j++) {
+            item_render.push({ name: data[j].name, price: `${data[j].price}G` })
+        }
+        console.log("🚀 ~ file: helper.ts:452 ~ Gen_Inline_Button_Item ~ item_render", item_render)
+        await Image_Interface(item_render, context)
         while (i < data.length && counter <lim) {
             const checker = await Searcher(inventory, data[i].id)
             let keyboard = Keyboard.builder()
