@@ -1380,8 +1380,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                     const task = task_list[location_list[location_name[selector]][tara]][randomInt(0,task_list[location_list[location_name[selector]][tara]].length)] || "Божественный напиток"
                     await context.send(`⌛ Загружается новое событие...`)
-                    const reward: number = randomInt(1, 10) //15МО = 5Г => 3MO = 1 G \2G
-                    const reward2: number = randomInt(1, 3) //2G
+                    const reward: number = randomInt(5, 50) //15МО = 5Г => 3MO = 1 G \2G
+                    const reward2: number = randomInt(1, 5) //2G
                     await context.send( `🍻Как насчет выпить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2+4}💰 ${reward}🧙`)
                     await vk.api.messages.send({
                         peer_id: chat_id,
