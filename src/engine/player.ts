@@ -9,13 +9,13 @@ import * as fs from 'fs';
 import { chat_id, prisma, root, vk } from '../index';
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { Image_Composer, Image_Composer2, Image_Interface, Image_Text_Add } from "./core/imagecpu";
+import { Image_Composer, Image_Composer2, Image_Interface, Image_Text_Add_Card } from "./core/imagecpu";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         
-        await Image_Text_Add(context, './src/art/card.jpg', 50, 650, get_user)
+        await Image_Text_Add_Card(context, 50, 650, get_user)
         //await Image_Composer2()
         //await Image_Interface([{ name: 'Серый кот', price: '10G'}, { name: 'Метла', price: '7G'}, { name: 'Стандартный набор учебников', price: '30G'}], context)
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
@@ -1299,7 +1299,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
             const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
             if (trigger_check.value == false) {
-                const answe = await context.question(`🍺 Желаете сливочного пива прямиком из Хогсмида с доставкой на дом, всего лишь за 5💰?`, 
+                const answe = await context.question(`🍺 Желаете сливочного пива прямиком из Хогсмида с доставкой на дом, всего лишь за 5💰? \n 💡В случае отрола затраты на пиво будут компенсированы!`, 
                     {   keyboard: Keyboard.builder()
                         .textButton({ label: '-5💰', payload: { command: 'beer' }, color: 'secondary' }).oneTime().inline()    }
                 )
@@ -1315,7 +1315,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         "Бристон": [ 'Стрип-клуб "MurMur angels-club"', "Филиал Некромантии и Бесоизгнания", "Суд", "ЗаМУРчательное кафе", "Парк", "Больница", "Мракоборческий участок", "Заповедник", "Торговый центр", "Лавка зелий и артефактов", 'Бар "У Пьюси и Винтер"', "Магическая аптека", "Бухта Ингернах", "Филиал Гильдии Артефакторов", 'Отель "Меллоу Брук"', "Закрытая пиццерия", "Волшебный зверинец",],
                         "Пиво из Хогсмида": [ 'Паб "Три метлы"', 'Трактир "Кабанья голова"']
                     }
-                    const location_name : any = ["Хогвартс", "Бристон", "Пиво из Хогсмида"]
+                    const location_name : any = ["Хогвартс", "Бристон"]
                     const selector = randomInt(0, location_name.length)
                     const tara = randomInt(0, location_list[location_name[selector]].length)
                     const rana = randomInt(0, user_list.length)
@@ -1382,11 +1382,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await context.send(`⌛ Загружается новое событие...`)
                     const reward: number = randomInt(1, 10) //15МО = 5Г => 3MO = 1 G \2G
                     const reward2: number = randomInt(1, 3) //2G
-                    await context.send( `🍻Как насчет выпить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`)
+                    await context.send( `🍻Как насчет выпить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2+4}💰 ${reward}🧙`)
                     await vk.api.messages.send({
                         peer_id: chat_id,
                         random_id: 0,
-                        message: `🍻 Обнаружен отрол: \n 👤@id${user.idvk}(${user.name}) \n 👥@id${user_list[rana].idvk}(${user_list[rana].name})  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+                        message: `🍻 Обнаружен отрол: \n 👤@id${user.idvk}(${user.name}) \n 👥@id${user_list[rana].idvk}(${user_list[rana].name})  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 Для 👤 ${reward2+4}💰 ${reward}🧙.  Для 👥${reward2}💰 ${reward}🧙`
                     })
                     try {
                         await vk.api.messages.send({
@@ -1397,7 +1397,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await vk.api.messages.send({
                             user_id: user_list[rana].idvk,
                             random_id: 0,
-                            message: `🍻Как насчет выпить с 👤@id${user.idvk}(${user.name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+                            message: `🍻Как насчет выпить с 👤@id${user.idvk}(${user.name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
                         })
                     } catch (error) {
                         console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)

@@ -265,12 +265,12 @@ export async function Keyboard_Index(context: any, messa: any) {
             "Бристон": [ 'Стрип-клуб "MurMur angels-club"', "Филиал Некромантии и Бесоизгнания", "Суд", "ЗаМУРчательное кафе", "Парк", "Больница", "Мракоборческий участок", "Заповедник", "Торговый центр", "Лавка зелий и артефактов", 'Бар "У Пьюси и Винтер"', "Магическая аптека", "Бухта Ингернах", "Филиал Гильдии Артефакторов", 'Отель "Меллоу Брук"', "Закрытая пиццерия", "Волшебный зверинец",],
             "Пиво из Хогсмида": [ 'Паб "Три метлы"', 'Трактир "Кабанья голова"']
         }
-        const location_name : any = ["Хогвартс", "Бристон", "Пиво из Хогсмида"]
+        const location_name : any = ["Хогвартс", "Бристон"]
         const selector = randomInt(0, location_name.length)
         const tara = randomInt(0, location_list[location_name[selector]].length)
         const rana = randomInt(0, user_list.length)
-        await context.send(`⌛ Загружается новое событие...`)
-        const reward: number = randomInt(1,16)
+        const rana2 = randomInt(0, user_list.length)
+        const reward: number = randomInt(5,50)
         const reward2: number = randomInt(1,5)
         const task_list: any = { "Большой зал": ["Попытаться украсть несколько свечек с потолка", "Оккупировать стол другого Факультета", "Подкинуть в тарелку с чужкой едой горстку соли", "Придумать план по захвату мира", "Придумать новый праздник и отметить его", "Создать семью яблок и банана" ],
                             "Астрономическая Башня": ["Спеть песню «И камнем вниз...»", "Скинуть водные бомбочки с башни", "Подумать, почему солнце назвали солнцем", "Поиграть в догони меня кирпич", "Проверить перила на прочность" ],
@@ -332,12 +332,25 @@ export async function Keyboard_Index(context: any, messa: any) {
                             'Трактир "Кабанья голова"': [ "Оставить свой след на вывеске", "Выпить бокальчик смородинового Рома", "Залезть под стол и громко кукарекать" ]
         }
         const task = task_list[location_list[location_name[selector]][tara]][randomInt(0,task_list[location_list[location_name[selector]][tara]].length)] || "Задача отсутствует"
-        await context.send( `👥 Как насчет поролить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙` )
         await vk.api.messages.send({
             peer_id: chat_id,
             random_id: 0,
-            message: `⌛ Обнаружен отрол: \n 👤@id${user_check.idvk}(${user_check.name}) \n 👥@id${user_list[rana].idvk}(${user_list[rana].name})  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+            message: `⌛ Обнаружен отрол: \n 👤@id${user_list[rana2].idvk}(${user_list[rana2].name}) \n 👥@id${user_list[rana].idvk}(${user_list[rana].name})  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
         })
+        try {
+            await vk.api.messages.send({
+                user_id: user_list[rana2].idvk,
+                random_id: 0,
+                message: `⌛ Загружается новое событие...`
+            })
+            await vk.api.messages.send({
+                user_id: user_list[rana2].idvk,
+                random_id: 0,
+                message: `👥 Как насчет поролить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+            })
+        } catch (error) {
+            console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)
+        }
         try {
             await vk.api.messages.send({
                 user_id: user_list[rana].idvk,
@@ -347,7 +360,7 @@ export async function Keyboard_Index(context: any, messa: any) {
             await vk.api.messages.send({
                 user_id: user_list[rana].idvk,
                 random_id: 0,
-                message: `👥 Как насчет поролить с 👤@id${user_check.idvk}(${user_check.name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*5 + reward2*10} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+                message: `👥 Как насчет поролить с 👤@id${user_list[rana2].idvk}(${user_list[rana2].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
             })
         } catch (error) {
             console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)
@@ -381,7 +394,6 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
         for (let j = modif; j < modif+3 && j < data.length; j++) {
             item_render.push({ name: data[j].name, price: `${data[j].price}G` })
         }
-        console.log("🚀 ~ file: helper.ts:452 ~ Gen_Inline_Button_Item ~ item_render", item_render)
         await Image_Interface(item_render, context)
         while (i < data.length && counter <lim) {
             const checker = await Searcher(inventory, data[i].id)
