@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { randomInt } from "crypto"
 import { Attachment, Keyboard } from "vk-io"
-import { chat_id, root, vk } from "../.."
+import { answerTimeLimit, chat_id, root, vk } from "../.."
 import { Image_Interface } from "./imagecpu"
 
 const prisma = new PrismaClient()
@@ -56,11 +56,8 @@ export async function Gen_Inline_Button(context: any, weapon_type: any) {
             color: 'primary'
         })
         
-        skill = await context.question(`${weapon_list}`,
-                                            {
-                                                keyboard: keyboard.inline()
-                                            }
-        )
+        skill = await context.question(`${weapon_list}`, { keyboard: keyboard.inline(), answerTimeLimit } )
+        if (skill.isTimeout) { return await context.send(`⏰ Время ожидания вашей активности истекло!`) }
         if (!skill.payload) {
             context.send('Жмите по inline кнопкам!')
         } else {
@@ -100,7 +97,7 @@ export async function Keyboard_Index(context: any, messa: any) {
         }
     })
     if (user_check.idvk == root && user_check.id_role === 2) {
-        context.send(`${messa}`,
+        await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
                 .textButton({
@@ -162,7 +159,7 @@ export async function Keyboard_Index(context: any, messa: any) {
             }
         )
     }else if (user_check.id_role === 2) {
-        context.send(`${messa}`,
+        await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
                 .textButton({
@@ -218,7 +215,7 @@ export async function Keyboard_Index(context: any, messa: any) {
         )
     } 
     if (user_check.id_role === 1) {
-        context.send(`${messa}`,
+        await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
                 .textButton({
@@ -395,26 +392,27 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
             item_render.push({ name: data[j].name, price: `${data[j].price}G` })
         }
         await Image_Interface(item_render, context)
+        let keyboard = Keyboard.builder()
         while (i < data.length && counter <lim) {
             const checker = await Searcher(inventory, data[i].id)
-            let keyboard = Keyboard.builder()
+            
             if (checker && data[i].type != 'unlimited') {
                 keyboard
-                .textButton({   label: 'Куплено',
+                .textButton({   label: `✅${data[i].name}`,
                                 payload: {  command: `null`, operation: 'cant byuing'  },
                                 color: 'positive'                           })
-                .oneTime().inline() 
+                .row()
             } else {
                 keyboard
-                .textButton({   label: 'Купить',
+                .textButton({   label: `🛒${data[i].price}💰 - ${data[i].name}`,
                                 payload: {  command: `${i}`, operation: 'byuing'  },
                                 color: 'secondary'                          })
-                .oneTime().inline()                                                                                
+                .row()
             }
-            context.question(`🛍 ${data[i].name} ${data[i].price}💰`, { keyboard: keyboard } )
             counter++
             i++
         }
+        await context.send(`🛍 Чего желаете?`, { keyboard: keyboard.oneTime().inline() } )
         const  push = await context.question('🧷 Быстрый доступ',
             { keyboard: Keyboard.builder()
                 .textButton({   label: '<',
@@ -432,9 +430,10 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                 .textButton({   label: 'Закончить',
                                 payload: { command: 'end' },
                                 color: 'primary'              })
-                
-                .oneTime() }
+                .oneTime(), answerTimeLimit
+            }
         )
+        if (push.isTimeout) { await context.send('⏰ Время ожидания выбора товаров истекло!'); return true }
         if (push.payload) {
             if (push.payload.operation == 'byuing') {
                 const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
@@ -442,7 +441,7 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                 const item_inventory:any = await prisma.inventory.findFirst({ where: { id_item: item_buy.id, id_user: user.id } })
                 if ((!item_inventory || item_buy.type == 'unlimited') && user.gold >= item_buy.price) {
                     const money = await prisma.user.update({ data: { gold: user.gold - item_buy.price }, where: { id: user.id } })
-                    context.send(`⚙ С вашего счета списано ${item_buy.price}💰, остаток: ${money.gold}💰`)
+                    await context.send(`⚙ С вашего счета списано ${item_buy.price}💰, остаток: ${money.gold}💰`)
                     const inventory = await prisma.inventory.create({ data: { id_user: user.id, id_item: item_buy.id } })
                     console.log(`User ${context.senderId} bought new item ${item_buy.id}`)
                     await vk.api.messages.send({
@@ -450,7 +449,7 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                         random_id: 0,
                         message: `🛍 @id${user.idvk}(${user.name}) покупает "${item_buy.name}" в "${category.name}" Косого переулка`
                     })
-                    context.send(`⚙ Ваша покупка доставлена: ${item_buy.name}`)
+                    await context.send(`⚙ Ваша покупка доставится в течение нескольких секунд: ${item_buy.name}`)
                 } else {
                     console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
                     !item_inventory ? context.send(`💡 У вас  недостаточно средств для покупки ${item_buy.name}!!`) : context.send(`💡 У вас уже есть ${item_buy.name}!`)
@@ -495,24 +494,22 @@ export async function Gen_Inline_Button_Category(context: any, weapon_type: any,
         .textButton({   label: '>',
                         payload: { command: 'right' },
                         color: 'primary'              })
-        const skill = await context.question(
-            `✉ ${mesa}\n${weapon_list}`,
-            { keyboard: keyboard.inline() }
-        )
+        const skill = await context.question( `✉ ${mesa}\n${weapon_list}`, { keyboard: keyboard.inline(), answerTimeLimit } )
+        if (skill.isTimeout) { await context.send('⏰ Время ожидания выбора места посещения истекло!'); return false }
         if (!skill.payload) {
-            context.send('💡 Жмите по inline кнопкам!')
+            await context.send('💡 Жмите по inline кнопкам!')
         } else {
             if (skill.payload.command == 'back') {
-                context.send('💡 Шоппинг успешно отменен')
+                await context.send('💡 Шоппинг успешно отменен')
                 modif = 0
                 return false
             }
             if (skill.payload.command == 'left') {
-                modif-limit >= 0 && modif < weapon_type.length ? modif-=limit : context.send('💡 Позади ничего нет!')
+                modif-limit >= 0 && modif < weapon_type.length ? modif-=limit : await context.send('💡 Позади ничего нет!')
                 continue
             }
             if (skill.payload.command == 'right') {
-                modif+limit < weapon_type.length ? modif+=limit: context.send('💡 Впереди ничего нет')
+                modif+limit < weapon_type.length ? modif+=limit: await context.send('💡 Впереди ничего нет')
                 continue
             }
             checker = true
