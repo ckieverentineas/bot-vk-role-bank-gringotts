@@ -16,6 +16,13 @@ export async function Image_Text_Add_Card(context: any, x: number, y: number, te
     
     await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
 }
+export async function Image_Random(context: any, dir_name: any) {
+    const dir = `./src/art/template/${dir_name}`
+    const file_name: any = await readDir(dir)
+    const lenna = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
+    const res = lenna.quality(0)
+    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
+}
 export async function Image_Composer() {
     const image0 = await Jimp.read('./src/art/composer/0.jpg')
     const image1 = await Jimp.read('./src/art/composer/1.png');

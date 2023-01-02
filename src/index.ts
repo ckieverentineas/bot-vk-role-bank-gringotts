@@ -13,6 +13,7 @@ import { send } from 'process';
 import { Keyboard_Index } from './engine/core/helper';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import { env } from 'process';
+import { Image_Random } from './engine/core/imagecpu';
 dotenv.config()
 
 export const token: string = String(process.env.token)
@@ -154,7 +155,8 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		const user_count = await prisma.user.count()
 		const sums: any = await prisma.user.aggregate({ _sum: { gold: true, lvl: true, xp: true } })
 		const artefacts: any = await prisma.artefact.count()
-		await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 2.2.81v⚙: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
+		await Image_Random(context, "bank")
+		await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.61v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
 	}
 	return next();
 })

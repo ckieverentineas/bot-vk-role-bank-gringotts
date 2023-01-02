@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { answerTimeLimit, chat_id, prisma, root, timer_text, vk } from '../index';
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { Image_Composer, Image_Composer2, Image_Interface, Image_Text_Add_Card } from "./core/imagecpu";
+import { Image_Composer, Image_Composer2, Image_Interface, Image_Random, Image_Text_Add_Card } from "./core/imagecpu";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
@@ -35,7 +35,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     hearManager.hear(/артефакты/, async (context) => {
         const get_user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/artefact.jpg' } }) });
+        await Image_Random(context, "artefact")
         await context.send(`✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: `)
         const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
         if (artefact.length > 0) {
@@ -810,7 +810,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     
     hearManager.hear(/инвентарь/, async (context) => {
-        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/inventory.jpg' }  }) });
+        await Image_Random(context, "inventory")
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId }, include: { Trigger: true }, })
         const inventory = await prisma.inventory.findMany({ where: { id_user: get_user.id }, include: { item: true } })
         let cart = ''
@@ -942,7 +942,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
     hearManager.hear(/админы/, async (context: any) => {
-        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/admin.jpg' } }) });
+        await Image_Random(context, "admin")
         const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         if (user?.id_role == 2) {
             const users = await prisma.user.findMany({ where: { id_role: 2 } })
@@ -954,7 +954,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `💡 Им бы еще черные очки, и точно люди в черном!`)
     })
     hearManager.hear(/Услуги/, async (context: any) => {
-        await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/service.jpg' } }) });
+        await Image_Random(context, "service")
         const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         const selector = await context.question(`✉ Ваш баланс: ${user?.xp}🧙 ${user?.gold}💰В данный момент доступны следующие операции:`,
             {
@@ -970,6 +970,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         )
         if (selector.isTimeout) { return await context.send(`⏰ Время ожидания выбора услуг истекло!`) }
+        if (!selector.payload) { return await Keyboard_Index(context, `💡 Вы не выбрали услугу, отменяем алгоритм`) }
         const config: any = {
             'lvl_upper': LVL_Upper,
             'convert_mo': Convert_MO,
@@ -978,7 +979,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             'underwear': Underwear,
             'beer': Beer
         }
-        await config[selector.payload.command](context)
+        try {
+            await config[selector.payload.command](context)
+        } catch (err) {
+            console.log(err)
+        }
         
         async function Beer(context: any) {
             const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
@@ -1000,7 +1005,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (answe.payload && user.gold >= 5) {
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-5 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-                    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/beer.jpg' } }) });
+                    await Image_Random(context, "beer")
                     await context.send(`⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
                     console.log(`User ${context.senderId} sold self beer`)
                     const user_list: any = await prisma.user.findMany({})
@@ -1119,6 +1124,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (answe.payload) {
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
+                    await Image_Random(context, "beer_drop")
                     await context.send(`⚙ Даже ваш староста зауважает вас, если узнает, что вы за экологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`)
                     console.log(`User ${context.senderId} return self beer`)
                 } else { await context.send(`💡 А как же восстановить честь?`) }
@@ -1145,7 +1151,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (answe.payload) {
                     const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+5 } })
                     const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-                    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/underwear.jpg' } }) });
+                    await Image_Random(context, "underwear")
                     await context.send(`⚙ Вы заложили свои трусы Гоблинам, держите 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
                     await vk.api.messages.send({
                         peer_id: chat_id,
@@ -1202,6 +1208,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (user.lvl == 0) {
                 const user_update = await prisma.user.update({ where: { id: user.id }, data: { lvl: user.lvl+1 } })
                 if (user_update) {
+                    await Image_Random(context, "lvl_up")
                     await context.send(`⚙ Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Первый раз бесплатно, далее за уровень по 150🧙\n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
                     await Keyboard_Index(context, `💡 Твой первый уровень? — это только начало!`)
                     console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
@@ -1224,6 +1231,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         lvl: user.lvl+1
                     }
                 })
+                await Image_Random(context, "lvl_up")
                 await context.send(`⚙ Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Остаток: ${user_update.xp}🧙 \n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
                 await vk.api.messages.send({
                     peer_id: chat_id,
@@ -1251,7 +1259,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (Number(count.text) >= 15 && Number(count.text) <= user.xp) {
                 const convert_gal = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+Math.floor(count.text/15)*15/3, xp: user.xp-Math.floor(count.text/15)*15 } })
                 console.log(`User ${context.senderId} converted ${Math.floor(count.text/15)*15}MO in ${Math.floor(count.text/15)*15/3}G`)
-                await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/boss.jpg' } }) });
+                await Image_Random(context, "conv_mo")
                 await context.send(`⌛ Конвертирование ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰 произошло успешно`)
                 await vk.api.messages.send({
                     peer_id: chat_id,
@@ -1270,7 +1278,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (Number(count.text) > 0 && Number(count.text) <= user.gold) {
                 const convert_gal = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-count.text, xp: user.xp+count.text*2 } })
                 console.log(`User ${context.senderId} converted ${count.text} G in ${count.text*2}MO`)
-                await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/boss.jpg' } }) });
+                await Image_Random(context, "conv_gal")
                 await context.send(`⌛ Конвертирование ${count.text}💰 в ${count.text*2}🧙 произошло успешно`)
                 await vk.api.messages.send({
                     peer_id: chat_id,

@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client"
 import { randomInt } from "crypto"
 import { Attachment, Keyboard } from "vk-io"
 import { answerTimeLimit, chat_id, root, vk } from "../.."
-import { Image_Interface } from "./imagecpu"
+import { Image_Interface, Image_Random } from "./imagecpu"
 
 const prisma = new PrismaClient()
 
@@ -397,14 +397,16 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
             const checker = await Searcher(inventory, data[i].id)
             
             if (checker && data[i].type != 'unlimited') {
+                const text = `✅${data[i].name}`
                 keyboard
-                .textButton({   label: `✅${data[i].name}`,
+                .textButton({   label: text.slice(0,40),
                                 payload: {  command: `null`, operation: 'cant byuing'  },
                                 color: 'positive'                           })
                 .row()
             } else {
+                const text = `🛒${data[i].price}💰 - ${data[i].name}`
                 keyboard
-                .textButton({   label: `🛒${data[i].price}💰 - ${data[i].name}`,
+                .textButton({   label: text.slice(0,40),
                                 payload: {  command: `${i}`, operation: 'byuing'  },
                                 color: 'secondary'                          })
                 .row()
@@ -464,7 +466,7 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
 }
 
 export async function Gen_Inline_Button_Category(context: any, weapon_type: any, mesa: string) {
-    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: './src/art/shop.jpg' } }) });
+    await Image_Random(context, "shop")
     let checker = false
     let counter = 0
     let current = 0
