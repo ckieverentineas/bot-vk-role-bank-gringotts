@@ -91,5 +91,4 @@ export async function Image_Interface(data: any, context: any) {
     }
     image_interface.dither565().quality(0)
     await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await image_interface.getBufferAsync(Jimp.MIME_JPEG) } }) });
-    image_interface.write('./src/art/temp/test3.jpg')
 }
