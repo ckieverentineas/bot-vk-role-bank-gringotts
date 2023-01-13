@@ -102,74 +102,21 @@ async function Book_Random_String(filename: string) {
     }
 }
 export async function Keyboard_Index(context: any, messa: any) {
-    const user_check: any = await prisma.user.findFirst({
-        where: {
-            idvk: context.senderId
-        }
-    })
+    const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
     const data = await Book_Random_String('./src/book/tom1-7.txt')
     messa = data.length > 3 ? `${messa}\n\n📜 ${data}` : messa
-    console.log("🚀 ~ file: helper.ts:110 ~ Keyboard_Index ~ messa", messa)
     if (user_check.idvk == root && user_check.id_role === 2) {
         await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({
-                    label: 'карта',
-                    payload: {
-                        command: 'grif'
-                    },
-                    color: 'secondary'
-                })
-                .textButton({
-                    label: 'инвентарь',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'артефакты',
-                    payload: {
-                        command: 'coga'
-                    },
-                    color: 'secondary'
-                })
-                .textButton({
-                    label: 'админы',
-                    payload: {
-                        command: 'coga'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'Косой переулок',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'positive'
-                })
-                .textButton({
-                    label: 'Услуги',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'primary'
-                }).row()
-                .textButton({
-                    label: 'операции',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'negative'
-                })
-                .textButton({
-                    label: 'права',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'negative'
-                }).oneTime()
+                .textButton({ label: 'карта', payload: { command: 'grif' }, color: 'secondary' })
+                .textButton({ label: 'инвентарь', payload: { command: 'sliz' }, color: 'secondary' }).row()
+                .textButton({ label: 'артефакты', payload: { command: 'coga' }, color: 'secondary' })
+                .textButton({ label: 'админы', payload: { command: 'coga' }, color: 'secondary' }).row()
+                .textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'positive' })
+                .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row()
+                .textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'negative' })
+                .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'negative' }).oneTime()
             }
         )
     }else if (user_check.id_role === 2) {
