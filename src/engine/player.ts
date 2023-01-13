@@ -26,7 +26,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         )
         console.log(`User ${get_user.idvk} see card`)
-        const user_list: any = await prisma.user.findMany({})
+        const user_list: any = await prisma.user.findMany({ where: { private: false } })
         const rana = randomInt(0, user_list.length)
         let ii = `🔔 А вы знали, что @id${user_list[rana].idvk}(${user_list[rana].name}) `
         if (randomInt(0,2) == 0) {
