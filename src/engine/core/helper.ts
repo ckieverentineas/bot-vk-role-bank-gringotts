@@ -3,6 +3,7 @@ import { randomInt } from "crypto"
 import { Attachment, Keyboard } from "vk-io"
 import { answerTimeLimit, chat_id, root, vk } from "../.."
 import { Image_Interface, Image_Random } from "./imagecpu"
+import { readFileSync, promises as fsPromises } from 'fs'
 
 const prisma = new PrismaClient()
 
@@ -90,12 +91,25 @@ export async function Accessed(context: any) {
     return role.id_role
 }
 
+async function Book_Random_String(filename: string) {
+    try {
+        const contents = await fsPromises.readFile(filename, 'utf-8');
+        const arr: any = contents.split(/\r?\n/);
+        const clear = await arr.filter((value: any) => value !== undefined && value.length > 5);
+        return clear[randomInt(0, clear.length - 1)];
+    } catch (err) {
+        console.log(err);
+    }
+}
 export async function Keyboard_Index(context: any, messa: any) {
     const user_check: any = await prisma.user.findFirst({
         where: {
             idvk: context.senderId
         }
     })
+    const data = await Book_Random_String('./src/book/tom1-7.txt')
+    messa = data.length > 3 ? `${messa}\n\n📜 ${data}` : messa
+    console.log("🚀 ~ file: helper.ts:110 ~ Keyboard_Index ~ messa", messa)
     if (user_check.idvk == root && user_check.id_role === 2) {
         await context.send(`${messa}`,
             {
@@ -256,7 +270,7 @@ export async function Keyboard_Index(context: any, messa: any) {
         )
     }
     if (randomInt(0, 100) < 5) {
-        const user_list: any = await prisma.user.findMany({})
+        const user_list: any = await prisma.user.findMany({ where: { private: false} })
         const location_list: any = {
             "Хогвартс": [ "Большой Зал", "Астрономическая Башня", "Гремучая Ива", "Часовая Башня", "Кухня", "Туалет Плаксы Миртл", "Кухня", "Зал Наказаний", "Внутренний Двор", "Запретный лес", "Правый коридор | Пятый этаж", "Деревянный мост", "Совятня", "Выручай-комната", "Комната Пивза", "Чердак", "Больничное крыло", "Вестибюль", "Опушка леса", "Библиотека Хогвартса", "Чёрное Озеро", "Лестничные пролёты", "Каменный Круг", "Кабинет Зельеварения", "Подземелья Хогвартса", "Прачечная", "Зал Славы", "Учебный Зал", "Теплицы", "Тайная Комната", "Кладбище", "Лодочный сарай", "Кабинет школьного психолога", "Коридор Одноглазой Ведьмы", "Комната 234-00", "Учительская", "Хижина Хагрида", "Коридоры", "Учительская"],
             "Бристон": [ 'Стрип-клуб "MurMur angels-club"', "Филиал Некромантии и Бесоизгнания", "Суд", "ЗаМУРчательное кафе", "Парк", "Больница", "Мракоборческий участок", "Заповедник", "Торговый центр", "Лавка зелий и артефактов", 'Бар "У Пьюси и Винтер"', "Магическая аптека", "Бухта Ингернах", "Филиал Гильдии Артефакторов", 'Отель "Меллоу Брук"', "Закрытая пиццерия", "Волшебный зверинец",],

@@ -16,6 +16,7 @@ model User {
   lvl       Int         @default(0)
   gold      Int         @default(60)
   xp        Int         @default(0)
+  private   Boolean     @default(false)
   crdate    DateTime    @default(now())
   id_role   Int         @default(1)
   role      Role        @relation(fields: [id_role], references: [id], onDelete: Cascade)
