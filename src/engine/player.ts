@@ -10,6 +10,7 @@ import { answerTimeLimit, chat_id, prisma, root, timer_text, vk } from '../index
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { Image_Composer, Image_Composer2, Image_Interface, Image_Random, Image_Text_Add_Card } from "./core/imagecpu";
+import { join } from "path";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
@@ -17,7 +18,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Image_Text_Add_Card(context, 50, 650, get_user)
         //await Image_Composer2()
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
-        await context.send(`✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} `)
+        await context.send(`✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} \n ⚙${get_user.private ? "Вы отказываетесь ролить" : "Вы разрешили приглашения на отролы"}`,
+            {   
+                keyboard: Keyboard.builder()
+                .textButton({ label: '⚙', payload: { command: 'private' }, color: 'secondary' })
+                .oneTime().inline()
+            }
+        )
         console.log(`User ${get_user.idvk} see card`)
         const user_list: any = await prisma.user.findMany({})
         const rana = randomInt(0, user_list.length)
@@ -1008,7 +1015,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await Image_Random(context, "beer")
                     await context.send(`⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`)
                     console.log(`User ${context.senderId} sold self beer`)
-                    const user_list: any = await prisma.user.findMany({})
+                    const user_list: any = await prisma.user.findMany({ where: { private: false} })
                     const location_list: any = {
                         "Хогвартс": [ "Большой Зал", "Астрономическая Башня", "Гремучая Ива", "Часовая Башня", "Кухня", "Туалет Плаксы Миртл", "Кухня", "Зал Наказаний", "Внутренний Двор", "Запретный лес", "Правый коридор | Пятый этаж", "Деревянный мост", "Совятня", "Выручай-комната", "Комната Пивза", "Чердак", "Больничное крыло", "Вестибюль", "Опушка леса", "Библиотека Хогвартса", "Чёрное Озеро", "Лестничные пролёты", "Каменный Круг", "Кабинет Зельеварения", "Подземелья Хогвартса", "Прачечная", "Зал Славы", "Учебный Зал", "Теплицы", "Тайная Комната", "Кладбище", "Лодочный сарай", "Кабинет школьного психолога", "Коридор Одноглазой Ведьмы", "Комната 234-00", "Учительская", "Хижина Хагрида", "Коридоры", "Учительская"],
                         "Бристон": [ 'Стрип-клуб "MurMur angels-club"', "Филиал Некромантии и Бесоизгнания", "Суд", "ЗаМУРчательное кафе", "Парк", "Больница", "Мракоборческий участок", "Заповедник", "Торговый центр", "Лавка зелий и артефактов", 'Бар "У Пьюси и Винтер"', "Магическая аптека", "Бухта Ингернах", "Филиал Гильдии Артефакторов", 'Отель "Меллоу Брук"', "Закрытая пиццерия", "Волшебный зверинец",],
@@ -1305,6 +1312,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 message: `‼ @id${context.senderId}(Admin) делает бекап баз данных dev.db.`
             })
         }
+    })
+    hearManager.hear(/⚙/, async (context: any) => {
+        if (context.messagePayload == null) { return }
+        const check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+        const changer: boolean = check.private ? false : true
+        const user_update = await prisma.user.update({ where: { id: check.id}, data: { private: changer} })
+        await context.send(`Приватный режим: ${changer ? 'Включен' : "Выключен"}`)
+        await Keyboard_Index(context, `💡 Вот это скрытность однако!`)
     })
 }
 
