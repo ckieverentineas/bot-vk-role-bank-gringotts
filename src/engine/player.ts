@@ -26,18 +26,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         )
         console.log(`User ${get_user.idvk} see card`)
-        const user_list: any = await prisma.user.findMany({ where: { private: false } })
-        const rana = randomInt(0, user_list.length)
-        let ii = `🔔 А вы знали, что @id${user_list[rana].idvk}(${user_list[rana].name}) `
-        if (randomInt(0,2) == 0) {
-            if (get_user.gold > user_list[rana].gold) { ii += `беднее вас в ${(get_user.gold/user_list[rana].gold).toFixed(2)} раз?` }
-            else if (get_user.gold < user_list[rana].gold) { ii += `богаче вас в ${(user_list[rana].gold/get_user.gold).toFixed(2)} раз?` }
-            else { ii = '💡 Вы взгляную на свою банковскую карту, что дальше?' }
-        } else {
-            if (get_user.lvl > user_list[rana].lvl) { ii += `отстает на ${get_user.lvl -user_list[rana].lvl} уровней от вас?` }
-            else if (get_user.lvl < user_list[rana].lvl) { ii += `имеет на ${user_list[rana].lvl - get_user.lvl} уровней больше, чем вы?` }
-            else { ii = '💡 Ваше отражение промелькнуло невзначай, что дальше?' }
-        }
+        let ii = `🔔 В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
         await Keyboard_Index(context, `${ii}`)
     })
     hearManager.hear(/артефакты/, async (context) => {
@@ -51,23 +40,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             await context.send(`${artefact_list}`)
         } else { await context.send(`✉ У Вас еще нет артефактов =(`) }
         console.log(`User ${get_user.idvk} see artefacts`)
-        const artefact_list: any = await prisma.artefact.findMany({include: { user: true }})
-        if (artefact_list.length > 0) {
-            const seler = randomInt(0, artefact_list.length)
-            let ii = `🔔 А вы знали, что @id${artefact_list[seler].user.idvk}(${artefact_list[seler].user.name}) `
-            let trig = false
-            for (const i in artefact) { 
-                if (artefact[i].description == artefact_list[seler].description) { 
-                    ii += `всеравно не победит вас своим 🔮${artefact_list[seler].name}!`
-                    trig = true
-                    break
-                } 
-            }
-            if (!trig) {
-                ii += `уже имеет в наличии 🔮${artefact_list[seler].name}!`
-            }
+        if (artefact.length > 0) {
+            let ii = `🔔 ${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизивание источает силу.'}`
             await Keyboard_Index(context, `${ii}`)
-        } else { await Keyboard_Index(context, `💡 Может быть вам скоро тоже дадут артефакт?`)}
+        } else { await Keyboard_Index(context, `💡 Вероятно вы магл, раз у вас нет артефакта..`)}
     })
     hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {

@@ -156,7 +156,11 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		const sums: any = await prisma.user.aggregate({ _sum: { gold: true, lvl: true, xp: true } })
 		const artefacts: any = await prisma.artefact.count()
 		await Image_Random(context, "bank")
-		await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.61v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
+		if (user_check.id_role != 1) {
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
+		} else {
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
+		}
 	}
 	return next();
 })
