@@ -57,37 +57,32 @@ async function Image_Border (image: any, x: number, y: number) {
     return image_border
 }
 export async function Image_Interface(data: any, context: any) {
-    const font = await Jimp.loadFont('./src/art/font/harlow_small/impact.fnt')
+    const font = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt')
     const dir = `./src/art/template/fon`
     const file_name: any = await readDir(dir)
     const image_interface = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
 
     let limiter = data[0].name.length
-    let need_px = Jimp.measureTextHeight(font, `${data[0].name} ${data[0].name}`, limiter)
-    let need_max_width = Jimp.measureTextHeight(font, data[0].name, limiter)
+    let need_px = 0
+    let need_max_width = 0
 
     for (const i in data) {
-        if (limiter < data[0].name.length) { limiter = data[0].name.length}
-        if (need_max_width < Jimp.measureText(font, data[i].name)) {need_max_width = Jimp.measureText(font, data[i].name);}
-        need_px += Jimp.measureTextHeight(font, data[i].name, limiter)
         const mesure = await Jimp.read(`./src/art/template/item/${data[i].name}.jpg`)
-        need_px += mesure.getHeight()/(data.length)
-        if (need_max_width < mesure.getHeight()/(data.length+1)) {need_max_width = mesure.getHeight()/(data.length)}
-        need_px += Jimp.measureTextHeight(font, data[i].price, limiter)*3
+        need_px += mesure.getHeight()
+        if (mesure.getWidth() > need_max_width) { need_max_width = mesure.getWidth() }
+        need_px += Jimp.measureTextHeight(font, `${data[i].name} - ${data[i].price}`, need_max_width)
+        need_px += Jimp.measureTextHeight(font, `${data[i].name} - ${data[i].price}`, need_max_width)
     }
     image_interface.resize(need_max_width, need_px).quality(100)
-    const width = image_interface.getWidth()/1.1
-    const height = image_interface.getHeight()/(data.length+1)
-    const maxWidth = width
-    const maxHeight = height
-    let height_now = Jimp.measureTextHeight(font, data[0].name, maxHeight)*2
+    let height_now = 0
     for (const i in data) {
         const image_temp = await Jimp.read(`./src/art/template/item/${data[i].name}.jpg`)
-        const turn = Jimp.measureTextHeight(font, data[i].name, maxHeight); 
-        image_interface.composite(await Image_Border(image_temp, width, height), (image_interface.getWidth() - width)/2, height_now)
-        .print(font, 0, height_now-turn, {text: data[i].name, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, maxWidth, maxHeight)
-        .print(font, 0, height_now+height, {text: data[i].price, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, maxWidth, maxHeight)
-        height_now += turn + height + Jimp.measureTextHeight(font, data[i].price, maxHeight)*2 
+        image_interface.print(font, 0, height_now, {text: `${data[i].name} - ${data[i].price}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, image_temp.getWidth(), image_temp.getHeight())
+        height_now += Jimp.measureTextHeight(font, `${data[i].name} - ${data[i].price}`, need_max_width)
+        image_interface.composite(await Image_Border(image_temp, image_temp.getWidth()*0.9, image_temp.getHeight()), image_interface.getWidth()*0.05, height_now)
+        height_now += image_temp.getHeight()
+        height_now += Jimp.measureTextHeight(font, `${data[i].name} - ${data[i].price}`, need_max_width)
+
     }
     image_interface.dither565().quality(0)
     await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await image_interface.getBufferAsync(Jimp.MIME_JPEG) } }) });
