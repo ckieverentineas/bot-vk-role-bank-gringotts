@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client"
 import { randomInt } from "crypto"
-import { Attachment, Keyboard } from "vk-io"
+import { Attachment, Keyboard, KeyboardBuilder } from "vk-io"
 import { answerTimeLimit, chat_id, root, vk } from "../.."
 import { Image_Interface, Image_Random } from "./imagecpu"
 import { readFileSync, promises as fsPromises } from 'fs'
@@ -91,7 +91,7 @@ export async function Accessed(context: any) {
     return role.id_role
 }
 
-async function Book_Random_String(filename: string) {
+export async function Book_Random_String(filename: string) {
     try {
         const contents = await fsPromises.readFile(filename, 'utf-8');
         const arr: any = contents.split(/\r?\n/);
@@ -103,8 +103,16 @@ async function Book_Random_String(filename: string) {
 }
 export async function Keyboard_Index(context: any, messa: any) {
     const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    const data = await Book_Random_String('./src/book/tom1-7.txt')
-    messa = data.length > 3 ? `${messa}\n\n📜 ${data}` : messa
+    const data = await Book_Random_String('./src/book/title.txt')
+    context.send(`📜 ${data}`, {
+        keyboard: new KeyboardBuilder().callbackButton({
+            label: '🔔 Дзинь',
+            payload: {
+                command: 'buy',
+                item: 'coffee'
+            }
+        }).inline()
+    })
     if (user_check.idvk == root && user_check.id_role === 2) {
         await context.send(`${messa}`,
             {

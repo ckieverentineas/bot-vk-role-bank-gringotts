@@ -10,7 +10,7 @@ import { timeStamp } from 'console';
 import { registerUserRoutes } from './engine/player'
 import { InitGameRoutes } from './engine/init';
 import { send } from 'process';
-import { Keyboard_Index } from './engine/core/helper';
+import { Book_Random_String, Keyboard_Index } from './engine/core/helper';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import { env } from 'process';
 import { Image_Random } from './engine/core/imagecpu';
@@ -164,6 +164,11 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
 		}
 	}
+	return next();
+})
+vk.updates.on('message_event', async (context: any, next: any) => { 
+	const data = await Book_Random_String('./src/book/tom1-7.txt')
+	context.answer({type: 'show_snackbar', text: `🔔 ${data.slice(0,80)}`})
 	return next();
 })
 
