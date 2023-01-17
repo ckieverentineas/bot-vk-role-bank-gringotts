@@ -145,10 +145,12 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		await context.send(`⌛ Благодарю за сотрудничество ${save.class} ${save.name}, ${save.spec}. \n ⚖Вы получили банковскую карту UID: ${save.id}. \n 🏦Вам зачислено ${save.gold} галлеонов`)
 		console.log(`Success save user idvk: ${context.senderId}`)
 		await context.send(`‼ Список обязательных для покупки вещей: \n 1. Волшебная палочка \n 2. Сова, кошка или жаба \n 3. Комплект учебников \n \n Посетите Косой переулок и приобретите их первым делом!`)
+		const check_bbox = await prisma.blackBox.findFirst({ where: { idvk: context.senderId } })
+		const ans_selector = `⁉ ${save.class} @id${save.idvk}(${save.name}) ${save.spec} ${!check_bbox ? "легально" : "НЕЛЕГАЛЬНО"} получает банковскую карту!`
 		await vk.api.messages.send({
 			peer_id: chat_id,
 			random_id: 0,
-			message: `⁉ ${save.class} @id${save.idvk}(${save.name}) ${save.spec} легально получает банковскую карту!`
+			message: ans_selector
 		})
 		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили и клавиатуры нет, напишите клава!`)
 	} else {

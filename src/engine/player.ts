@@ -605,6 +605,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const user_del = await prisma.user.delete({ where: { id: id } })
                     await context.send(`❗ Удален пользователь ${user_del.name}`)
                     if (user_del) {
+                        const check_bbox = await prisma.blackBox.findFirst({ where: { idvk: user_del.idvk } })
+                        if (!check_bbox) {
+                            const add_bbox = await prisma.blackBox.create({ data: { idvk: user_del.idvk } })
+                            add_bbox ? await context.send(`⚙ @id${user_del.idvk}(${user_del.name}) теперь является нелегалом.`) : await context.send(`⚙ @id${user_del.idvk}(${user_del.name}) не смог стать нелегалом.`)
+                        } else {
+                            await context.send(`⚙ @id${user_del.idvk}(${user_del.name}) депортируется НА РОДИНУ уже не в первый раз.`)
+                        }
                         try {
                             await vk.api.messages.send({
                                 user_id: user_del.idvk,
