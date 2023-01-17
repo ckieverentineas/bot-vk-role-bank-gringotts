@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { answerTimeLimit, chat_id, prisma, root, timer_text, vk } from '../index';
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { Image_Composer, Image_Composer2, Image_Interface, Image_Random, Image_Text_Add_Card } from "./core/imagecpu";
+import { Image_Composer, Image_Composer2, Image_Interface, Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "./core/imagecpu";
 import { join } from "path";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
@@ -800,30 +800,38 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     
     hearManager.hear(/инвентарь/, async (context) => {
-        await Image_Random(context, "inventory")
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId }, include: { Trigger: true }, })
         const inventory = await prisma.inventory.findMany({ where: { id_user: get_user.id }, include: { item: true } })
         let cart = ''
         for (const i in get_user.Trigger) {
-            if (get_user.Trigger[i].value == false && get_user.Trigger[i].name == 'underwear') { cart += '👜 Трусы Домашние; ' }
-            if (get_user.Trigger[i].value == true && get_user.Trigger[i].name == 'beer') { cart += '👜 Сливочное пиво из Хогсмида; ' }
+            if (get_user.Trigger[i].value == false && get_user.Trigger[i].name == 'underwear') { cart += 'Трусы Домашние;' }
+            if (get_user.Trigger[i].value == true && get_user.Trigger[i].name == 'beer') { cart += 'Сливочное пиво из Хогсмида;' }
         }
         if (inventory.length == 0) {
+            await Image_Random(context, "inventory")
             await context.send(`✉ Вы еще ничего не приобрели:(`)
             await Keyboard_Index(context, `💡 Как можно было так лохануться?`)
             return
         }
         for (const i in inventory) {
-            cart += `👜 ${inventory[i].item.name};`
+            cart += `${inventory[i].item.name};`
         }
+            
         const destructor = cart.split(';').filter(i => i)
         let compile = []
+        let compile_rendered: any = []
         for (const i in destructor) {
             let counter = 0
             for (const j in destructor) { if (destructor[i] != null) { if (destructor[i] == destructor[j]) { counter++ } } }
-            compile.push(`${destructor[i]} x ${counter}\n`)
+            compile.push(`👜 ${destructor[i]} x ${counter}\n`)
+            compile_rendered.push({name: destructor[i], text:`x ${counter}`})
             counter = 0
         }
+        const fUArr: any = compile_rendered.filter( (li: ArrayLike<any> | { [s: string]: any; }, idx: any, self: ({ [s: string]: any; } | ArrayLike<any>)[]) => 
+            self.map( (itm: { [s: string]: any; } | ArrayLike<any>) => Object.values(itm).reduce((r, c) => r.concat(c), '') )
+            .indexOf( Object.values(li).reduce((r, c) => r.concat(c), '') ) === idx
+        )
+        await Image_Interface_Inventory(fUArr, context)
         let final: any = Array.from(new Set(compile));
         await context.send(`✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
         console.log(`User ${context.senderId} see self inventory`)
