@@ -1,4 +1,4 @@
-import { VK, Keyboard, IMessageContextSendOptions, ContextDefaultState, MessageContext, VKAppPayloadContext } from 'vk-io';
+import { VK, Keyboard, IMessageContextSendOptions, ContextDefaultState, MessageContext, VKAppPayloadContext, KeyboardBuilder } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
 import { PrismaClient } from '@prisma/client'
 import {
@@ -163,6 +163,16 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		} else {
 			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
 		}
+		const data = await Book_Random_String('./src/book/title.txt')
+		context.send(`📜 ${data}`, {
+			keyboard: new KeyboardBuilder().callbackButton({
+				label: '🔔 Дзинь',
+				payload: {
+					command: 'buy',
+					item: 'coffee'
+				}
+			}).inline()
+		})
 	}
 	return next();
 })

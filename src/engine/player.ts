@@ -1217,7 +1217,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     })
                     return
                 }
-                
             }
             if (user.xp >= 150 && user.lvl < 15) {
                 const user_update = await prisma.user.update({

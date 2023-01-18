@@ -1,10 +1,12 @@
 import { randomInt } from "crypto";
 import Jimp = require("jimp")
 import { UploadAllowedSource } from "vk-io";
-import { vk } from "../..";
+import { prisma, vk } from "../..";
 import { promises as fs } from 'fs';
 
 export async function Image_Text_Add_Card(context: any, x: number, y: number, text: any) {
+    const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    if (check?.id_role == 2) { return }
     const dir = `./src/art/template/card`
     const file_name: any = await readDir(dir)
     const lenna = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
@@ -17,6 +19,8 @@ export async function Image_Text_Add_Card(context: any, x: number, y: number, te
     await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
 }
 export async function Image_Random(context: any, dir_name: any) {
+    const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    if (check?.id_role == 2) { return }
     const dir = `./src/art/template/${dir_name}`
     const file_name: any = await readDir(dir)
     const lenna = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
@@ -57,6 +61,8 @@ async function Image_Border (image: any, x: number, y: number) {
     return image_border
 }
 export async function Image_Interface(data: any, context: any) {
+    const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    if (check?.id_role == 2) { return }
     const font = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt')
     const dir = `./src/art/template/fon`
     const file_name: any = await readDir(dir)
@@ -87,6 +93,8 @@ export async function Image_Interface(data: any, context: any) {
 }
 
 export async function Image_Interface_Inventory(data: any, context: any) {
+    const checkas = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    if (checkas?.id_role == 2) { return }
     const font = await Jimp.loadFont('./src/art/font/impact_medium/impact.fnt')
     const dir = `./src/art/template/inventory`
     const file_name: any = await readDir(dir)

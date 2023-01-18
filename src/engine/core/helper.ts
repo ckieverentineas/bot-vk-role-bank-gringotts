@@ -103,16 +103,6 @@ export async function Book_Random_String(filename: string) {
 }
 export async function Keyboard_Index(context: any, messa: any) {
     const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    const data = await Book_Random_String('./src/book/title.txt')
-    context.send(`📜 ${data}`, {
-        keyboard: new KeyboardBuilder().callbackButton({
-            label: '🔔 Дзинь',
-            payload: {
-                command: 'buy',
-                item: 'coffee'
-            }
-        }).inline()
-    })
     if (user_check.idvk == root && user_check.id_role === 2) {
         await context.send(`${messa}`,
             {
