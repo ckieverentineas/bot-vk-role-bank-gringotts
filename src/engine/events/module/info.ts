@@ -115,5 +115,27 @@ export async function Inventory_Enter(context: any) {
             text: `🔔 ${ii}`
         })
     })
-
+}
+export async function Admin_Enter(context: any) {
+    const attached = await Image_Random(context, "admin")
+    const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    let puller = '🏦 Полный спектр рабов... \n'
+    if (user?.id_role == 2) {
+        const users = await prisma.user.findMany({ where: { id_role: 2 } })
+        for (const i in users) { puller += `\n👤 ${users[i].id} - @id${users[i].idvk}(${users[i].name})` }
+    } else {
+        puller += `\n🚫 Доступ запрещен\n`
+    }
+    const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${puller}`, keyboard: keyboard, attachment: attached?.toString()})
+    console.log(`Admin ${context.peerId} see list administrators`) 
+    await vk.api.messages.sendMessageEventAnswer({
+        event_id: context.eventId,
+        user_id: context.userId,
+        peer_id: context.peerId,
+        event_data: JSON.stringify({
+            type: "show_snackbar",
+            text: `🔔 Им бы еще черные очки, и точно люди в черном!`
+        })
+    })
 }
