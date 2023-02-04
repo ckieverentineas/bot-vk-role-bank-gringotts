@@ -5,7 +5,7 @@ import { User } from "@prisma/client"
 import { Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "../../core/imagecpu"
 
 export async function Card_Enter(context:any) {
-    const get_user: User | null | undefined = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const get_user: User | null | undefined = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (get_user) {
         const attached = await Image_Text_Add_Card(context, 50, 650, get_user)
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
@@ -31,7 +31,7 @@ export async function Card_Enter(context:any) {
     }
 }
 export async function Card_Private(context: any) {
-    const check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const check: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const changer: boolean = check.private ? false : true
     const user_update = await prisma.user.update({ where: { id: check.id}, data: { private: changer} })
     await vk.api.messages.sendMessageEventAnswer({
@@ -47,7 +47,7 @@ export async function Card_Private(context: any) {
 }
 
 export async function Artefact_Enter(context: any) {
-    const get_user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const get_user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const attached = await Image_Random(context, "artefact")
     let artefact_list = `✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: \n`
     const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })

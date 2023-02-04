@@ -6,7 +6,7 @@ import { promises as fs } from 'fs';
 import prisma from "../events/module/prisma_client";
 
 export async function Image_Text_Add_Card(context: any, x: number, y: number, text: any) {
-    const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const check = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     //if (check?.id_role == 2) { return }
     const dir = `./src/art/template/card`
     const file_name: any = await readDir(dir)
@@ -25,7 +25,7 @@ export async function Image_Text_Add_Card(context: any, x: number, y: number, te
     
 }
 export async function Image_Random(context: any, dir_name: any) {
-    const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const check = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     //if (check?.id_role == 2) { return }
     const dir = `./src/art/template/${dir_name}`
     const file_name: any = await readDir(dir)
@@ -72,7 +72,7 @@ async function Image_Border (image: any, x: number, y: number) {
     return image_border
 }
 export async function Image_Interface(data: any, context: any) {
-    const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const check = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     //if (check?.id_role == 2) { return }
     const font = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt')
     const dir = `./src/art/template/fon`
@@ -104,7 +104,7 @@ export async function Image_Interface(data: any, context: any) {
 }
 
 export async function Image_Interface_Inventory(data: any, context: any) {
-    const checkas = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const checkas = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     //if (checkas?.id_role == 2) { return }
     const font = await Jimp.loadFont('./src/art/font/impact_medium/impact.fnt')
     const dir = `./src/art/template/inventory`
