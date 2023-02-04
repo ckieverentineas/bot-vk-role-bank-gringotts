@@ -15,7 +15,7 @@ import { env } from 'process';
 import { Image_Random } from './engine/core/imagecpu';
 import prisma from './engine/events/module/prisma_client';
 import { Exit, Main_Menu, Main_Menu_Init } from './engine/events/contoller';
-import { Card_Enter, Card_Private} from './engine/events/module/info';
+import { Artefact_Enter, Card_Enter, Card_Private, Inventory_Enter} from './engine/events/module/info';
 import { User_Info } from './engine/events/module/tool';
 dotenv.config()
 
@@ -184,7 +184,9 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 		"system_call": Main_Menu_Init,
 		"card_enter": Card_Enter,
 		"card_private": Card_Private,
-		"exit": Exit
+		"exit": Exit,
+		"artefact_enter": Artefact_Enter,
+		"inventory_enter": Inventory_Enter
 	}
 	await config[context.eventPayload.command](context)
 	//console.log("🚀 ~ file: index.ts:180 ~ vk.updates.on ~ context", context)

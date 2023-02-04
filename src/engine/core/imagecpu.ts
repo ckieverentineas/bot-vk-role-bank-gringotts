@@ -73,7 +73,7 @@ async function Image_Border (image: any, x: number, y: number) {
 }
 export async function Image_Interface(data: any, context: any) {
     const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    if (check?.id_role == 2) { return }
+    //if (check?.id_role == 2) { return }
     const font = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt')
     const dir = `./src/art/template/fon`
     const file_name: any = await readDir(dir)
@@ -105,7 +105,7 @@ export async function Image_Interface(data: any, context: any) {
 
 export async function Image_Interface_Inventory(data: any, context: any) {
     const checkas = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    if (checkas?.id_role == 2) { return }
+    //if (checkas?.id_role == 2) { return }
     const font = await Jimp.loadFont('./src/art/font/impact_medium/impact.fnt')
     const dir = `./src/art/template/inventory`
     const file_name: any = await readDir(dir)
@@ -146,5 +146,10 @@ export async function Image_Interface_Inventory(data: any, context: any) {
         }
     }
     image_interface.dither565().quality(0)
-    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await image_interface.getBufferAsync(Jimp.MIME_JPEG) } }) });
+    const attachment = await vk.upload.messagePhoto({
+        source: {
+            value: await image_interface.getBufferAsync(Jimp.MIME_JPEG)
+        }
+    });
+    return attachment
 }

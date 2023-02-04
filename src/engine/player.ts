@@ -14,7 +14,7 @@ import { join } from "path";
 import prisma from "./events/module/prisma_client";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
-    hearManager.hear(/карта/, async (context) => {
+    /*hearManager.hear(/карта/, async (context) => {
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         await Image_Text_Add_Card(context, 50, 650, get_user)
         //await Image_Composer2()
@@ -29,8 +29,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         console.log(`User ${get_user.idvk} see card`)
         let ii = `🔔 В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
         await Keyboard_Index(context, `${ii}`)
-    })
-    hearManager.hear(/артефакты/, async (context) => {
+    })*/
+    /*hearManager.hear(/артефакты/, async (context) => {
         const get_user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         await Image_Random(context, "artefact")
         await context.send(`✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: `)
@@ -45,7 +45,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let ii = `🔔 ${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизивание источает силу.'}`
             await Keyboard_Index(context, `${ii}`)
         } else { await Keyboard_Index(context, `💡 Вероятно вы магл, раз у вас нет артефакта..`)}
-    })
+    })*/
     hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {
             console.log(`Admin ${context.senderId} enter in shopping`)
@@ -800,7 +800,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
     })
     
-    hearManager.hear(/инвентарь/, async (context) => {
+    /*hearManager.hear(/инвентарь/, async (context) => {
         const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId }, include: { Trigger: true }, })
         const inventory = await prisma.inventory.findMany({ where: { id_user: get_user.id }, include: { item: true } })
         let cart = ''
@@ -837,7 +837,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         await context.send(`✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
         console.log(`User ${context.senderId} see self inventory`)
         await Keyboard_Index(context, `💡 Что ж, имущества много не бывает, на что вообще жить??`)
-    })
+    })*/
 
     hearManager.hear(/админка/, async (context: any) => {
         if (context.senderId == root) {
