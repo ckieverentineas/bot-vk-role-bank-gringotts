@@ -1,12 +1,13 @@
 import { randomInt } from "crypto";
 import Jimp = require("jimp")
 import { UploadAllowedSource } from "vk-io";
-import { prisma, vk } from "../..";
+import { vk } from "../..";
 import { promises as fs } from 'fs';
+import prisma from "../events/module/prisma_client";
 
 export async function Image_Text_Add_Card(context: any, x: number, y: number, text: any) {
     const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    if (check?.id_role == 2) { return }
+    //if (check?.id_role == 2) { return }
     const dir = `./src/art/template/card`
     const file_name: any = await readDir(dir)
     const lenna = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
@@ -15,17 +16,27 @@ export async function Image_Text_Add_Card(context: any, x: number, y: number, te
     const res = await lenna.resize(1687, 1077).print(font_big, x, y, (`${text.idvk * Math.pow(10, 16-String(text.idvk).length)+text.id}`).slice(-16).replace(/\d{4}(?=.)/g, '$& ').replace(/ /g, `${' '.repeat(7)}`))
     .print(font, x, y+200, text.name, 1200)
     .print(font, lenna.getWidth()-370, y+200, text.crdate.toLocaleDateString('de-DE', { year: "numeric", month: "2-digit", day: "2-digit" }) )
+    const attachment = await vk.upload.messagePhoto({
+        source: {
+            value: await res.getBufferAsync(Jimp.MIME_JPEG)
+        }
+    });
+    return attachment
     
-    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
 }
 export async function Image_Random(context: any, dir_name: any) {
     const check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    if (check?.id_role == 2) { return }
+    //if (check?.id_role == 2) { return }
     const dir = `./src/art/template/${dir_name}`
     const file_name: any = await readDir(dir)
     const lenna = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
     const res = lenna.quality(0)
-    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await res.getBufferAsync(Jimp.MIME_JPEG) } }) });
+    const attachment = await vk.upload.messagePhoto({
+        source: {
+            value: await res.getBufferAsync(Jimp.MIME_JPEG)
+        }
+    });
+    return attachment
 }
 export async function Image_Composer() {
     const image0 = await Jimp.read('./src/art/composer/0.jpg')

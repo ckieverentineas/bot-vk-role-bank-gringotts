@@ -1,6 +1,5 @@
 import { VK, Keyboard, IMessageContextSendOptions, ContextDefaultState, MessageContext, VKAppPayloadContext, KeyboardBuilder } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
-import { PrismaClient } from '@prisma/client'
 import {
     QuestionManager,
     IQuestionMessageContext
@@ -14,6 +13,10 @@ import { Book_Random_String, Keyboard_Index } from './engine/core/helper';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import { env } from 'process';
 import { Image_Random } from './engine/core/imagecpu';
+import prisma from './engine/events/module/prisma_client';
+import { Exit, Main_Menu, Main_Menu_Init } from './engine/events/contoller';
+import { Card_Enter, Card_Private} from './engine/events/module/info';
+import { User_Info } from './engine/events/module/tool';
 dotenv.config()
 
 export const token: string = String(process.env.token)
@@ -23,11 +26,10 @@ export const group_id: number = Number(process.env.group_id)//clear chat group
 export const timer_text = { answerTimeLimit: 300_000 } // ожидать пять минут
 export const answerTimeLimit = 300_000 // ожидать пять минут
 //авторизация
-export const vk = new VK({ token: token, pollingGroupId: group_id, apiMode: "sequential", apiLimit: 1 });
+export const vk = new VK({ token: token, pollingGroupId: group_id, apiLimit: 1 });
 //инициализация
 const questionManager = new QuestionManager();
 const hearManager = new HearManager<IQuestionMessageContext>();
-export const prisma = new PrismaClient()
 
 /*prisma.$use(async (params, next) => {
 	console.log('This is middleware!')
@@ -164,11 +166,12 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
 		}
 		const data = await Book_Random_String('./src/book/title.txt')
-		context.send(`📜 ${data}`, {
+		const user_inf = await User_Info(context)
+		await context.send(`Здравствуйте ${user_inf.first_name}, это вы, если да, то подтвердите`, {
 			keyboard: new KeyboardBuilder().callbackButton({
-				label: '🔔 Дзинь',
+				label: '✅ Подтвердить авторизацию',
 				payload: {
-					command: 'buy',
+					command: 'system_call',
 					item: 'coffee'
 				}
 			}).inline()
@@ -177,9 +180,21 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	return next();
 })
 vk.updates.on('message_event', async (context: any, next: any) => { 
-	const data = await Book_Random_String('./src/book/tom1-7.txt')
-	context.answer({type: 'show_snackbar', text: `🔔 ${data.slice(0,80)}`})
-	return next();
+	const config: any = {
+		"system_call": Main_Menu_Init,
+		"card_enter": Card_Enter,
+		"card_private": Card_Private,
+		"exit": Exit
+	}
+	await config[context.eventPayload.command](context)
+	//console.log("🚀 ~ file: index.ts:180 ~ vk.updates.on ~ context", context)
+	//const data = await Book_Random_String('./src/book/tom1-7.txt')
+	//await context.answer({type: 'show_snackbar', text: `🔔 ${await data.slice(0,80)}`, event_id: context.eventId})
+	//await context.answer({type: 'message_edit', text: `🔔 ${data.slice(0,80)}`})
+	
+	return await next();
 })
 
-vk.updates.start().catch(console.error);
+vk.updates.start().then(() => {
+	console.log('Bank ready for services clients!')
+}).catch(console.error);

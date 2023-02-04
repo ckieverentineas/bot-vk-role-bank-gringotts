@@ -6,11 +6,12 @@ import { Attachment, Context, Keyboard, KeyboardBuilder, PhotoAttachment } from 
 import { IQuestionMessageContext } from "vk-io-question";
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
-import { answerTimeLimit, chat_id, prisma, root, timer_text, vk } from '../index';
+import { answerTimeLimit, chat_id, root, timer_text, vk } from '../index';
 import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { Image_Composer, Image_Composer2, Image_Interface, Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "./core/imagecpu";
 import { join } from "path";
+import prisma from "./events/module/prisma_client";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/карта/, async (context) => {
@@ -1305,10 +1306,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
     hearManager.hear(/⚙/, async (context: any) => {
         if (context.messagePayload == null) { return }
-        const check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-        const changer: boolean = check.private ? false : true
-        const user_update = await prisma.user.update({ where: { id: check.id}, data: { private: changer} })
-        await context.send(`Приватный режим: ${changer ? 'Включен' : "Выключен"}`)
+        
         await Keyboard_Index(context, `💡 Вот это скрытность однако!`)
     })
 }
