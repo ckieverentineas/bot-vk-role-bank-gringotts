@@ -9,7 +9,7 @@ export async function Service_Enter(context: any) {
     const keyboard = new KeyboardBuilder()
     .callbackButton({ label: '📈', payload: { command: 'service_lvl_upper' }, color: 'secondary' })
     .callbackButton({ label: '👙', payload: { command: 'service_underwear' }, color: 'secondary' }).row()
-    .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_mo' }, color: 'secondary' })
+    .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' })
     .callbackButton({ label: '💰>🧙', payload: { command: 'service_convert_galleon' }, color: 'secondary' }).row()
     .callbackButton({ label: '🍺', payload: { command: 'service_beer' }, color: 'secondary' })
     .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).row().inline().oneTime()
@@ -49,7 +49,7 @@ export async function Service_Convert_Galleon(context: any) {
     if (user.gold >= 100) { keyboard.callbackButton({ label: '100💰 => 200🧙', payload: { command: 'service_convert_galleon_change', item: "gold", value: 100 }, color: 'secondary' }) }
     if (user.gold >= 1000) { keyboard.callbackButton({ label: '1000💰 => 2000🧙', payload: { command: 'service_convert_galleon_change', item: "gold", value: 1000 }, color: 'secondary' }).row() }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.gold <= 0 ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
+    text += user.gold <= 0 ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.gold}💰 ${user?.xp}🧙, сколько сконвертируем?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_convert_galleon") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -82,7 +82,7 @@ export async function Service_Convert_Galleon_Change(context: any) {
             await vk.api.messages.send({
                 peer_id: chat_id,
                 random_id: 0,
-                message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${input}💰 в ${input*2}🧙.`
+                message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${input}💰 в ${input*2}🧙. \n💳 Баланс: ${convert_gal?.gold}💰 ${convert_gal?.xp}🧙`
             })
             await Service_Convert_Galleon(context)
         } else {
@@ -98,25 +98,65 @@ export async function Service_Convert_Galleon_Change(context: any) {
         }
     } 
 }
-/*async function Service_Convert_Magic_Experience(context: any) {
-    const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-    const count = await context.question(`✉ Текущий курс: 15🧙 => 5💰. . Доступен обмен ${Math.floor(user.xp/15)*15}🧙 на ${Math.floor(user.xp/15)*15/3}💰. При полной конвертации у вас будет ${user.gold + Math.floor(user.xp/15)*15/3}💰 на счету. \n Введите количество магического опыта для конвертации в галлеоны:`, timer_text)
-    if (count.isTimeout) { return await context.send(`⏰ Время ожидания обмена МО на G истекло!`) }
-    if (Number(count.text) >= 15 && Number(count.text) <= user.xp) {
-        const convert_gal = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+Math.floor(count.text/15)*15/3, xp: user.xp-Math.floor(count.text/15)*15 } })
-        console.log(`User ${context.senderId} converted ${Math.floor(count.text/15)*15}MO in ${Math.floor(count.text/15)*15/3}G`)
-        await Image_Random(context, "conv_mo")
-        await context.send(`⌛ Конвертирование ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰 произошло успешно`)
-        await vk.api.messages.send({
-            peer_id: chat_id,
-            random_id: 0,
-            message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰.`
+export async function Service_Convert_Magic_Experience(context: any) {
+    const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    const attached = await Image_Random(context, "conv_mo")
+    let text = `✉ Гоблин в черной одежде предлагает обменять магический опыт на галлеоны.`
+    const keyboard = new KeyboardBuilder()
+    if (user.xp >= 15) { keyboard.callbackButton({ label: '15🧙 => 5💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 15 }, color: 'secondary' }) }
+    if (user.xp >= 30) { keyboard.callbackButton({ label: '30🧙 => 10💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 30 }, color: 'secondary' }).row() }
+    if (user.xp >= 75) { keyboard.callbackButton({ label: '75🧙 => 25💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 75 }, color: 'secondary' }) }
+    if (user.xp >= 150) { keyboard.callbackButton({ label: '150🧙 => 50💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 150 }, color: 'secondary' }).row() }
+    keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
+    text += user.xp < 15 ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+    if (context?.eventPayload?.command == "service_convert_magic_experience") {
+        await vk.api.messages.sendMessageEventAnswer({
+            event_id: context.eventId,
+            user_id: context.userId,
+            peer_id: context.peerId,
+            event_data: JSON.stringify({
+                type: "show_snackbar",
+                text: `🔔 Услуга обмена 15 единиц магического опыта на 5 галлеонов.`
+            })
         })
-    } else {
-        await context.send(`💡 Ошибка конвертации`)
     }
-}*/
-
+}
+export async function Service_Convert_Magic_Experience_Change(context: any) {
+    const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    if (context.eventPayload.command == "service_convert_magic_experience_change" && context.eventPayload.item == "xp") {
+        const input = context.eventPayload.value
+        if (input <= user.xp) {
+            const convert_mo = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+input/3, xp: user.xp-input } })
+            console.log(`User ${context.peerId} converted ${input}MO in ${input/3}G`)
+            await vk.api.messages.sendMessageEventAnswer({
+                event_id: context.eventId,
+                user_id: context.userId,
+                peer_id: context.peerId,
+                event_data: JSON.stringify({
+                    type: "show_snackbar",
+                    text: `🔔 Конвертировано ${input}🧙 в ${input/3}💰.`
+                })
+            })
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${input}🧙 в ${input/3}💰. \n💳 Баланс: ${convert_mo?.xp}🧙 ${convert_mo?.gold}💰`
+            })
+            await Service_Convert_Magic_Experience(context)
+        } else {
+            await vk.api.messages.sendMessageEventAnswer({
+                event_id: context.eventId,
+                user_id: context.userId,
+                peer_id: context.peerId,
+                event_data: JSON.stringify({
+                    type: "show_snackbar",
+                    text: `🔔 Ошибка конвертирования магического опыта в галлеоны.`
+                })
+            })
+        }
+    } 
+}
 /*async function Service_Beer(context: any) {
     const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
