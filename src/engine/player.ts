@@ -940,7 +940,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
-    hearManager.hear(/админы/, async (context: any) => {
+    /*hearManager.hear(/админы/, async (context: any) => {
         await Image_Random(context, "admin")
         const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         if (user?.id_role == 2) {
@@ -951,8 +951,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         console.log(`Admin ${context.senderId} see list administrators`)
         await Keyboard_Index(context, `💡 Им бы еще черные очки, и точно люди в черном!`)
-    })
-    hearManager.hear(/Услуги/, async (context: any) => {
+    })*/
+    /*hearManager.hear(/Услуги/, async (context: any) => {
         await Image_Random(context, "service")
         const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         const selector = await context.question(`✉ Ваш баланс: ${user?.xp}🧙 ${user?.gold}💰В данный момент доступны следующие операции:`,
@@ -1293,7 +1293,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         const underwear = await prisma.trigger.count({ where: { name: 'underwear', value: true } })
         await Keyboard_Index(context, `💡 ${underwear} человек уже заложило свои труселя, как на счёт твоих?`)
-    })
+    })*/
     hearManager.hear(/енотик/, async (context: any) => {
         if (await Accessed(context) == 2) {
             await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );

@@ -17,6 +17,7 @@ import prisma from './engine/events/module/prisma_client';
 import { Exit, Main_Menu, Main_Menu_Init } from './engine/events/contoller';
 import { Admin_Enter, Artefact_Enter, Card_Enter, Card_Private, Inventory_Enter} from './engine/events/module/info';
 import { User_Info } from './engine/events/module/tool';
+import { Service_Cancel, Service_Convert_Galleon, Service_Convert_Galleon_Change, Service_Enter } from './engine/events/module/service';
 dotenv.config()
 
 export const token: string = String(process.env.token)
@@ -187,7 +188,11 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 		"exit": Exit,
 		"artefact_enter": Artefact_Enter,
 		"inventory_enter": Inventory_Enter,
-		"admin_enter": Admin_Enter
+		"admin_enter": Admin_Enter,
+		"service_enter": Service_Enter,
+		"service_cancel": Service_Cancel,
+		"service_convert_galleon": Service_Convert_Galleon,
+		"service_convert_galleon_change": Service_Convert_Galleon_Change
 	}
 	await config[context.eventPayload.command](context)
 	//console.log("🚀 ~ file: index.ts:180 ~ vk.updates.on ~ context", context)
