@@ -18,6 +18,7 @@ import { Exit, Main_Menu, Main_Menu_Init } from './engine/events/contoller';
 import { Admin_Enter, Artefact_Enter, Card_Enter, Card_Private, Inventory_Enter} from './engine/events/module/info';
 import { User_Info } from './engine/events/module/tool';
 import { Service_Cancel, Service_Convert_Galleon, Service_Convert_Galleon_Change, Service_Convert_Magic_Experience, Service_Convert_Magic_Experience_Change, Service_Enter, Service_Level_Up, Service_Level_Up_Change } from './engine/events/module/service';
+import { Shop_Cancel, Shop_Category_Enter, Shop_Enter } from './engine/events/module/shop';
 dotenv.config()
 
 export const token: string = String(process.env.token)
@@ -196,7 +197,10 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 		"service_convert_magic_experience": Service_Convert_Magic_Experience,
 		"service_convert_magic_experience_change": Service_Convert_Magic_Experience_Change,
 		"service_level_up": Service_Level_Up,
-		"service_level_up_change": Service_Level_Up_Change
+		"service_level_up_change": Service_Level_Up_Change,
+		"shop_category_enter": Shop_Category_Enter,
+		"shop_enter": Shop_Enter,
+		"shop_cancel": Shop_Cancel
 	}
 	await config[context.eventPayload.command](context)
 	//console.log("🚀 ~ file: index.ts:180 ~ vk.updates.on ~ context", context)

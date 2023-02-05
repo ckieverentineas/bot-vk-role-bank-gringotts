@@ -14,18 +14,17 @@ export async function Card_Enter(context:any) {
         .callbackButton({ label: '⚙', payload: { command: 'card_private' }, color: 'secondary' })
         .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
         console.log(`User ${get_user.idvk} see card`)
-        let ii = `🔔 В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
+        let ii = `В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
         await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
-        const data = {
-            type: "show_snackbar",
-            text: `🔔 ${ii}`
-        }
         if (context?.eventPayload?.command == "card_enter") {
             await vk.api.messages.sendMessageEventAnswer({
                 event_id: context.eventId,
                 user_id: context.userId,
                 peer_id: context.peerId,
-                event_data: JSON.stringify(data)
+                event_data: JSON.stringify({
+                    type: "show_snackbar",
+                    text: `🔔 ${ii}`
+                })
             })
         }
     }

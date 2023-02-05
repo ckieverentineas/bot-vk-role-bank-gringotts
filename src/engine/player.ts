@@ -46,7 +46,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             await Keyboard_Index(context, `${ii}`)
         } else { await Keyboard_Index(context, `💡 Вероятно вы магл, раз у вас нет артефакта..`)}
     })*/
-    hearManager.hear(/Косой переулок/, async (context) => {
+    /*hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {
             console.log(`Admin ${context.senderId} enter in shopping`)
             const category:any = await prisma.category.findMany({})
@@ -178,7 +178,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         await Keyboard_Index(context, `💡 А может быть в косом переулке есть подполье?`)
-    })
+    })*/
     hearManager.hear(/✏Тип/, async (context) => {
         if (context.messagePayload == null && context.senderId != root) {
             console.log((`stop`))
@@ -1304,11 +1304,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             })
         }
     })
-    hearManager.hear(/⚙/, async (context: any) => {
+    /*hearManager.hear(/⚙/, async (context: any) => {
         if (context.messagePayload == null) { return }
         
         await Keyboard_Index(context, `💡 Вот это скрытность однако!`)
-    })
+    })*/
 }
 
     

@@ -100,7 +100,12 @@ export async function Image_Interface(data: any, context: any) {
         height_now += Jimp.measureTextHeight(font, `${data[i].name} - ${data[i].price}`, need_max_width)
     }
     image_interface.dither565().quality(0)
-    await context.send({ attachment: await vk.upload.messagePhoto({ source: { value: await image_interface.getBufferAsync(Jimp.MIME_JPEG) } }) });
+    const attachment = await vk.upload.messagePhoto({
+        source: {
+            value: await image_interface.getBufferAsync(Jimp.MIME_JPEG)
+        }
+    });
+    return attachment
 }
 
 export async function Image_Interface_Inventory(data: any, context: any) {
