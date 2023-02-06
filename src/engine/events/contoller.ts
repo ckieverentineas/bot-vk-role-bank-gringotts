@@ -2,6 +2,7 @@ import { KeyboardBuilder } from "vk-io"
 import prisma from "./module/prisma_client"
 import { root, vk } from "../.."
 import { Image_Random } from "../core/imagecpu";
+import { User } from "@prisma/client";
 
 function Sleep(ms: number) {
     return new Promise((resolve) => {
@@ -11,7 +12,8 @@ function Sleep(ms: number) {
 
 export async function Main_Menu_Init(context: any) {
     const attached = await Image_Random(context, "bank")
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `🏦 Банк Гринготтс Онлайн 0.99v:`, keyboard: await Main_Menu(context), attachment: attached.toString() })
+    const user: User | null = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `🏦 Доступ разрешен, зашифрованное соединение по proxy: https:/hog_online/bank_gringotts/${user?.id}:${user?.idvk}\n✅ Вы авторизованы, ${user?.name}!\n💳 UID-${user?.id} Баланс: ${user?.gold}💰 ${user?.xp}🧙`, keyboard: await Main_Menu(context), attachment: attached.toString() })
     await vk.api.messages.sendMessageEventAnswer({
         event_id: context.eventId,
         user_id: context.userId,
@@ -44,7 +46,7 @@ export async function Main_Menu(context: any) {
     .callbackButton({ label: 'Услуги', payload: { command: 'service_enter' }, color: 'primary' })
     if (user_check.id_role === 2) {
         keyboard.callbackButton({ label: 'Админы', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
-        .callbackButton({ label: 'Операции⛔', payload: { command: 'service_enter' }, color: 'negative' })
+        .callbackButton({ label: 'Операции⛔', payload: { command: 'operation_enter' }, color: 'negative' })
     }
     if (user_check.idvk == root) {
         keyboard.callbackButton({ label: 'Права⛔', payload: { command: 'right_enter' }, color: 'negative' })

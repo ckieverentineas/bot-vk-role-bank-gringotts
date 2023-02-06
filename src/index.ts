@@ -16,8 +16,8 @@ import { Image_Random } from './engine/core/imagecpu';
 import prisma from './engine/events/module/prisma_client';
 import { Exit, Main_Menu, Main_Menu_Init } from './engine/events/contoller';
 import { Admin_Enter, Artefact_Enter, Card_Enter, Card_Private, Inventory_Enter} from './engine/events/module/info';
-import { User_Info } from './engine/events/module/tool';
-import { Service_Cancel, Service_Convert_Galleon, Service_Convert_Galleon_Change, Service_Convert_Magic_Experience, Service_Convert_Magic_Experience_Change, Service_Enter, Service_Level_Up, Service_Level_Up_Change } from './engine/events/module/service';
+import { Operation_Enter, Right_Enter, User_Info } from './engine/events/module/tool';
+import { Service_Beer_Open, Service_Cancel, Service_Convert_Galleon, Service_Convert_Galleon_Change, Service_Convert_Magic_Experience, Service_Convert_Magic_Experience_Change, Service_Enter, Service_Level_Up, Service_Level_Up_Change, Service_Underwear_Open } from './engine/events/module/service';
 import { Shop_Bought, Shop_Buy, Shop_Cancel, Shop_Category_Enter, Shop_Enter } from './engine/events/module/shop';
 dotenv.config()
 
@@ -156,16 +156,16 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			random_id: 0,
 			message: ans_selector
 		})
-		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили и клавиатуры нет, напишите клава!`)
+		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили, напишите что-нибудь, а затем нажмите кнопку: ✅Подтвердить авторизацию!`)
 	} else {
 		const user_count = await prisma.user.count()
 		const sums: any = await prisma.user.aggregate({ _sum: { gold: true, lvl: true, xp: true } })
 		const artefacts: any = await prisma.artefact.count()
 		await Image_Random(context, "bank")
 		if (user_check.id_role != 1) {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.94v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
 		} else {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.76v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.94v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
 		}
 		const data = await Book_Random_String('./src/book/title.txt')
 		const user_inf = await User_Info(context)
@@ -202,9 +202,17 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 		"shop_enter": Shop_Enter,
 		"shop_cancel": Shop_Cancel,
 		"shop_bought": Shop_Bought,
-		"shop_buy": Shop_Buy
+		"shop_buy": Shop_Buy,
+		"operation_enter": Operation_Enter, // заглушки
+		"right_enter": Right_Enter,
+		"service_beer_open": Service_Beer_Open,
+		"service_underwear_open": Service_Underwear_Open,
 	}
-	await config[context.eventPayload.command](context)
+	try {
+		await config[context.eventPayload.command](context)
+	} catch (e) {
+		console.log(`Ошибка события ${e}`)
+	}
 	//console.log("🚀 ~ file: index.ts:180 ~ vk.updates.on ~ context", context)
 	//const data = await Book_Random_String('./src/book/tom1-7.txt')
 	//await context.answer({type: 'show_snackbar', text: `🔔 ${await data.slice(0,80)}`, event_id: context.eventId})

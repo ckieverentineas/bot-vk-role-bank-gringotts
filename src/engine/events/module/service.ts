@@ -8,10 +8,10 @@ export async function Service_Enter(context: any) {
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const keyboard = new KeyboardBuilder()
     .callbackButton({ label: '📈', payload: { command: 'service_level_up' }, color: 'secondary' })
-    .callbackButton({ label: '👙⛔', payload: { command: 'service_underwear' }, color: 'secondary' }).row()
+    .callbackButton({ label: '👙⛔', payload: { command: 'service_underwear_open' }, color: 'secondary' }).row()
     .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' })
     .callbackButton({ label: '💰>🧙', payload: { command: 'service_convert_galleon' }, color: 'secondary' }).row()
-    .callbackButton({ label: '🍺⛔', payload: { command: 'service_beer' }, color: 'secondary' })
+    .callbackButton({ label: '🍺⛔', payload: { command: 'service_beer_open' }, color: 'secondary' })
     .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).row().inline().oneTime()
     const text = `✉ В данный момент доступны следующие операции:`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})  
@@ -234,7 +234,19 @@ export async function Service_Level_Up_Change(context: any) {
         })
     })
 }
-/*async function Service_Beer(context: any) {
+export async function Service_Beer_Open(context: any) {
+    if (context?.eventPayload?.command == "service_beer_open") {
+        await vk.api.messages.sendMessageEventAnswer({
+            event_id: context.eventId,
+            user_id: context.userId,
+            peer_id: context.peerId,
+            event_data: JSON.stringify({
+                type: "show_snackbar",
+                text: `🔔 Поставки нерентабельны, пройдите к клавиатуре...`
+            })
+        })
+    }
+    /*
     const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
     if (!trigger) { 
@@ -379,8 +391,21 @@ export async function Service_Level_Up_Change(context: any) {
         } else { await context.send(`💡 А как же восстановить честь?`) }
     }
     await Keyboard_Index(context, '💡 Интересно, и зачем нужен паспорт?')
-}*/
-/*async function Service_Underwear(context: any) {
+    */
+}
+export async function Service_Underwear_Open(context: any) {
+    if (context?.eventPayload?.command == "service_underwear_open") {
+        await vk.api.messages.sendMessageEventAnswer({
+            event_id: context.eventId,
+            user_id: context.userId,
+            peer_id: context.peerId,
+            event_data: JSON.stringify({
+                type: "show_snackbar",
+                text: `🔔 Если так хочется... То зайдите в услуги с помощью обычной клавиатуры`
+            })
+        })
+    }
+    /*
     const underwear = await prisma.trigger.count({ where: { name: 'underwear', value: true } })
         await Keyboard_Index(context, `💡 ${underwear} человек уже заложило свои труселя, как на счёт твоих?`)
     const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
@@ -435,4 +460,5 @@ export async function Service_Level_Up_Change(context: any) {
         } else { await context.send(`💡 А как же восстановить честь?`) }
     }
     await Keyboard_Index(context, '💡 Кто бы мог подумать, что дойдет до такого?')
-}*/
+    */
+}
