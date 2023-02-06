@@ -162,9 +162,11 @@ export async function Service_Level_Up(context: any) {
     const attached = await Image_Random(context, "lvl_up")
     let text = `✉ Гоблин в темных очках, предлагает вам повысить свой уровень.`
     const keyboard = new KeyboardBuilder()
-    if (user.xp >= 150) { keyboard.callbackButton({ label: '150🧙 => 1📈', payload: { command: 'service_level_up_change', item: "xp", value: 150 }, color: 'secondary' }) }
+    let paying = 150
+    if (user.lvl == 0) { paying = 0 }
+    if (user.xp >= paying) { keyboard.callbackButton({ label: `${paying}🧙 => 1📈`, payload: { command: 'service_level_up_change', item: "xp", value: paying }, color: 'secondary' }) }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.xp < 150 ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
+    text += user.xp < paying ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_level_up") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -200,12 +202,13 @@ export async function Service_Level_Up_Change(context: any) {
         15: `15 уровень — мифический уровень`,
     }
     const keyboard = new KeyboardBuilder()
-    if (user.xp >= 150) { keyboard.callbackButton({ label: '150🧙 => 1📈', payload: { command: 'service_level_up_change', item: "xp", value: 150 }, color: 'secondary' }) }
+    let paying = 150
+    if (user.lvl == 0) { paying = 0 }
+    if (user.xp >= paying) { keyboard.callbackButton({ label: `150🧙 => 1📈`, payload: { command: 'service_level_up_change', item: "xp", value: 150 }, color: 'secondary' }) }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
     let text = ''
     let ii =''
-    let paying = 150
-    if (user.lvl == 0) { paying = 0 }
+    
     if (user.xp >= paying && user.lvl < 15) {
         const user_update = await prisma.user.update({ where: { id: user.id }, data: { xp: user.xp-paying, lvl: user.lvl+1 } })
         text += user.lvl == 0 ? `⚙ Поздравляем с повышением, первый раз бесплатно, далее за уровень по 150🧙\n 🏦Разблокировка: ${leveling[user_update.lvl]}` : `⚙ Поздравляем с повышением! \n 🏦Разблокировка: ${leveling[user_update.lvl]}`
