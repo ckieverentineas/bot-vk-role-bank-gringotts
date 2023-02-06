@@ -58,9 +58,9 @@ export async function Artefact_Enter(context: any) {
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${artefact_list}`, keyboard: keyboard, attachment: attached?.toString()})
     let ii = ''
     if (artefact.length > 0) {
-        ii += `🔔 ${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизивание источает силу.'}`
+        ii += `${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизивание источает силу.'}`
     } else { 
-        ii += `💡 Вероятно вы магл, раз у вас нет артефакта..`
+        ii += `Вероятно вы магл, раз у вас нет артефакта..`
     }
     await vk.api.messages.sendMessageEventAnswer({
         event_id: context.eventId,

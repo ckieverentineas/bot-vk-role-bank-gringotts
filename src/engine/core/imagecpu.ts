@@ -119,38 +119,40 @@ export async function Image_Interface_Inventory(data: any, context: any) {
     let need_width = 0
     let need_height = 0
     let mod = 0
-    const mesure = await Jimp.read(`./src/art/template/item/${data[0].name}.jpg`)
-    const check = await Image_Border(mesure, mesure.getWidth()/5.2, mesure.getHeight()/5.2)
-    const configure = data.length/3
-    if (configure <= 1) {
-        mod = 1.1
-        need_height = check.getHeight()
-        need_width = (check.getWidth()+check.getWidth()*0.1)*data.length*1.3 
-    } else {
-        mod = Math.floor(configure+1)*0.8
-        need_height = check.getHeight() * Math.floor(configure+1)
-        need_width = (check.getWidth()+check.getWidth()*0.1)*3*1.3
-    }
-    image_interface.resize(need_width, need_height*mod).quality(100)
-    let width_now = image_interface.getWidth()*0.05
-    let height_now = image_interface.getHeight()*0.05
-    let counter2 = 0
-    for (const i in data) {
-        const image_temp = await Jimp.read(`./src/art/template/item/${data[i].name}.jpg`)
-        if (counter2 < 2) {
-            image_interface.composite(await Image_Border(image_temp, image_temp.getWidth()/5.2, image_temp.getHeight()/5.2), width_now, height_now)
-            image_interface.print(font, width_now, height_now+image_temp.getHeight()/5.2, {text: `${data[i].text}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, image_temp.getWidth()*1.5, image_temp.getHeight()/5)
-            width_now += image_temp.getWidth()+image_interface.getWidth()*0.1
-            counter2++
+    if (data && data[0] != undefined) {
+        const mesure = await Jimp.read(`./src/art/template/item/${data[0].name}.jpg`)
+        const check = await Image_Border(mesure, mesure.getWidth()/5.2, mesure.getHeight()/5.2)
+        const configure = data.length/3
+        if (configure <= 1) {
+            mod = 1.1
+            need_height = check.getHeight()
+            need_width = (check.getWidth()+check.getWidth()*0.1)*data.length*1.3 
         } else {
-            image_interface.composite(await Image_Border(image_temp, image_temp.getWidth()/5.2, image_temp.getHeight()/5.2), width_now, height_now)
-            image_interface.print(font, width_now, height_now+image_temp.getHeight()/5, {text: `${data[i].text}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, image_temp.getWidth()*1.5, image_temp.getHeight()/5)
-            width_now = image_interface.getWidth()*0.05
-            height_now += image_temp.getHeight()*2
-            counter2 = 0
+            mod = Math.floor(configure+1)*0.8
+            need_height = check.getHeight() * Math.floor(configure+1)
+            need_width = (check.getWidth()+check.getWidth()*0.1)*3*1.3
         }
+        image_interface.resize(need_width, need_height*mod).quality(100)
+        let width_now = image_interface.getWidth()*0.05
+        let height_now = image_interface.getHeight()*0.05
+        let counter2 = 0
+        for (const i in data) {
+            const image_temp = await Jimp.read(`./src/art/template/item/${data[i].name}.jpg`)
+            if (counter2 < 2) {
+                image_interface.composite(await Image_Border(image_temp, image_temp.getWidth()/5.2, image_temp.getHeight()/5.2), width_now, height_now)
+                image_interface.print(font, width_now, height_now+image_temp.getHeight()/5.2, {text: `${data[i].text}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, image_temp.getWidth()*1.5, image_temp.getHeight()/5)
+                width_now += image_temp.getWidth()+image_interface.getWidth()*0.1
+                counter2++
+            } else {
+                image_interface.composite(await Image_Border(image_temp, image_temp.getWidth()/5.2, image_temp.getHeight()/5.2), width_now, height_now)
+                image_interface.print(font, width_now, height_now+image_temp.getHeight()/5, {text: `${data[i].text}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER}, image_temp.getWidth()*1.5, image_temp.getHeight()/5)
+                width_now = image_interface.getWidth()*0.05
+                height_now += image_temp.getHeight()*2
+                counter2 = 0
+            }
+        }
+        image_interface.dither565().quality(0)
     }
-    image_interface.dither565().quality(0)
     const attachment = await vk.upload.messagePhoto({
         source: {
             value: await image_interface.getBufferAsync(Jimp.MIME_JPEG)
