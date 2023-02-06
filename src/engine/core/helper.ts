@@ -107,10 +107,6 @@ export async function Keyboard_Index(context: any, messa: any) {
         await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({ label: 'карта', payload: { command: 'grif' }, color: 'secondary' })
-                .textButton({ label: 'инвентарь', payload: { command: 'sliz' }, color: 'secondary' }).row()
-                .textButton({ label: 'артефакты', payload: { command: 'coga' }, color: 'secondary' })
-                .textButton({ label: 'админы', payload: { command: 'coga' }, color: 'secondary' }).row()
                 .textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'positive' })
                 .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row()
                 .textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'negative' })
@@ -121,55 +117,8 @@ export async function Keyboard_Index(context: any, messa: any) {
         await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({
-                    label: 'карта',
-                    payload: {
-                        command: 'grif'
-                    },
-                    color: 'secondary'
-                })
-                .textButton({
-                    label: 'инвентарь',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'артефакты',
-                    payload: {
-                        command: 'coga'
-                    },
-                    color: 'secondary'
-                })
-                .textButton({
-                    label: 'админы',
-                    payload: {
-                        command: 'coga'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'Косой переулок',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'positive'
-                })
-                .textButton({
-                    label: 'Услуги',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'primary'
-                }).row()
-                .textButton({
-                    label: 'операции',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'negative'
-                }).oneTime()
+                .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row()
+                .textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'negative' }).oneTime()
             }
         )
     } 
@@ -177,40 +126,7 @@ export async function Keyboard_Index(context: any, messa: any) {
         await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({
-                    label: 'карта',
-                    payload: {
-                        command: 'grif'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'инвентарь',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'артефакты',
-                    payload: {
-                        command: 'coga'
-                    },
-                    color: 'secondary'
-                }).row()
-                .textButton({
-                    label: 'Косой переулок',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'positive'
-                }).textButton({
-                    label: 'Услуги',
-                    payload: {
-                        command: 'sliz'
-                    },
-                    color: 'primary'
-                }).oneTime()
+                .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row().oneTime()
             }
         )
     }

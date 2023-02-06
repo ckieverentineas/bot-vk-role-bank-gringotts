@@ -14,39 +14,7 @@ import { join } from "path";
 import prisma from "./events/module/prisma_client";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
-    /*hearManager.hear(/карта/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-        await Image_Text_Add_Card(context, 50, 650, get_user)
-        //await Image_Composer2()
-        const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
-        await context.send(`✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} \n ⚙${get_user.private ? "Вы отказываетесь ролить" : "Вы разрешили приглашения на отролы"}`,
-            {   
-                keyboard: Keyboard.builder()
-                .textButton({ label: '⚙', payload: { command: 'private' }, color: 'secondary' })
-                .oneTime().inline()
-            }
-        )
-        console.log(`User ${get_user.idvk} see card`)
-        let ii = `🔔 В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
-        await Keyboard_Index(context, `${ii}`)
-    })*/
-    /*hearManager.hear(/артефакты/, async (context) => {
-        const get_user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-        await Image_Random(context, "artefact")
-        await context.send(`✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: `)
-        const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
-        if (artefact.length > 0) {
-            let artefact_list: String = ''
-            for (const i in artefact) { artefact_list += `💬: ${artefact[i].name} \n 🔧: ${artefact[i].type}${artefact[i].label} \n 🧷:  ${artefact[i].description}` }
-            await context.send(`${artefact_list}`)
-        } else { await context.send(`✉ У Вас еще нет артефактов =(`) }
-        console.log(`User ${get_user.idvk} see artefacts`)
-        if (artefact.length > 0) {
-            let ii = `🔔 ${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизивание источает силу.'}`
-            await Keyboard_Index(context, `${ii}`)
-        } else { await Keyboard_Index(context, `💡 Вероятно вы магл, раз у вас нет артефакта..`)}
-    })*/
-    /*hearManager.hear(/Косой переулок/, async (context) => {
+    hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {
             console.log(`Admin ${context.senderId} enter in shopping`)
             const category:any = await prisma.category.findMany({})
@@ -160,25 +128,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     if (ans_item.payload.command == 'continue') { await context.send(`💡 Нажимайте кнопку купить у желаемого товара`) }
                 }
             }
-        } else {
-            console.log(`User ${context.senderId} enter in shopping`)
-            const categorys:any = await prisma.category.findMany({})
-            if (categorys.length == 0) {
-                const ans: any = await context.send(`✉ Магазинов еще нет`)
-                return
-            } 
-            let cat_stop = false
-            while (cat_stop == false) {
-                const category = await prisma.category.findMany({})
-                const skill = await  Gen_Inline_Button_Category(context, category, 'Куда пойдем?')
-                if (!skill) {cat_stop = true} else {
-                    const skill_sel = await Gen_Inline_Button_Item(skill, context)
-                    if (skill_sel) {cat_stop = true}
-                }
-            }
         }
         await Keyboard_Index(context, `💡 А может быть в косом переулке есть подполье?`)
-    })*/
+    })
     hearManager.hear(/✏Тип/, async (context) => {
         if (context.messagePayload == null && context.senderId != root) {
             console.log((`stop`))
@@ -799,46 +751,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
     })
-    
-    /*hearManager.hear(/инвентарь/, async (context) => {
-        const get_user:any = await prisma.user.findFirst({ where: { idvk: context.senderId }, include: { Trigger: true }, })
-        const inventory = await prisma.inventory.findMany({ where: { id_user: get_user.id }, include: { item: true } })
-        let cart = ''
-        for (const i in get_user.Trigger) {
-            if (get_user.Trigger[i].value == false && get_user.Trigger[i].name == 'underwear') { cart += 'Трусы Домашние;' }
-            if (get_user.Trigger[i].value == true && get_user.Trigger[i].name == 'beer') { cart += 'Сливочное пиво из Хогсмида;' }
-        }
-        if (inventory.length == 0) {
-            await Image_Random(context, "inventory")
-            await context.send(`✉ Вы еще ничего не приобрели:(`)
-            await Keyboard_Index(context, `💡 Как можно было так лохануться?`)
-            return
-        }
-        for (const i in inventory) {
-            cart += `${inventory[i].item.name};`
-        }
-            
-        const destructor = cart.split(';').filter(i => i)
-        let compile = []
-        let compile_rendered: any = []
-        for (const i in destructor) {
-            let counter = 0
-            for (const j in destructor) { if (destructor[i] != null) { if (destructor[i] == destructor[j]) { counter++ } } }
-            compile.push(`👜 ${destructor[i]} x ${counter}\n`)
-            compile_rendered.push({name: destructor[i], text:`x ${counter}`})
-            counter = 0
-        }
-        const fUArr: any = compile_rendered.filter( (li: ArrayLike<any> | { [s: string]: any; }, idx: any, self: ({ [s: string]: any; } | ArrayLike<any>)[]) => 
-            self.map( (itm: { [s: string]: any; } | ArrayLike<any>) => Object.values(itm).reduce((r, c) => r.concat(c), '') )
-            .indexOf( Object.values(li).reduce((r, c) => r.concat(c), '') ) === idx
-        )
-        await Image_Interface_Inventory(fUArr, context)
-        let final: any = Array.from(new Set(compile));
-        await context.send(`✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}`)
-        console.log(`User ${context.senderId} see self inventory`)
-        await Keyboard_Index(context, `💡 Что ж, имущества много не бывает, на что вообще жить??`)
-    })*/
-
     hearManager.hear(/админка/, async (context: any) => {
         if (context.senderId == root) {
             const user:any = await prisma.user.findFirst({ where: { idvk: Number(context.senderId) } })
@@ -940,29 +852,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
-    /*hearManager.hear(/админы/, async (context: any) => {
-        await Image_Random(context, "admin")
-        const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-        if (user?.id_role == 2) {
-            const users = await prisma.user.findMany({ where: { id_role: 2 } })
-            let puller = '⌛ Загрузка списка рабов... \n'
-            for (const i in users) { puller += `👤 ${users[i].id} - @id${users[i].idvk}(${users[i].name}) \n` }
-            await context.send(`${puller}`)
-        }
-        console.log(`Admin ${context.senderId} see list administrators`)
-        await Keyboard_Index(context, `💡 Им бы еще черные очки, и точно люди в черном!`)
-    })*/
-    /*hearManager.hear(/Услуги/, async (context: any) => {
+    hearManager.hear(/Услуги/, async (context: any) => {
         await Image_Random(context, "service")
         const user = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         const selector = await context.question(`✉ Ваш баланс: ${user?.xp}🧙 ${user?.gold}💰В данный момент доступны следующие операции:`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({ label: '📈', payload: { command: 'lvl_upper' }, color: 'secondary' })
-                .textButton({ label: '👙', payload: { command: 'underwear' }, color: 'secondary' }).row()
-                .textButton({ label: '🧙>💰', payload: { command: 'convert_mo' }, color: 'secondary' })
-                .textButton({ label: '💰>🧙', payload: { command: 'convert_gal' }, color: 'secondary' }).row()
-                .textButton({ label: '🍺', payload: { command: 'beer' }, color: 'secondary' })
+                .textButton({ label: '👙', payload: { command: 'underwear' }, color: 'secondary' })
+                .textButton({ label: '🍺', payload: { command: 'beer' }, color: 'secondary' }).row()
                 .textButton({ label: '🔙', payload: { command: 'cancel' }, color: 'secondary' })
                 .oneTime().inline(),
                 answerTimeLimit
@@ -971,9 +868,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         if (selector.isTimeout) { return await context.send(`⏰ Время ожидания выбора услуг истекло!`) }
         if (!selector.payload) { return await Keyboard_Index(context, `💡 Вы не выбрали услугу, отменяем алгоритм`) }
         const config: any = {
-            'lvl_upper': LVL_Upper,
-            'convert_mo': Convert_MO,
-            'convert_gal': Convert_Gal,
             'cancel': Cancel,
             'underwear': Underwear,
             'beer': Beer
@@ -983,7 +877,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         } catch (err) {
             console.log(err)
         }
-        
+        async function Cancel(context: any) {
+            await context.send(`💡 Услуги отозваны.`)
+        }
         async function Beer(context: any) {
             const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
             const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
@@ -1184,116 +1080,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
             await Keyboard_Index(context, '💡 Кто бы мог подумать, что дойдет до такого?')
         }
-        async function LVL_Upper(context: any) {
-            const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-            const leveling: any = {
-                1: `1 уровень — стандартные возможности. Разрешается использование только волшебной палочки.`,
-                2: `2 уровень — возможность добычи ингредиентов для зелий и т.д. в теплицах.`,
-                3: `3 уровень — разрешается поход в Хогсмид, доступен к покупке порошок мгновенной тьмы. Разрешается вступить в "Дуэльный Клуб".`,
-                4: `4 уровень — возможность пользоваться услугами банка "Гринготтс" в полной мере. Самостоятельное изучение любых трёх заклинаний, которые вы должны будете написать Флитвику. Чтобы вы могли их использовать, вы должны описать изучение каждого минимум в 15 комп. строках, и после двух использования в локациях заклинание будет действовать стабильно. Заклинания можно выбрать те, что изучаются на более старших курсах, чем сейчас вы (максимум на два вперёд).`,
-                5: `5 уровень — разрешается использование невербальных заклинаний.`,
-                6: `6 уровень — доступно к покупке любовное зелье. Доступ к получению ингредиентов в кладовке профессора Снейпа с зельями. Доступна окклюменция.`,
-                7: `7 уровень — возможность обучиться анимагии, доступна к покупке мантия невидимости. Использование заклинаний без волшебной палочки. Доступна легилименция.,
-                Также становится возможным укорочение постов для изучения заклинаний. 7 строк ПК вместо 15.`,
-                8: `8 уровень — возможность стать полноценным работником газеты "Ежедневного Пророка" и получать за каждую статью по 15 МО и по 10 галлеонов. Открытие рынка магических животных от ХХХ. Можно купить зверька, на рынке будут выставлены его характеристики.`,
-                9: `9 уровень — возможность обучиться трансгресии, доступ к изучению тёмной магии.`,
-                10: `10 уровень — создание собственных заклинаний и изобретение зелий/растений и т.д.`,
-                11: `11 уровень — обычный уровень`,
-                12: `12 уровень — редкий уровень`,
-                13: `13 уровень — эпический уровень`,
-                14: `14 уровень — легендарный уровень`,
-                15: `15 уровень — мифический уровень`,
-            }
-            if (user.lvl == 0) {
-                const user_update = await prisma.user.update({ where: { id: user.id }, data: { lvl: user.lvl+1 } })
-                if (user_update) {
-                    await Image_Random(context, "lvl_up")
-                    await context.send(`⚙ Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Первый раз бесплатно, далее за уровень по 150🧙\n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
-                    await Keyboard_Index(context, `💡 Твой первый уровень? — это только начало!`)
-                    console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
-                    await vk.api.messages.send({
-                        peer_id: chat_id,
-                        random_id: 0,
-                        message: `📈 @id${user.idvk}(${user.name}) повышает уровень с ${user.lvl} до ${user_update.lvl}.`
-                    })
-                    return
-                }
-            }
-            if (user.xp >= 150 && user.lvl < 15) {
-                const user_update = await prisma.user.update({
-                    where: {
-                        id: user.id
-                    },
-                    data: {
-                        xp: user.xp-150,
-                        lvl: user.lvl+1
-                    }
-                })
-                await Image_Random(context, "lvl_up")
-                await context.send(`⚙ Ваш уровень повышен с ${user.lvl} до ${user_update.lvl}. Остаток: ${user_update.xp}🧙 \n 🏦Разблокировка: ${leveling[user_update.lvl]}`)
-                await vk.api.messages.send({
-                    peer_id: chat_id,
-                    random_id: 0,
-                    message: `📈 @id${user.idvk}(${user.name}) повышает уровень с ${user.lvl} до ${user_update.lvl}.`
-                })
-                await Keyboard_Index(context, `💡 Неужели можно стать еще мощнее?`)
-                console.log(`User ${context.senderId} lvl up from ${user.lvl} to ${user_update.lvl}`)
-            } else {
-                if (user.lvl >= 15) {
-                    await context.send(`💡 Уровень повыше невозможно постичь...`)
-                    await Keyboard_Index(context, `💡 Вы достигли предела, хотя бесконечность — не предел.`)
-                    console.log(`User ${context.senderId} lvl up from finally anytime`)
-                    return
-                }
-                await context.send(`💡 Недостаточно магического опыта! Необходимо 150🧙 для повышения уровня.`)
-                await Keyboard_Index(context, `💡 Ха—ха, наивно было полагать, что можно стать сильнее без достаточного магического опыта`)
-                console.log(`User ${context.senderId} have not enough MO for lvl up from ${user.lvl} to ${user.lvl++}`)
-            }
-        }
-        async function Convert_MO(context: any) {
-            const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-            const count = await context.question(`✉ Текущий курс: 15🧙 => 5💰. . Доступен обмен ${Math.floor(user.xp/15)*15}🧙 на ${Math.floor(user.xp/15)*15/3}💰. При полной конвертации у вас будет ${user.gold + Math.floor(user.xp/15)*15/3}💰 на счету. \n Введите количество магического опыта для конвертации в галлеоны:`, timer_text)
-            if (count.isTimeout) { return await context.send(`⏰ Время ожидания обмена МО на G истекло!`) }
-            if (Number(count.text) >= 15 && Number(count.text) <= user.xp) {
-                const convert_gal = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+Math.floor(count.text/15)*15/3, xp: user.xp-Math.floor(count.text/15)*15 } })
-                console.log(`User ${context.senderId} converted ${Math.floor(count.text/15)*15}MO in ${Math.floor(count.text/15)*15/3}G`)
-                await Image_Random(context, "conv_mo")
-                await context.send(`⌛ Конвертирование ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰 произошло успешно`)
-                await vk.api.messages.send({
-                    peer_id: chat_id,
-                    random_id: 0,
-                    message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${Math.floor(count.text/15)*15}🧙 в ${Math.floor(count.text/15)*15/3}💰.`
-                })
-            } else {
-                await context.send(`💡 Ошибка конвертации`)
-            }
-            await Keyboard_Index(context, `💡 А кто говорил, что конвертация магического опыта будет выгодной?`)
-        }
-        async function Convert_Gal(context: any) {
-            const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
-            const count = await context.question(`✉ Текущий курс: 1💰 => 2🧙. . Доступен обмен ${user.gold}💰 на ${user.gold*2}🧙. При полной конвертации у вас будет ${user.xp + user.gold*2}🧙 на счету. \n Введите количество галлеонов для конвертации в магический опыт:`, timer_text)
-            if (count.isTimeout) { return await context.send(`⏰ Время ожидания обмена G на MO истекло!`) }
-            if (Number(count.text) > 0 && Number(count.text) <= user.gold) {
-                const convert_gal = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-count.text, xp: user.xp+count.text*2 } })
-                console.log(`User ${context.senderId} converted ${count.text} G in ${count.text*2}MO`)
-                await Image_Random(context, "conv_gal")
-                await context.send(`⌛ Конвертирование ${count.text}💰 в ${count.text*2}🧙 произошло успешно`)
-                await vk.api.messages.send({
-                    peer_id: chat_id,
-                    random_id: 0,
-                    message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${count.text}💰 в ${count.text*2}🧙.`
-                })
-            } else {
-                await context.send(`💡 Ошибка конвертации`)
-            }
-            await Keyboard_Index(context, `💡 А кто говорил, что конвертация галлеонов будет выгодной?`)
-        }
-        async function Cancel(context: any) {
-            await context.send(`💡 Услуги отозваны.`)
-        }
-        const underwear = await prisma.trigger.count({ where: { name: 'underwear', value: true } })
-        await Keyboard_Index(context, `💡 ${underwear} человек уже заложило свои труселя, как на счёт твоих?`)
-    })*/
+    })
     hearManager.hear(/енотик/, async (context: any) => {
         if (await Accessed(context) == 2) {
             await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );
@@ -1304,11 +1091,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             })
         }
     })
-    /*hearManager.hear(/⚙/, async (context: any) => {
-        if (context.messagePayload == null) { return }
-        
-        await Keyboard_Index(context, `💡 Вот это скрытность однако!`)
-    })*/
 }
 
     
