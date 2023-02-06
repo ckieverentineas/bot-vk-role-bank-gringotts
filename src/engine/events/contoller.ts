@@ -12,7 +12,7 @@ function Sleep(ms: number) {
 
 export async function Main_Menu_Init(context: any) {
     const attached = await Image_Random(context, "bank")
-    const user: User | null = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `🏦 Доступ разрешен, зашифрованное соединение по proxy: https:/hog_online/bank_gringotts/${user?.id}:${user?.idvk}\n✅ Вы авторизованы, ${user?.name}!\n💳 UID-${user?.id} Баланс: ${user?.gold}💰 ${user?.xp}🧙`, keyboard: await Main_Menu(context), attachment: attached.toString() })
     await vk.api.messages.sendMessageEventAnswer({
         event_id: context.eventId,
@@ -37,7 +37,7 @@ export async function Exit(context: any) {
     })
 }
 export async function Main_Menu(context: any) {
-    const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+    const user_check: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const keyboard = new KeyboardBuilder()
     .callbackButton({ label: 'Карта', payload: { command: 'card_enter' }, color: 'secondary' })
     .callbackButton({ label: 'Инвентарь', payload: { command: 'inventory_enter' }, color: 'secondary' }).row()
