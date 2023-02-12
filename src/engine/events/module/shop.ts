@@ -106,7 +106,7 @@ async function Searcher(data: any, target: number) {
 export async function Shop_Enter(context: any) {
     if (context.eventPayload.item == "id") {
         const input = context.eventPayload.value
-        const user: User | null = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+        const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
         if (user) {
             let text = `⌛ Вы оказались в ${input.name}. Ваш баланс: ${user.gold}`
             const data: Item[] = await prisma.item.findMany({ where: { id_category: Number(input.id) } })
@@ -172,7 +172,7 @@ export async function Shop_Bought(context: any) {
 export async function Shop_Buy(context: any) {
     if (context.eventPayload.command == "shop_buy" && context.eventPayload.item_sub == "item") {
         const input = context.eventPayload.value_sub
-        const user: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
+        const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
         const item_inventory:any = await prisma.inventory.findFirst({ where: { id_item: input.id, id_user: user.id } })
         if ((!item_inventory || input.type == 'unlimited') && user.gold >= input.price) {
             const money = await prisma.user.update({ data: { gold: user.gold - input.price }, where: { id: user.id } })
