@@ -3,3 +3,5 @@ node_modules
 src/temp
 build
 prisma/dev.db
+hog-stud-report.xlsx
+.env
