@@ -212,7 +212,7 @@ export async function Keyboard_Index(context: any, messa: any) {
             await vk.api.messages.send({
                 user_id: user_list[rana2].idvk,
                 random_id: 0,
-                message: `👥 Как насчет поролить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+                message: `👥 Как насчет поролить с 👤@id${user_list[rana].idvk}(${user_list[rana].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙\n\n💡 После выполнения квеста напишите нам в чат с хештегом #role с сылкой/скринами на совместный отрол.`
             })
         } catch (error) {
             console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)
@@ -226,7 +226,7 @@ export async function Keyboard_Index(context: any, messa: any) {
             await vk.api.messages.send({
                 user_id: user_list[rana].idvk,
                 random_id: 0,
-                message: `👥 Как насчет поролить с 👤@id${user_list[rana2].idvk}(${user_list[rana2].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙`
+                message: `👥 Как насчет поролить с 👤@id${user_list[rana2].idvk}(${user_list[rana2].name}): \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 ${reward2}💰 ${reward}🧙\n\n💡 После выполнения квеста напишите нам в чат с хештегом #role с сылкой/скринами на совместный отрол.`
             })
         } catch (error) {
             console.log(`User ${user_list[rana].idvk} blocked chating with bank!`)
