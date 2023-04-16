@@ -48,7 +48,6 @@ vk.updates.on('message_new', hearManager.middleware);
 InitGameRoutes(hearManager)
 registerUserRoutes(hearManager)
 
-let blocker: Array<1> = []
 //миддлевар для предварительной обработки сообщений
 vk.updates.on('message_new', async (context: any, next: any) => {
 	if (context.peerType == 'chat') { 
@@ -62,21 +61,6 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		}  
 		return
 	}
-	if (context.text.toLowerCase() == `позвать сотрудника`) {
-		if (!blocker.includes(context.senderId)) {
-			blocker.push(context.senderId)
-			await context.send(`⁉ Включен режим удержания клиента, для возврата в нормальный режим, пишите: позвать бота`)
-			console.log(`User ${context.senderId} activated mode for talk with employee`)
-		}
-	}
-	if (context.text.toLowerCase() == `позвать бота`) {
-		if (blocker.includes(context.senderId)) {
-			blocker.splice(blocker.indexOf(context.senderId))
-			await context.send(`💡 Банковское обслуживание переведено в штатный режим.`)
-			console.log(`User ${context.senderId} return in mode for talk with bot`)
-		}
-	}
-	if (blocker.includes(context.senderId)) { return }
 	//проверяем есть ли пользователь в базах данных
 	const user_check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
 	//если пользователя нет, то начинаем регистрацию
@@ -150,34 +134,13 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		console.log(`Success save user idvk: ${context.senderId}`)
 		await context.send(`‼ Список обязательных для покупки вещей: \n 1. Волшебная палочка \n 2. Сова, кошка или жаба \n 3. Комплект учебников \n \n Посетите Косой переулок и приобретите их первым делом!`)
 		const check_bbox = await prisma.blackBox.findFirst({ where: { idvk: context.senderId } })
-		const ans_selector = `⁉ ${save.class} @id${save.idvk}(${save.name}) ${save.spec} ${!check_bbox ? "легально" : "НЕЛЕГАЛЬНО"} получает банковскую карту!`
+		const ans_selector = `⁉ ${save.class} @id${save.idvk}(${save.name}) ${save.spec} ${!check_bbox ? "легально" : "НЕЛЕГАЛЬНО"} получает банковскую карту UID: ${save.id}!`
 		await vk.api.messages.send({
 			peer_id: chat_id,
 			random_id: 0,
 			message: ans_selector
 		})
-		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили, напишите что-нибудь, а затем нажмите кнопку: ✅Подтвердить авторизацию!`)
-	} else {
-		const user_count = await prisma.user.count()
-		const sums: any = await prisma.user.aggregate({ _sum: { gold: true, lvl: true, xp: true } })
-		const artefacts: any = await prisma.artefact.count()
-		await Image_Random(context, "bank")
-		if (user_check.id_role != 1) {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.94v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
-		} else {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.94v: \n\n 💡 Для связи с нами напишите: позвать сотрудника`)
-		}
-		const data = await Book_Random_String('./src/book/title.txt')
-		const user_inf = await User_Info(context)
-		await context.send(`Здравствуйте ${user_inf.first_name}, это вы, если да, то подтвердите`, {
-			keyboard: new KeyboardBuilder().callbackButton({
-				label: '✅ Подтвердить авторизацию',
-				payload: {
-					command: 'system_call',
-					item: 'coffee'
-				}
-			}).inline()
-		})
+		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили, напишите [!банк] без квадратных скобочек, а затем нажмите кнопку: ✅Подтвердить авторизацию!`)
 	}
 	return next();
 })
@@ -204,7 +167,7 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 		"shop_bought": Shop_Bought,
 		"shop_buy": Shop_Buy,
 		"operation_enter": Operation_Enter, // заглушки
-		"right_enter": Right_Enter,
+		"right_enter": Right_Enter, // заглушки
 		"service_beer_open": Service_Beer_Open,
 		"service_underwear_open": Service_Underwear_Open,
 	}
@@ -213,11 +176,6 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 	} catch (e) {
 		console.log(`Ошибка события ${e}`)
 	}
-	//console.log("🚀 ~ file: index.ts:180 ~ vk.updates.on ~ context", context)
-	//const data = await Book_Random_String('./src/book/tom1-7.txt')
-	//await context.answer({type: 'show_snackbar', text: `🔔 ${await data.slice(0,80)}`, event_id: context.eventId})
-	//await context.answer({type: 'message_edit', text: `🔔 ${data.slice(0,80)}`})
-	
 	return await next();
 })
 

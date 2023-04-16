@@ -107,9 +107,8 @@ export async function Keyboard_Index(context: any, messa: any) {
         await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'positive' })
-                .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row()
-                .textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'negative' })
+                .textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'positive' }).row()
+                .textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'negative' }).row()
                 .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'negative' }).oneTime()
             }
         )
@@ -117,20 +116,15 @@ export async function Keyboard_Index(context: any, messa: any) {
         await context.send(`${messa}`,
             {
                 keyboard: Keyboard.builder()
-                .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row()
                 .textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'negative' }).oneTime()
             }
         )
     } 
     if (user_check.id_role === 1) {
-        await context.send(`${messa}`,
-            {
-                keyboard: Keyboard.builder()
-                .textButton({ label: 'Услуги', payload: { command: 'sliz' }, color: 'primary' }).row().oneTime()
-            }
+        await context.send(`${messa}`
         )
     }
-    if (randomInt(0, 100) < 5) {
+    if (randomInt(0, 100) < 25) {
         const user_list: any = await prisma.user.findMany({ where: { private: false} })
         const location_list: any = {
             "Хогвартс": [ "Большой Зал", "Астрономическая Башня", "Гремучая Ива", "Часовая Башня", "Кухня", "Туалет Плаксы Миртл", "Кухня", "Зал Наказаний", "Внутренний Двор", "Запретный лес", "Правый коридор | Пятый этаж", "Деревянный мост", "Совятня", "Выручай-комната", "Комната Пивза", "Чердак", "Больничное крыло", "Вестибюль", "Опушка леса", "Библиотека Хогвартса", "Чёрное Озеро", "Лестничные пролёты", "Каменный Круг", "Кабинет Зельеварения", "Подземелья Хогвартса", "Прачечная", "Зал Славы", "Учебный Зал", "Теплицы", "Тайная Комната", "Кладбище", "Лодочный сарай", "Кабинет школьного психолога", "Коридор Одноглазой Ведьмы", "Комната 234-00", "Учительская", "Хижина Хагрида", "Коридоры", "Учительская"],
