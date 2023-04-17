@@ -3,3 +3,4 @@ node_modules
 src/temp
 build
 prisma/dev.db
+.env
