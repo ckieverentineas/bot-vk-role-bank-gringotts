@@ -25,7 +25,7 @@ export async function Main_Menu_Init(context: any) {
     })
 }
 export async function Exit(context: any) {
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `💡 Сессия успешно завершена. Чтобы начать новую, напишите в госдуму! Вас рассмотрят, как кандидата`})
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `💡 Сессия успешно завершена. Чтобы начать новую, напишите [!банк] без квадратных скобочек`})
     await vk.api.messages.sendMessageEventAnswer({
         event_id: context.eventId,
         user_id: context.userId,

@@ -1,22 +1,17 @@
-import { VK, Keyboard, IMessageContextSendOptions, ContextDefaultState, MessageContext, VKAppPayloadContext, KeyboardBuilder } from 'vk-io';
+import { VK, Keyboard } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
 import {
     QuestionManager,
     IQuestionMessageContext
 } from 'vk-io-question';
-import { randomInt } from 'crypto';
-import { timeStamp } from 'console';
 import { registerUserRoutes } from './engine/player'
 import { InitGameRoutes } from './engine/init';
-import { send } from 'process';
-import { Book_Random_String, Keyboard_Index } from './engine/core/helper';
+import { Keyboard_Index } from './engine/core/helper';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import { env } from 'process';
-import { Image_Random } from './engine/core/imagecpu';
 import prisma from './engine/events/module/prisma_client';
-import { Exit, Main_Menu, Main_Menu_Init } from './engine/events/contoller';
+import { Exit, Main_Menu_Init } from './engine/events/contoller';
 import { Admin_Enter, Artefact_Enter, Card_Enter, Card_Private, Inventory_Enter} from './engine/events/module/info';
-import { Operation_Enter, Right_Enter, User_Info } from './engine/events/module/tool';
+import { Operation_Enter, Right_Enter } from './engine/events/module/tool';
 import { Service_Beer_Open, Service_Cancel, Service_Convert_Galleon, Service_Convert_Galleon_Change, Service_Convert_Magic_Experience, Service_Convert_Magic_Experience_Change, Service_Enter, Service_Level_Up, Service_Level_Up_Change, Service_Underwear_Open } from './engine/events/module/service';
 import { Shop_Bought, Shop_Buy, Shop_Cancel, Shop_Category_Enter, Shop_Enter } from './engine/events/module/shop';
 dotenv.config()
@@ -80,7 +75,6 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			return;
 		}
 		//приветствие игрока
-		const counter_players = await prisma.user.count()
 		const visit = await context.question(`⌛ Поставив свою подпись, вы, стараясь не смотреть косо на гоблинов, вошли в здание банка, подошли к стойке, где за информационной системой сидела полная гоблинша с бородавкой на носу.`,
 			{ 	
 				keyboard: Keyboard.builder()
@@ -141,6 +135,8 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			message: ans_selector
 		})
 		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили, напишите [!банк] без квадратных скобочек, а затем нажмите кнопку: ✅Подтвердить авторизацию!`)
+	} else {
+		await Keyboard_Index(context, `⌛ Загрузка, пожалуйста подождите...`)
 	}
 	return next();
 })

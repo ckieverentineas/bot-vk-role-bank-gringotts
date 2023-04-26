@@ -1,16 +1,9 @@
-import { PrismaClient } from "@prisma/client";
 import { HearManager } from "@vk-io/hear";
-import { randomInt } from "crypto";
-import { send } from "process";
-import { Attachment, Context, Keyboard, KeyboardBuilder, PhotoAttachment } from "vk-io";
+import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
-import * as xlsx from 'xlsx';
-import * as fs from 'fs';
 import { answerTimeLimit, chat_id, root, timer_text, vk } from '../index';
-import { Accessed, Gen_Inline_Button_Category, Gen_Inline_Button_Item, Keyboard_Index } from "./core/helper";
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { Image_Composer, Image_Composer2, Image_Interface, Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "./core/imagecpu";
-import { join } from "path";
+import { Accessed, Keyboard_Index } from "./core/helper";
+import { Image_Random} from "./core/imagecpu";
 import prisma from "./events/module/prisma_client";
 import { User_Info } from "./events/module/tool";
 
@@ -81,28 +74,24 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await context.send(`✉ К сожалению приалвки пока что пусты=/`)
                     } else {
                         item.forEach(async (element: any) => {
-                            const buer: any= await context.send(`🛍 ${element.name} ${element.price}💰`,
-                                {   keyboard: Keyboard.builder()
-                                    .textButton({   label: 'Купить',
-                                                    payload: { command: `${element.name}` },
-                                                    color: 'secondary'                        })
-                                    .textButton({   label: '✏Имя',
-                                                    payload: { command: `${element.name}` },
-                                                    color: 'secondary'                        })
-                                    .textButton({   label: '✏Тип',
-                                                    payload: { command: `${element.name}` },
-                                                    color: 'secondary'                        })
-                                    .oneTime().inline()                                             })  })
+                            await context.send(`🛍 ${element.name} ${element.price}💰`,
+                                {
+                                    keyboard: Keyboard.builder()
+                                    .textButton({ label: 'Купить', payload: { command: `${element.name}` }, color: 'secondary' })
+                                    .textButton({ label: '✏Имя', payload: { command: `${element.name}` }, color: 'secondary' })
+                                    .textButton({ label: '✏Тип', payload: { command: `${element.name}` }, color: 'secondary' })
+                                    .oneTime().inline()                                             
+                                }
+                            )  
+                        })
                     }
                     const ans_item: any = await context.question( `✉ Что будем делать?`,
-                        {   keyboard: Keyboard.builder()
-                            .textButton({   label: 'Добавить товар',
-                                            payload: { command: 'new_item' },
-                                            color: 'secondary'                  })
-                            .textButton({   label: 'Перейти к покупкам',
-                                            payload: { command: 'continue' },
-                                            color: 'secondary'                  })
-                            .oneTime().inline()                                     }
+                        {   
+                            keyboard: Keyboard.builder()
+                            .textButton({ label: 'Добавить товар', payload: { command: 'new_item' }, color: 'secondary' })
+                            .textButton({ label: 'Перейти к покупкам', payload: { command: 'continue' }, color: 'secondary' })
+                            .oneTime().inline()
+                        }
                     )
                     if (ans_item.payload?.command == 'new_item') {
                         const item_name: any = await context.question( `🧷 Введите название предмета:` )
