@@ -9,9 +9,9 @@ export async function Service_Enter(context: any) {
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const keyboard = new KeyboardBuilder()
     .callbackButton({ label: '📈', payload: { command: 'service_level_up' }, color: 'secondary' })
-    .callbackButton({ label: '👙', payload: { command: 'service_underwear_open' }, color: 'secondary' }).row()
-    .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' })
-    .callbackButton({ label: '💰>🧙', payload: { command: 'service_convert_galleon' }, color: 'secondary' }).row()
+    .callbackButton({ label: '👙', payload: { command: 'service_underwear_open' }, color: 'secondary' })
+    .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' }).row()
+    //.callbackButton({ label: '💰>🧙', payload: { command: 'service_convert_galleon' }, color: 'secondary' }).row()
     .callbackButton({ label: '🍺', payload: { command: 'service_beer_open' }, color: 'secondary' })
     .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).row().inline().oneTime()
     const text = `✉ В данный момент доступны следующие операции:`
@@ -50,7 +50,7 @@ export async function Service_Convert_Galleon(context: any) {
     if (user.gold >= 100) { keyboard.callbackButton({ label: '100💰 => 200🧙', payload: { command: 'service_convert_galleon_change', item: "gold", value: 100 }, color: 'secondary' }) }
     if (user.gold >= 1000) { keyboard.callbackButton({ label: '1000💰 => 2000🧙', payload: { command: 'service_convert_galleon_change', item: "gold", value: 1000 }, color: 'secondary' }).row() }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.gold <= 0 ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.gold}💰 ${user?.xp}🧙, сколько сконвертируем?`
+    text += user.gold <= 0 ? `\n\n💬 Ээээ, Бомжара, тикай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.gold}💰 ${user?.xp}🧙, сколько сконвертируем?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_convert_galleon") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -109,7 +109,7 @@ export async function Service_Convert_Magic_Experience(context: any) {
     if (user.xp >= 75) { keyboard.callbackButton({ label: '75🧙 => 25💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 75 }, color: 'secondary' }) }
     if (user.xp >= 150) { keyboard.callbackButton({ label: '150🧙 => 50💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 150 }, color: 'secondary' }).row() }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.xp < 15 ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
+    text += user.xp < 15 ? `\n\n💬 Ээээ, Бомжара, тикай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_convert_magic_experience") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -167,7 +167,7 @@ export async function Service_Level_Up(context: any) {
     if (user.lvl == 0) { paying = 0 }
     if (user.xp >= paying) { keyboard.callbackButton({ label: `${paying}🧙 => 1📈`, payload: { command: 'service_level_up_change', item: "xp", value: paying }, color: 'secondary' }) }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.xp < paying ? `\n\n💬 Ээээ, Бомжара, тиакай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
+    text += user.xp < paying ? `\n\n💬 Ээээ, Бомжара, тикай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_level_up") {
         await vk.api.messages.sendMessageEventAnswer({
