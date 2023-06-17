@@ -4,6 +4,8 @@ import prisma from "./prisma_client"
 import { chat_id, vk } from "../../.."
 import { randomInt } from "crypto"
 
+const timeouter = 86400000 //время кд квестов
+
 export async function Service_Enter(context: any) {
     const attached = await Image_Random(context, "service")
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
@@ -267,11 +269,11 @@ export async function Service_Beer_Open(context: any) {
         attached = await Image_Random(context, "beer_drop")
         const datenow: any = new Date()
         const dateold: any = new Date(trigger_check.crdate)
-        if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+        if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
             text += `🍺 Вы точно хотите, сдать бутылку 1.5 литра за 1💰?`
         } else {
-            text = `🔔 Вы уже бухали по сливочному: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`
+            text = `🔔 Вы уже бухали по сливочному: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`
         }
         if (context.eventPayload?.command_sub == 'beer_selling') {
             const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
@@ -279,7 +281,7 @@ export async function Service_Beer_Open(context: any) {
             text = `⚙ Даже ваш староста зауважает вас, если узнает, что вы за экологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`
             console.log(`User ${context.peerId} return self beer`)
         } else {
-            if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+            if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
                 keyboard.callbackButton({ label: '+1💰-🍺', payload: { command: 'service_beer_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
             }
         }
@@ -329,11 +331,11 @@ export async function Service_Beer_Premium_Open(context: any) {
         attached = await Image_Random(context, "beer_premium_drop")
         const datenow: any = new Date()
         const dateold: any = new Date(trigger_check.crdate)
-        if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+        if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
             text += `🍺 Вы точно хотите, сдать бамбуковую PREMIUM бутылку 1.5 литра за 10💰?`
         } else {
-            text = `🔔 ТАААК, вам больше не наливаем, последний раз бухали: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новой порцией.`
+            text = `🔔 ТАААК, вам больше не наливаем, последний раз бухали: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новой порцией.`
         }
         if (context.eventPayload?.command_sub == 'beer_selling') {
             const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+10 } })
@@ -341,7 +343,7 @@ export async function Service_Beer_Premium_Open(context: any) {
             text = `⚙ Даже ваш староста зауважает вас, если узнает, что вы за PREMIUM экологию, +10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, теперь мы на эту бутылку аж целых два сливочных пива прямиком из Хогсмида накатим!`
             console.log(`User ${context.peerId} return self beer`)
         } else {
-            if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+            if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
                 keyboard.callbackButton({ label: '+10💰-VIP🍺', payload: { command: 'service_beer_premium_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
             }
         }
@@ -457,18 +459,18 @@ export async function Service_Quest_Open(context: any) {
         attached = await Image_Random(context, "quest_drop")
         const datenow: any = new Date()
         const dateold: any = new Date(trigger_check.crdate)
-        if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+        if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
             text += `📅 Вы точно хотите, приступить к новому квесту?`
         } else {
-            text = `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
+            text = `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
         }
         if (context.eventPayload?.command_sub == 'beer_selling') {
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
             text = `⚙ Вы опустили в магический шредер листовку с прошлым заданием`
             console.log(`User ${context.peerId} ready for new quest`)
         } else {
-            if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+            if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
                 keyboard.callbackButton({ label: '-📅', payload: { command: 'service_quest_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
             }
         }

@@ -1,8 +1,9 @@
 import { KeyboardBuilder } from "vk-io"
 import prisma from "./prisma_client"
-import { vk } from "../../.."
-import { User } from "@prisma/client"
+import { chat_id, vk } from "../../.."
+import { Trigger, User } from "@prisma/client"
 import { Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "../../core/imagecpu"
+import { randomInt } from "crypto"
 
 export async function Card_Enter(context:any) {
     const get_user: User | null | undefined = await prisma.user.findFirst({ where: { idvk: context.peerId } })
@@ -12,6 +13,7 @@ export async function Card_Enter(context:any) {
         const text = `✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user?.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} \n ⚙${get_user.private ? "Вы отказываетесь ролить" : "Вы разрешили приглашения на отролы"}`
         const keyboard = new KeyboardBuilder()
         .callbackButton({ label: '⚙', payload: { command: 'card_private' }, color: 'secondary' })
+        .callbackButton({ label: '🎁', payload: { command: 'birthday_enter' }, color: 'secondary' })
         .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
         console.log(`User ${get_user.idvk} see card`)
         let ii = `В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
@@ -137,4 +139,49 @@ export async function Admin_Enter(context: any) {
             text: `🔔 Им бы еще черные очки, и точно люди в черном!`
         })
     })
+}
+
+export async function Birthday_Enter(context: any) {
+    let attached = await Image_Random(context, "birthday")
+    const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    if (!user) { return }
+    const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'birthday' } })
+    if (!trigger) { 
+        const trigger_init: any = await prisma.trigger.create({ data: { id_user: user.id, name: 'birthday', value: false, crdate: user.crdate } })
+        console.log(`Init birthday for user ${context.peerId}`)
+    }
+    let text = ''
+    const keyboard = new KeyboardBuilder()
+    
+    const trigger_check: Trigger | null = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'birthday' } })
+    if (!trigger_check) { return }
+    const datenow: any = new Date()
+    const dateold: any = new Date(trigger_check.crdate)
+    const timeouter = 31536000000 //время кд в днюхе
+    const year = datenow.getFullYear(); // получаем текущий год
+    const month = dateold.getMonth(); // получаем месяц из объекта Date с датой регистрации
+    const day = dateold.getDate(); // получаем день из объекта Date с датой регистрации
+    if (datenow - dateold >= timeouter) {
+        if (context.eventPayload?.command_sub == 'beer_buying') {
+            const gold = randomInt(365, 778)
+            const xp = randomInt(15, 151)
+            const user_update: any = await prisma.user.update({ where: { id: user.id }, data: { gold: { increment: gold }, xp: { increment: xp } } })
+            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: new Date(year, month, day) } })
+            text = `⚙ Развязав бантик бантиков c красивой упакованной коробочки, вы нашли внутри ${gold}💰 и ${xp}🧙. В самом дне коробки лежала записочка: С днем Рождения, сук@!`
+            console.log(`User ${context.peerId} get gift for birthday`)
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `🎁 @id${user.idvk}(${user.name}) празднует свой день Рождения и получает в подарок от жадных гоблинов ${gold}💰 и ${xp}🧙.`
+            })
+        } else {
+            text += `🎁 Кто-бы мог подумать, у дверей возникла посылка с бантиками, красиво обтягивающими коробку!`
+            keyboard.callbackButton({ label: '+🎁', payload: { command: 'birthday_enter', command_sub: "beer_buying" }, color: 'secondary' }).row()
+        }
+    } else {
+        attached = await Image_Random(context, "birthday_drop")
+        text = `🔔 Последний ваш день Рождения отмечали всем банком: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! До вашего нового дня Рождения осталось ${((timeouter-(datenow-dateold))/60000/60).toFixed(2)} часов.`
+    }
+    keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
