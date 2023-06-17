@@ -8,6 +8,12 @@ import { MessagesGetHistoryResponse, MessagesSendResponse } from "vk-io/lib/api/
 
 const prisma = new PrismaClient()
 
+export function Sleep(ms: number) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 export async function Gen_Inline_Button(context: any, weapon_type: any) {
     let checker = false
     let counter = 0
@@ -115,7 +121,9 @@ export async function Keyboard_Index(context: any, messa: any) {
     keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
     await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
-    .then((response: MessagesSendResponse) => { return vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
+    .then(async (response: MessagesSendResponse) => { 
+        await Sleep(5000)
+        return vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
     .then(() => { console.log(`User ${context.senderId} succes get keyboard`) })
     .catch((error) => { console.error(`User ${context.senderId} fail get keyboard: ${error}`) });
 

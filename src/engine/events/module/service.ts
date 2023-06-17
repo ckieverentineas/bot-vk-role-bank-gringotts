@@ -9,10 +9,12 @@ export async function Service_Enter(context: any) {
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const keyboard = new KeyboardBuilder()
     .callbackButton({ label: '📈', payload: { command: 'service_level_up' }, color: 'secondary' })
-    .callbackButton({ label: '👙', payload: { command: 'service_underwear_open' }, color: 'secondary' })
-    .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' }).row()
+    .callbackButton({ label: '📅', payload: { command: 'service_quest_open' }, color: 'secondary' })
+    .callbackButton({ label: '👙', payload: { command: 'service_underwear_open' }, color: 'secondary' }).row()
+    .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' })
     //.callbackButton({ label: '💰>🧙', payload: { command: 'service_convert_galleon' }, color: 'secondary' }).row()
     .callbackButton({ label: '🍺', payload: { command: 'service_beer_open' }, color: 'secondary' })
+    .callbackButton({ label: 'VIP🍺', payload: { command: 'service_beer_premium_open' }, color: 'secondary' }).row()
     .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).row().inline().oneTime()
     const text = `✉ В данный момент доступны следующие операции:`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})  
@@ -237,17 +239,6 @@ export async function Service_Level_Up_Change(context: any) {
 }
 export async function Service_Beer_Open(context: any) {
     let attached = await Image_Random(context, "beer")
-    /*if (context?.eventPayload?.command == "service_beer_open") {
-        await vk.api.messages.sendMessageEventAnswer({
-            event_id: context.eventId,
-            user_id: context.userId,
-            peer_id: context.peerId,
-            event_data: JSON.stringify({
-                type: "show_snackbar",
-                text: `🔔 Поставки нерентабельны, пройдите к клавиатуре...`
-            })
-        })
-    }*/
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
     if (!trigger) { 
@@ -264,6 +255,118 @@ export async function Service_Beer_Open(context: any) {
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
             text = `⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`
             console.log(`User ${context.peerId} sold self beer`)
+        } else {
+            if (user.gold >= 5) {
+                text += `🍺 Желаете сливочного пива прямиком из Хогсмида с доставкой на дом, всего лишь за 5💰?`
+                keyboard.callbackButton({ label: '-5💰+🍺', payload: { command: 'service_beer_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
+            } else {
+                text += `🍺 Здесь должно было быть ваше пиво, но у вас нет даже 5💰!`
+            }
+        }
+    } else {
+        attached = await Image_Random(context, "beer_drop")
+        const datenow: any = new Date()
+        const dateold: any = new Date(trigger_check.crdate)
+        if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+            const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
+            text += `🍺 Вы точно хотите, сдать бутылку 1.5 литра за 1💰?`
+        } else {
+            text = `🔔 Вы уже бухали по сливочному: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`
+        }
+        if (context.eventPayload?.command_sub == 'beer_selling') {
+            const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
+            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
+            text = `⚙ Даже ваш староста зауважает вас, если узнает, что вы за экологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`
+            console.log(`User ${context.peerId} return self beer`)
+        } else {
+            if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+                keyboard.callbackButton({ label: '+1💰-🍺', payload: { command: 'service_beer_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
+            }
+        }
+    }
+    keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+}
+
+export async function Service_Beer_Premium_Open(context: any) {
+    let attached = await Image_Random(context, "beer_premium")
+    /*if (context?.eventPayload?.command == "service_beer_open") {
+        await vk.api.messages.sendMessageEventAnswer({
+            event_id: context.eventId,
+            user_id: context.userId,
+            peer_id: context.peerId,
+            event_data: JSON.stringify({
+                type: "show_snackbar",
+                text: `🔔 Поставки нерентабельны, пройдите к клавиатуре...`
+            })
+        })
+    }*/
+    const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer_premium' } })
+    if (!trigger) { 
+        const trigger_init: any = await prisma.trigger.create({ data: { id_user: user.id, name: 'beer_premium', value: false } })
+        console.log(`Init beer premium for user ${context.peerId}`)
+    }
+    let text = ''
+    const keyboard = new KeyboardBuilder()
+    
+    const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer_premium' } })
+    if (trigger_check.value == false) {
+        if (user.gold >= 50 && context.eventPayload?.command_sub == 'beer_buying') {
+            const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-50 } })
+            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
+            text = `⚙ Кто-бы мог подумать, у дверей возникло бамбуковое пиво прямиком из Хогсмида, снято 50💰. Теперь ваш баланс: ${underwear_sold.gold}`
+            console.log(`User ${context.peerId} sold self beer premium`)
+        } else {
+            if (user.gold >= 50) {
+                text += `🍺 Желаете бамбукового пива PREMIUM прямиком из Хогсмида с доставкой на дом, всего лишь за 50💰?`
+                keyboard.callbackButton({ label: '-50💰+VIP🍺', payload: { command: 'service_beer_premium_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
+            } else {
+                text += `🍺 Здесь должно было быть ваше бамбуковое PREMIUM пиво, но у вас нет даже 50💰!`
+            }
+        }
+    } else {
+        attached = await Image_Random(context, "beer_premium_drop")
+        const datenow: any = new Date()
+        const dateold: any = new Date(trigger_check.crdate)
+        if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+            const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
+            text += `🍺 Вы точно хотите, сдать бамбуковую PREMIUM бутылку 1.5 литра за 10💰?`
+        } else {
+            text = `🔔 ТАААК, вам больше не наливаем, последний раз бухали: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новой порцией.`
+        }
+        if (context.eventPayload?.command_sub == 'beer_selling') {
+            const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+10 } })
+            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
+            text = `⚙ Даже ваш староста зауважает вас, если узнает, что вы за PREMIUM экологию, +10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, теперь мы на эту бутылку аж целых два сливочных пива прямиком из Хогсмида накатим!`
+            console.log(`User ${context.peerId} return self beer`)
+        } else {
+            if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
+                keyboard.callbackButton({ label: '+10💰-VIP🍺', payload: { command: 'service_beer_premium_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
+            }
+        }
+    }
+    keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+}
+
+export async function Service_Quest_Open(context: any) {
+    let attached = await Image_Random(context, "quest")
+    const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
+    if (!trigger) { 
+        const trigger_init: any = await prisma.trigger.create({ data: { id_user: user.id, name: 'quest', value: false } })
+        console.log(`Init question for user ${context.peerId}`)
+    }
+    let text = ''
+    const keyboard = new KeyboardBuilder()
+    
+    const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
+    if (trigger_check.value == false) {
+        if (context.eventPayload?.command_sub == 'beer_buying') {
+            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
+            text = `⚙ Кто-бы мог подумать, у дверей возникла бумажка с надписью, ЕЖЕДНЕВНОЕ ЗАДАНИЕ НАФИГ`
+            console.log(`User ${context.peerId} got quest`)
             const user_list: any = await prisma.user.findMany({ where: { private: false} })
             const location_list: any = {
                 "Хогвартс": [ "Большой Зал", "Астрономическая Башня", "Гремучая Ива", "Часовая Башня", "Кухня", "Туалет Плаксы Миртл", "Кухня", "Зал Наказаний", "Внутренний Двор", "Запретный лес", "Правый коридор | Пятый этаж", "Деревянный мост", "Совятня", "Выручай-комната", "Комната Пивза", "Чердак", "Больничное крыло", "Вестибюль", "Опушка леса", "Библиотека Хогвартса", "Чёрное Озеро", "Лестничные пролёты", "Каменный Круг", "Кабинет Зельеварения", "Подземелья Хогвартса", "Прачечная", "Зал Славы", "Учебный Зал", "Теплицы", "Тайная Комната", "Кладбище", "Лодочный сарай", "Кабинет школьного психолога", "Коридор Одноглазой Ведьмы", "Комната 234-00", "Учительская", "Хижина Хагрида", "Коридоры", "Учительская"],
@@ -336,44 +439,44 @@ export async function Service_Beer_Open(context: any) {
             await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `⌛ Загружается новое событие...`})
             const reward: number = randomInt(5, 50) //15МО = 5Г => 3MO = 1 G \2G
             const reward2: number = randomInt(1, 5) //2G
-            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `🍻Как насчет выпить с тем, 👥 кем захотите? \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 Для 👤 ${reward2+4}💰 ${reward}🧙.  Для 👥 ${reward2}💰 ${reward}🧙\n\n💡 После выполнения квеста напишите нам в чат с хештегом role с сылкой/скринами на совместный отрол, желательно предоставьте ваши uid для начислений после проверки. Если вам локация недоступна, выберите любую из доступных сами.` })
+            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с тем, с 👥 кем захотите? \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 Для 👤 ${reward2+4}💰 ${reward}🧙.  Для 👥 ${reward2}💰 ${reward}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.` })
             await vk.api.messages.send({
                 peer_id: chat_id,
                 random_id: 0,
-                message: `🍻 Обнаружен квест для 👤@id${user.idvk}(${user.name}):  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 Для 👤 ${reward2+4}💰 ${reward}🧙.  Для 👥 ${reward2}💰 ${reward}🧙`
+                message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 Для 👤 ${reward2+4}💰 ${reward}🧙.  Для 👥 ${reward2}💰 ${reward}🧙`
             })
         } else {
-            if (user.gold >= 5) {
-                text += `🍺 Желаете сливочного пива прямиком из Хогсмида с доставкой на дом, всего лишь за 5💰? \n 💡В случае отрола с тем, кем сами захотите, затраты на пиво будут компенсированы с чаевыми!`
-                keyboard.callbackButton({ label: '-5💰+🍺', payload: { command: 'service_beer_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
+            if (user) {
+                text += `📅 Кто-то позвонил в дверь, открыть?`
+                keyboard.callbackButton({ label: '+📅', payload: { command: 'service_quest_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
             } else {
-                text += `🍺 Здесь должно было быть ваше пиво, но у вас нет даже 5💰!`
+                text += `📅 Здесь должно было быть ваше ежедневное задание, но мы его еще не придумали!`
             }
         }
     } else {
-        attached = await Image_Random(context, "beer_drop")
+        attached = await Image_Random(context, "quest_drop")
         const datenow: any = new Date()
         const dateold: any = new Date(trigger_check.crdate)
         if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
-            text += `🍺 Вы точно хотите, сдать бутылку 1.5 литра за 1💰?`
+            text += `📅 Вы точно хотите, приступить к новому квесту?`
         } else {
-            text = `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`
+            text = `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((86400000-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
         }
         if (context.eventPayload?.command_sub == 'beer_selling') {
-            const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
-            text = `⚙ Даже ваш староста зауважает вас, если узнает, что вы за экологию, +1💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы сдавали стеклотару, то вслед послышалось: \n — Воу респект, респект, еще бы пластик сдавали!`
-            console.log(`User ${context.peerId} return self beer`)
+            text = `⚙ Вы опустили в магический шредер листовку с прошлым заданием`
+            console.log(`User ${context.peerId} ready for new quest`)
         } else {
             if (datenow-trigger_check.crdate > 86400000 && trigger_check.value) {
-                keyboard.callbackButton({ label: '+1💰-🍺', payload: { command: 'service_beer_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
+                keyboard.callbackButton({ label: '-📅', payload: { command: 'service_quest_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
             }
         }
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
+
 export async function Service_Underwear_Open(context: any) {
     let attached = await Image_Random(context, "underwear")
     /*if (context?.eventPayload?.command == "service_underwear_open") {
