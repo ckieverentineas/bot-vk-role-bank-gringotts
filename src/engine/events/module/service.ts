@@ -3,6 +3,7 @@ import { Image_Random } from "../../core/imagecpu"
 import prisma from "./prisma_client"
 import { chat_id, vk } from "../../.."
 import { randomInt } from "crypto"
+import { Analyzer_Beer_Counter } from "./analyzer"
 
 const timeouter = 86400000 //время кд квестов
 
@@ -16,7 +17,7 @@ export async function Service_Enter(context: any) {
     .callbackButton({ label: '🧙>💰', payload: { command: 'service_convert_magic_experience' }, color: 'secondary' })
     //.callbackButton({ label: '💰>🧙', payload: { command: 'service_convert_galleon' }, color: 'secondary' }).row()
     .callbackButton({ label: '🍺', payload: { command: 'service_beer_open' }, color: 'secondary' })
-    .callbackButton({ label: 'VIP🍺', payload: { command: 'service_beer_premium_open' }, color: 'secondary' }).row()
+    .callbackButton({ label: '🍵', payload: { command: 'service_beer_premium_open' }, color: 'secondary' }).row()
     .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).row().inline().oneTime()
     const text = `✉ В данный момент доступны следующие операции:`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})  
@@ -257,6 +258,7 @@ export async function Service_Beer_Open(context: any) {
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
             text = `⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`
             console.log(`User ${context.peerId} sold self beer`)
+            await Analyzer_Beer_Counter(context)
         } else {
             if (user.gold >= 5) {
                 text += `🍺 Желаете сливочного пива прямиком из Хогсмида с доставкой на дом, всего лишь за 5💰?`
@@ -321,10 +323,10 @@ export async function Service_Beer_Premium_Open(context: any) {
             console.log(`User ${context.peerId} sold self beer premium`)
         } else {
             if (user.gold >= 50) {
-                text += `🍺 Желаете бамбукового пива PREMIUM прямиком из Хогсмида с доставкой на дом, всего лишь за 50💰?`
-                keyboard.callbackButton({ label: '-50💰+VIP🍺', payload: { command: 'service_beer_premium_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
+                text += `🍵 Желаете бамбукового пива PREMIUM прямиком из Хогсмида с доставкой на дом, всего лишь за 50💰?`
+                keyboard.callbackButton({ label: '-50💰+🍵', payload: { command: 'service_beer_premium_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
             } else {
-                text += `🍺 Здесь должно было быть ваше бамбуковое PREMIUM пиво, но у вас нет даже 50💰!`
+                text += `🍵 Здесь должно было быть ваше бамбуковое PREMIUM пиво, но у вас нет даже 50💰!`
             }
         }
     } else {
@@ -333,7 +335,7 @@ export async function Service_Beer_Premium_Open(context: any) {
         const dateold: any = new Date(trigger_check.crdate)
         if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
-            text += `🍺 Вы точно хотите, сдать бамбуковую PREMIUM бутылку 1.5 литра за 10💰?`
+            text += `🍵 Вы точно хотите, сдать бамбуковую PREMIUM бутылку 1.5 литра за 10💰?`
         } else {
             text = `🔔 ТАААК, вам больше не наливаем, последний раз бухали: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новой порцией.`
         }
@@ -344,7 +346,7 @@ export async function Service_Beer_Premium_Open(context: any) {
             console.log(`User ${context.peerId} return self beer`)
         } else {
             if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
-                keyboard.callbackButton({ label: '+10💰-VIP🍺', payload: { command: 'service_beer_premium_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
+                keyboard.callbackButton({ label: '+10💰-🍵', payload: { command: 'service_beer_premium_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
             }
         }
     }
