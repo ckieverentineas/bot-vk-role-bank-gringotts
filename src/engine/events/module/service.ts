@@ -3,7 +3,7 @@ import { Image_Random } from "../../core/imagecpu"
 import prisma from "./prisma_client"
 import { chat_id, vk } from "../../.."
 import { randomInt } from "crypto"
-import { Analyzer_Beer_Counter } from "./analyzer"
+import { Analyzer_Beer_Counter, Analyzer_Beer_Premium_Counter } from "./analyzer"
 
 const timeouter = 86400000 //время кд квестов
 
@@ -321,6 +321,7 @@ export async function Service_Beer_Premium_Open(context: any) {
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
             text = `⚙ Кто-бы мог подумать, у дверей возникло бамбуковое пиво прямиком из Хогсмида, снято 50💰. Теперь ваш баланс: ${underwear_sold.gold}`
             console.log(`User ${context.peerId} sold self beer premium`)
+            await Analyzer_Beer_Premium_Counter(context)
         } else {
             if (user.gold >= 50) {
                 text += `🍵 Желаете бамбукового пива PREMIUM прямиком из Хогсмида с доставкой на дом, всего лишь за 50💰?`
