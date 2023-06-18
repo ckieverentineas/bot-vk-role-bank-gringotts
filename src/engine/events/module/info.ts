@@ -4,13 +4,15 @@ import { chat_id, vk } from "../../.."
 import { Trigger, User } from "@prisma/client"
 import { Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "../../core/imagecpu"
 import { randomInt } from "crypto"
+import { Analyzer_Birthday_Counter } from "./analyzer"
 
 export async function Card_Enter(context:any) {
     const get_user: User | null | undefined = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (get_user) {
         const attached = await Image_Text_Add_Card(context, 50, 650, get_user)
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
-        const text = `✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user?.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter} \n ⚙${get_user.private ? "Вы отказываетесь ролить" : "Вы разрешили приглашения на отролы"}`
+        const achievement_counter = await prisma.achievement.count({ where: { id_user: get_user.id } })
+        const text = `✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user?.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🌟Достижения: ${achievement_counter} \n 🔮Артефакты: ${artefact_counter} \n ⚙${get_user.private ? "Вы отказываетесь ролить" : "Вы разрешили приглашения на отролы"}`
         const keyboard = new KeyboardBuilder()
         .callbackButton({ label: '⚙', payload: { command: 'card_private' }, color: 'secondary' })
         .callbackButton({ label: '🎁', payload: { command: 'birthday_enter' }, color: 'secondary' })
@@ -82,6 +84,7 @@ export async function Inventory_Enter(context: any) {
     for (const i in get_user.Trigger) {
         if (get_user.Trigger[i].value == false && get_user.Trigger[i].name == 'underwear') { cart += 'Трусы Домашние;' }
         if (get_user.Trigger[i].value == true && get_user.Trigger[i].name == 'beer') { cart += 'Сливочное пиво из Хогсмида;' }
+        if (get_user.Trigger[i].value == true && get_user.Trigger[i].name == 'beer_premium') { cart += 'Бамбуковое пиво от тех, кто гнал бамбук;' }
     }
     for (const i in inventory) {
         cart += `${inventory[i].item.name};`
@@ -174,6 +177,7 @@ export async function Birthday_Enter(context: any) {
                 random_id: 0,
                 message: `🎁 @id${user.idvk}(${user.name}) празднует свой день Рождения и получает в подарок от жадных гоблинов ${gold}💰 и ${xp}🧙.`
             })
+            await Analyzer_Birthday_Counter(context)
         } else {
             text += `🎁 Кто-бы мог подумать, у дверей возникла посылка с бантиками, красиво обтягивающими коробку!`
             keyboard.callbackButton({ label: '+🎁', payload: { command: 'birthday_enter', command_sub: "beer_buying" }, color: 'secondary' }).row()
