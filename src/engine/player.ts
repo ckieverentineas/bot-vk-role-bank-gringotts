@@ -860,9 +860,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         const artefact_counter = await prisma.artefact.count({ where: { id_user: user_check.id } })
 		await Image_Random(context, "bank")
 		if (user_check.id_role != 1) {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.99v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n`)
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 1.08v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n`)
 		} else {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 0.99v: \n ${user_check.name}👥 ${user_check.gold}💰 ${user_check.lvl*150+user_check.xp}🧙 ${artefact_counter}🔮 \n`)
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 1.08v: \n ${user_check.name}👥 ${user_check.gold}💰 ${user_check.lvl*150+user_check.xp}🧙 ${artefact_counter}🔮 \n`)
 		}
 		const user_inf = await User_Info(context)
 		await context.send(`${user_inf.first_name}, чтобы авторизоваться, нажмите кнопку под этим сообщением!`, {
