@@ -3,7 +3,7 @@ import { Image_Random } from "../../core/imagecpu"
 import prisma from "./prisma_client"
 import { chat_id, vk } from "../../.."
 import { randomInt } from "crypto"
-import { Analyzer_Beer_Counter, Analyzer_Beer_Premium_Counter } from "./analyzer"
+import { Analyzer_Beer_Counter, Analyzer_Beer_Premium_Counter, Analyzer_Convert_MO_Counter, Analyzer_Quest_Counter, Analyzer_Underwear_Counter } from "./analyzer"
 
 const timeouter = 86400000 //время кд квестов
 
@@ -149,6 +149,7 @@ export async function Service_Convert_Magic_Experience_Change(context: any) {
                 random_id: 0,
                 message: `⌛ @id${user.idvk}(${user.name}) конвертирует ${input}🧙 в ${input/3}💰. \n💳 Баланс: ${convert_mo?.xp}🧙 ${convert_mo?.gold}💰`
             })
+            await Analyzer_Convert_MO_Counter(context)
             await Service_Convert_Magic_Experience(context)
         } else {
             await vk.api.messages.sendMessageEventAnswer({
@@ -450,6 +451,7 @@ export async function Service_Quest_Open(context: any) {
                 random_id: 0,
                 message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):  \n \n 🌐 ${location_name[selector]} \n 👣 ${location_list[location_name[selector]][tara]} \n ⚡ ${task} \n ✅ ${reward*2 + reward2*5} ПК+ \n🏆 Для 👤 ${reward2+4}💰 ${reward}🧙.  Для 👥 ${reward2}💰 ${reward}🧙`
             })
+            await Analyzer_Quest_Counter(context)
         } else {
             if (user) {
                 text += `📅 Кто-то позвонил в дверь, открыть?`
@@ -535,6 +537,7 @@ export async function Service_Underwear_Open(context: any) {
                     message: `⌛ Кто-то выкупил свои трусы...`
                 })
                 console.log(`User ${context.peerId} return self underwear`)
+                await Analyzer_Underwear_Counter(context)
             } else { 
                 text = 'Соболезнуем, для выкупа нужно 10 галлеонов, хотите в рабство? Дайте нам об этом знать:)'
             }
