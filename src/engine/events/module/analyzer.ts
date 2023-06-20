@@ -46,8 +46,8 @@ export async function Analyzer_Birthday_Counter(context: any) {
         if (analyze_birthday_counter) { 
             console.log(`Analyzer module detected birthday for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.birthday == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.birthday >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `🎁 ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -98,8 +98,8 @@ export async function Analyzer_Beer_Counter(context: any) {
         if (analyze_birthday_counter) { 
             console.log(`Analyzer module detected beer for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.beer == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.beer >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `🍺 ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -150,8 +150,8 @@ export async function Analyzer_Beer_Premium_Counter(context: any) {
         if (analyze_birthday_counter) { 
             console.log(`Analyzer module detected beer bambuke premium for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.beer_premiun == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.beer_premiun >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `🍵 ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -200,10 +200,10 @@ export async function Analyzer_Underwear_Counter(context: any) {
     if (analyzer) {
         const analyze_birthday_counter: Analyzer | null = await prisma.analyzer.update({ where: { id: analyzer.id }, data: { underwear: { increment: 1 } } })
         if (analyze_birthday_counter) { 
-            console.log(`Analyzer module detected beer bambuke premium for user UID ${id_user}`)
+            console.log(`Analyzer module detected underwear for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.underwear == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.underwear >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `👙 ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -252,10 +252,10 @@ export async function Analyzer_Quest_Counter(context: any) {
     if (analyzer) {
         const analyze_birthday_counter: Analyzer | null = await prisma.analyzer.update({ where: { id: analyzer.id }, data: { quest: { increment: 1 } } })
         if (analyze_birthday_counter) { 
-            console.log(`Analyzer module detected beer bambuke premium for user UID ${id_user}`)
+            console.log(`Analyzer module detected quest for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.quest == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.quest >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `📅 ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -304,10 +304,10 @@ export async function Analyzer_Convert_MO_Counter(context: any) {
     if (analyzer) {
         const analyze_birthday_counter: Analyzer | null = await prisma.analyzer.update({ where: { id: analyzer.id }, data: { convert_mo: { increment: 1 } } })
         if (analyze_birthday_counter) { 
-            console.log(`Analyzer module detected beer bambuke premium for user UID ${id_user}`)
+            console.log(`Analyzer module detected convert MO for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.convert_mo == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.convert_mo >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `✨ ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -356,10 +356,10 @@ export async function Analyzer_Buying_Counter(context: any) {
     if (analyzer) {
         const analyze_birthday_counter: Analyzer | null = await prisma.analyzer.update({ where: { id: analyzer.id }, data: { buying: { increment: 1 } } })
         if (analyze_birthday_counter) { 
-            console.log(`Analyzer module detected beer bambuke premium for user UID ${id_user}`)
+            console.log(`Analyzer module detected buying for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.buying == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.buying >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `🛒 ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
@@ -410,8 +410,8 @@ export async function Analyzer_THERE_Counter(context: any) {
         if (analyze_birthday_counter) { 
             console.log(`Analyzer module detected beer bambuke premium for user UID ${id_user}`)
             for (const i in birthday) {
-                if (analyze_birthday_counter.THERE == birthday[i].counter) {
-                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid } })
+                if (analyze_birthday_counter.THERE >= birthday[i].counter) {
+                    const achive_check = await prisma.achievement.findFirst({ where: { uid: birthday[i].uid, id_user: id_user } })
                     if (!achive_check) {
                         const achive_add = await prisma.achievement.create({ data: { uid: birthday[i].uid, name: `THERE ${birthday[i].name} - ${birthday[i].subname[randomInt(0, 3)]}`, id_user: id_user } })
                         if (achive_add) {
