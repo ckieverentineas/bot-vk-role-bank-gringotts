@@ -856,13 +856,15 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         const user_count = await prisma.user.count()
 		const sums: any = await prisma.user.aggregate({ _sum: { gold: true, lvl: true, xp: true } })
 		const artefacts: any = await prisma.artefact.count()
+        const achievement: any = await prisma.achievement.count()
         const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
         const artefact_counter = await prisma.artefact.count({ where: { id_user: user_check.id } })
+        const achievement_counter = await prisma.achievement.count({ where: { id_user: user_check.id } })
 		await Image_Random(context, "bank")
 		if (user_check.id_role != 1) {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 1.08v: \n ${user_count}👥 ${sums._sum.gold}💰 ${sums._sum.lvl*150+sums._sum.xp}🧙 ${artefacts}🔮 \n`)
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 1.11v:\n👥 ${user_count}\n💰 ${sums._sum.gold}\n🧙 ${sums._sum.lvl*150+sums._sum.xp}\n🔮 ${artefacts}\n🌟 ${achievement}\n\n`)
 		} else {
-			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 1.08v: \n ${user_check.name}👥 ${user_check.gold}💰 ${user_check.lvl*150+user_check.xp}🧙 ${artefact_counter}🔮 \n`)
+			await Keyboard_Index(context, `🏦 Банк Гринготтс Онлайн 1.11v:\n👥 ${user_check.name}\n💰 ${user_check.gold}\n🧙 ${user_check.lvl*150+user_check.xp}\n🔮 ${artefact_counter}\n🌟 ${achievement_counter} \n\n`)
 		}
 		const user_inf = await User_Info(context)
 		await context.send(`${user_inf.first_name}, чтобы авторизоваться, нажмите кнопку под этим сообщением!`, {
