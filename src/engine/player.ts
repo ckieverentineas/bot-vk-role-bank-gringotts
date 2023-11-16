@@ -1,7 +1,7 @@
 import { HearManager } from "@vk-io/hear";
 import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
-import { answerTimeLimit, chat_id, root, timer_text, vk } from '../index';
+import { answerTimeLimit, chat_id, root, timer_text, timer_text_oper, vk } from '../index';
 import { Accessed, Keyboard_Index } from "./core/helper";
 import { Image_Random} from "./core/imagecpu";
 import prisma from "./events/module/prisma_client";
@@ -179,7 +179,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         let name_check = false
 		let datas: any = []
 		while (name_check == false) {
-			const uid: any = await context.question( `🧷 Введите 💳UID банковского счета получателя:`, timer_text )
+			const uid: any = await context.question( `🧷 Введите 💳UID банковского счета получателя:`,
+                {   
+                    keyboard: Keyboard.builder()
+                    .textButton({ label: '🚫Отмена', payload: { command: 'limited' }, color: 'secondary' })
+                    .oneTime().inline(),
+                    timer_text
+                }
+            )
             if (uid.isTimeout) { return await context.send('⏰ Время ожидания на ввод банковского счета получателя истекло!')}
 			if (/^(0|-?[1-9]\d{0,5})$/.test(uid.text)) {
                 const get_user = await prisma.user.findFirst({ where: { id: Number(uid.text) } })
@@ -224,6 +231,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                 } else { await context.send(`💡 Нет такого банковского счета!`) }
 			} else {
+                if (uid.text == "🚫Отмена") { 
+                    await context.send(`💡 Операции прерваны пользователем!`) 
+                    return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+                }
 				await context.send(`💡 Необходимо ввести корректный UID!`)
 			}
 		}
@@ -509,7 +520,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let golden: number = 0
             let money_check = false
             while (money_check == false) {
-                const gold: any = await context.question(`🧷 Введите количество для операции ${ans.text}: `, timer_text)
+                const gold: any = await context.question(`🧷 Введите количество для операции ${ans.text}: `, timer_text_oper)
                 if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${ans.text} истекло!`); return golden }
                 if (typeof Number(gold.text) == "number") {
                     money_check = true
@@ -522,7 +533,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let golden = ''
             let money_check = false
             while (money_check == false) {
-                const gold = await context.question(`🧷 Введите уведомление пользователю ${ans.text}:`, timer_text)
+                const gold = await context.question(`🧷 Введите уведомление пользователю ${ans.text}:`, timer_text_oper)
                 if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${ans.text} истекло!`); return "Уведомление приняло ИСЛАМ!" }
                 if (gold.text) {
                     money_check = true

@@ -21,6 +21,7 @@ export const root: number = Number(process.env.root) //root user
 export const chat_id: number = Number(process.env.chat_id) //chat for logs
 export const group_id: number = Number(process.env.group_id)//clear chat group
 export const timer_text = { answerTimeLimit: 300_000 } // ожидать пять минут
+export const timer_text_oper = { answerTimeLimit: 60_000 } // ожидать пять минут
 export const answerTimeLimit = 300_000 // ожидать пять минут
 //авторизация
 export const vk = new VK({ token: token, pollingGroupId: group_id, apiLimit: 1 });
@@ -181,3 +182,5 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 vk.updates.start().then(() => {
 	console.log('Bank ready for services clients!')
 }).catch(console.error);
+
+process.on('warning', e => console.warn(e.stack))
