@@ -200,7 +200,7 @@ export async function Statistics_Enter(context: any) {
     let text = ''
     const keyboard = new KeyboardBuilder()
     text = `⚙ Конфиденциальная информация:\n\n🍺 Сливочное: ${stats?.beer}/20000\n🍵 Бамбуковое: ${stats?.beer_premiun}/1000\n🎁 Дни Рождения: ${stats?.birthday}/15\n🛒 Покупок: ${stats?.buying}/20000\n🧙 Конвертаций МО: ${stats?.convert_mo}/20000\n📅 Получено ЕЗ: ${stats?.quest}/20000\n👙 Залогов: ${stats?.underwear}/20000\n`
-    console.log(`User ${context.peerId} get gift for birthday`)
+    console.log(`User ${context.peerId} get statistics information`)
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
 }
@@ -210,7 +210,7 @@ export async function Rank_Enter(context: any) {
     const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (!user) { return }
     const stats = await prisma.analyzer.findFirst({ where: { id_user: user.id }})
-    let text = ''
+    let text = '⚙ Рейтинг ролевиков:\n\n'
     const keyboard = new KeyboardBuilder()
 
 
@@ -220,9 +220,9 @@ export async function Rank_Enter(context: any) {
         const ach_counter = await prisma.achievement.count({ where: { id_user: userok.id }})
         stat.push({
             rank: counter,
-            text: `- [https://vk.com/id${statistics.user.idvk}|${statistics.user.name.slice(0, 20)}] --> ${all.energy.toFixed(2)}${icotransl_list['energy'].smile}\n`,
-            score: all.energy,
-            me: statistics.user.idvk == context.senderId ? true : false
+            text: `- [https://vk.com/id${userok.idvk}|${userok.name.slice(0, 20)}] --> ${ach_counter}🌟\n`,
+            score: ach_counter,
+            me: userok.idvk == user.idvk ? true : false
         })
         counter++
     }
@@ -233,21 +233,18 @@ export async function Rank_Enter(context: any) {
     let trig_find_me = false
     for (const stat_sel of stat) {
         if (counter_last <= 10) {
-            users += `${stat_sel.me ? '✅' : '👤'} ${counter_last} ${stat_sel.text}`
+            text += `${stat_sel.me ? '✅' : '👤'} ${counter_last} ${stat_sel.text}`
             if (stat_sel.me) { trig_find_me = true }
         }
         if (counter_last > 10 && !trig_find_me) {
             if (stat_sel.me) {
-                users += `\n\n${stat_sel.me ? '✅' : '👤'} ${counter_last} ${stat_sel.text}`
+                text += `\n\n${stat_sel.me ? '✅' : '👤'} ${counter_last} ${stat_sel.text}`
             }
         }
         counter_last++
     }
-    users += `\n\n☠ В статистие участвует ${counter} игроков`
-    return `${users}`
-
-    text = `⚙ Конфиденциальная информация:\n\n🍺 Сливочное: ${stats?.beer}/20000\n🍵 Бамбуковое: ${stats?.beer_premiun}/1000\n🎁 Дни Рождения: ${stats?.birthday}/15\n🛒 Покупок: ${stats?.buying}/20000\n🧙 Конвертаций МО: ${stats?.convert_mo}/20000\n📅 Получено ЕЗ: ${stats?.quest}/20000\n👙 Залогов: ${stats?.underwear}/20000\n`
-    console.log(`User ${context.peerId} get gift for birthday`)
+    text += `\n\n☠ В статистие участвует ${counter} ролевиков`
+    console.log(`User ${context.peerId} get rank information`)
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
 }
