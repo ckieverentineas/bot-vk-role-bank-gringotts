@@ -243,7 +243,7 @@ export async function Rank_Enter(context: any) {
         }
         counter_last++
     }
-    text += `\n\n☠ В статистие участвует ${counter} ролевиков`
+    text += `\n\n☠ В статистике участвует ${counter} ролевиков`
     console.log(`User ${context.peerId} get rank information`)
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
