@@ -6,6 +6,7 @@ import { Accessed, Keyboard_Index } from "./core/helper";
 import { Image_Random} from "./core/imagecpu";
 import prisma from "./events/module/prisma_client";
 import { User_Info } from "./events/module/tool";
+import { Item } from "@prisma/client";
 
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/Косой переулок/, async (context) => {
@@ -243,13 +244,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             {   
                 keyboard: Keyboard.builder()
                 .textButton({ label: '+💰', payload: { command: 'gold_up' }, color: 'secondary' })
-                .textButton({ label: '—💰', payload: { command: 'gold_down' }, color: 'secondary' }).row()
+                .textButton({ label: '—💰', payload: { command: 'gold_down' }, color: 'secondary' })
+                .textButton({ label: '➕🔮', payload: { command: 'artefact_add' }, color: 'secondary' }).row()
                 .textButton({ label: '+🧙', payload: { command: 'xp_up' }, color: 'secondary' })
-                .textButton({ label: '—🧙', payload: { command: 'xp_down' }, color: 'secondary' }).row()
-                .textButton({ label: '➕🔮', payload: { command: 'artefact_add' }, color: 'secondary' })
+                .textButton({ label: '—🧙', payload: { command: 'xp_down' }, color: 'secondary' })
                 .textButton({ label: '👁🔮', payload: { command: 'artefact_show' }, color: 'secondary' }).row()
                 .textButton({ label: '✏', payload: { command: 'editor' }, color: 'secondary' })
-                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                .textButton({ label: '👁👜', payload: { command: 'inventory_show' }, color: 'secondary' })
+                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
                 .textButton({ label: '☠', payload: { command: 'user_delete' }, color: 'secondary' })
                 .oneTime().inline(),
                 answerTimeLimit                                                                       
@@ -416,6 +418,56 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
             console.log(`Admin ${context.senderId} see artefacts from user UID: ${id}`)
         }
+        async function Inventory_Show(id: number) { 
+            const artefact = await prisma.inventory.findMany({ where: { id_user: id } })
+            if (artefact.length > 0) {
+                for(const element of artefact) {
+                    const item: any = await prisma.item.findFirst({ where: { id: element.id_item }, include: { category: true } })
+                    console.log(item.category)
+                    await context.send(`💬: ${item.name}-${element.id} \n 🔧: ${item.category.name}-${item.price}💰`,
+                        {
+                            keyboard: Keyboard.builder()
+                            .textButton({ label: 'Удалить👜', payload: { command: `${element.id}` }, color: 'secondary' })
+                            .oneTime().inline()
+                        }
+                    )
+                }
+            } else {
+                await context.send(`✉ Товары отсутствуют =(`)
+            }
+            console.log(`Admin ${context.senderId} see artefacts from user UID: ${id}`)
+        }
+        hearManager.hear(/Удалить👜/, async (context) => {
+            if (context.messagePayload == null) {
+                return
+            }
+            const art_get: any = await prisma.inventory.findFirst({ where: { id: Number(context.messagePayload.command) } })
+            const item: any = await prisma.item.findFirst({ where: { id: art_get.id_item } })
+            if (art_get) {
+                const art_del = await prisma.inventory.delete({ where: { id: Number(context.messagePayload.command) } })
+                await context.send(`⚙ Удален товар ${item.name}-${art_del.id}`)
+                const user_find = await prisma.user.findFirst({ where: { id: art_del.id_user } })
+                if (user_find) {
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_find.idvk,
+                            random_id: 0,
+                            message: `⚙ Ваш товар ${item.name} пожертвовали в АЗКАБАН!`
+                        })
+                        await context.send(`⚙ Удаление товара успешно завершено`)
+                    } catch (error) {
+                        console.log(`User ${user_find.idvk} blocked chating with bank`)
+                    }
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⚙ @id${context.senderId}(Admin) > "🚫👜" > товар ${item.name} пожертвовали в Азкабан! у @id${user_find.idvk}(${user_find.name})`
+                    })
+                }
+                console.log(`Admin ${context.senderId} destroy item from user UID: ${user_find?.idvk}`)
+            }
+            await Keyboard_Index(context, '💡 Был товар, нееет товара!')
+        })
         hearManager.hear(/Удалить🔮/, async (context) => {
             if (context.messagePayload == null) {
                 return
@@ -743,6 +795,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 'back': Back,
                 'artefact_add': Artefact_Add,
                 'artefact_show': Artefact_Show,
+                'inventory_show': Inventory_Show,
                 'user_delete': User_delete,
                 'editor': Editor
             }
