@@ -881,7 +881,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_find.idvk,
                         random_id: 0,
-                        message: `⚙ Ваш артефакт ${art_del.name} изьял ОМОН!`
+                        message: `⚙ Ваш артефакт ${art_del.name} изъял ОМОН!`
                     })
                     await context.send(`⚙ Удаление артефакта успешно завершено`)
                 } catch (error) {
