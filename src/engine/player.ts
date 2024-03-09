@@ -173,6 +173,328 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Может еще что-нибудь отредактировать?`)
     })
+    hearManager.hear(/операция/, async (context) => {
+        if (await Accessed(context) != 2) {
+            return
+        }
+        let name_check = false
+        let uids = null
+        while (name_check == false) {
+            const uid: any = await context.question( `🧷 Введите список 💳UID банковских счетов получателей формата:\n"UID1 UID2 .. UIDN"`,
+                {   
+                    keyboard: Keyboard.builder()
+                    .textButton({ label: '🚫Отмена', payload: { command: 'limited' }, color: 'secondary' })
+                    .oneTime().inline(),
+                    timer_text
+                }
+            )
+            if (uid.isTimeout) { return await context.send('⏰ Время ожидания на ввод банковского счета получателя истекло!')}
+            if (/(?:^|\s)(\d+)(?=\s|$)/g.test(uid.text)) {
+                uids = uid.text.match(/(?:^|\s)(\d+)(?=\s|$)/g)
+                await context.send(`⚙ Подготовка к массовым операциям, товарищ ДОК!`)
+                name_check = true
+            } else {
+                if (uid.text == "🚫Отмена") { 
+                    await context.send(`💡 Операции прерваны пользователем!`) 
+                    return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+                }
+				await context.send(`💡 Необходимо ввести корректный UID!`)
+			}
+        }
+        const ans: any = await context.question( `✉ Доступны следующие операции с 💳UID: ${JSON.stringify(uids)}`,
+            {   
+                keyboard: Keyboard.builder()
+                .textButton({ label: '+💰', payload: { command: 'gold_up_many' }, color: 'secondary' })
+                .textButton({ label: '—💰', payload: { command: 'gold_down_many' }, color: 'secondary' }).row()
+                .textButton({ label: '+🧙', payload: { command: 'xp_up_many' }, color: 'secondary' })
+                .textButton({ label: '—🧙', payload: { command: 'xp_down_many' }, color: 'secondary' }).row()
+                .textButton({ label: '+💰🧙', payload: { command: 'multi_up_many' }, color: 'secondary' })
+                .textButton({ label: '—💰🧙', payload: { command: 'multi_down_many' }, color: 'secondary' }).row()
+                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
+                .oneTime().inline(),
+                answerTimeLimit                                                                       
+            }
+        )
+        if (ans.isTimeout) { return await context.send(`⏰ Время ожидания на ввод операции с 💳UID: ${JSON.stringify(uids)} истекло!`) }
+        if (ans.payload && ans.payload.command != 'back') {
+            const config: any = {
+                'gold_up_many': Gold_Up_Many,
+                'gold_down_many': Gold_Down_Many,
+                'xp_up_many': Xp_Up_Many,
+                'xp_down_many': Xp_Down_Many,
+                'back': Back,
+                'multi_up_many': Multi_Up_Many,
+                'multi_down_many': Multi_Down_Many
+            }
+            const answergot = await config[ans.payload.command](uids)
+            
+        } else {
+            await context.send(`⚙ Операция отменена пользователем.`)
+        }
+        await context.send(`✅ Процедура массовых операций под названием операция "Ы" успешно завершена!`)
+        await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+
+        //Модуль мульти начислений
+        async function Multi_Up_Many(uids: number[]) {
+            await context.send(`⚠ Приступаем к начислению галлеонов`)
+            const gold: number = await Ipnut_Gold() 
+            await context.send(`⚠ Приступаем к начислению магического опыта`)
+            const xp: number = await Ipnut_Gold()
+            const messa: string = await Ipnut_Message()
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: User | null = await prisma.user.findFirst({ where: { id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { increment: gold }, xp: { increment: xp } } })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get?.idvk,
+                        random_id: 0,
+                        message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\n Уведомление: ${messa}`
+                    })
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get?.idvk} blocked chating with bank`)
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                }
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `🗿 @id${context.senderId}(Admin) > "+💰🧙" >\n${user_get?.gold}+${gold}=${money_put.gold}💰\n${user_get?.xp}+${xp}=${money_put.xp}🧙\n для @id${user_get?.idvk}(${user_get?.name}) 🧷: ${messa}`
+                })
+                console.log(`User ${user_get?.idvk} got ${gold} gold and ${xp} xp. Him/Her bank now ${money_put.gold}`)
+            }
+        }
+        async function Multi_Down_Many(uids: number[]) {
+            await context.send(`⚠ Приступаем к снятию галлеонов`)
+            const gold: number = await Ipnut_Gold() 
+            await context.send(`⚠ Приступаем к снятию магического опыта`)
+            const xp: number = await Ipnut_Gold()
+            const messa: string = await Ipnut_Message()
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: User | null = await prisma.user.findFirst({ where: { id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { decrement: gold }, xp: { decrement: xp } } })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get?.idvk,
+                        random_id: 0,
+                        message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\n Уведомление: ${messa}`
+                    })
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get?.idvk} blocked chating with bank`)
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                }
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `🗿 @id${context.senderId}(Admin) > "-💰🧙" >\n${user_get?.gold}-${gold}=${money_put.gold}💰\n${user_get?.xp}-${xp}=${money_put.xp}🧙\n для @id${user_get?.idvk}(${user_get?.name}) 🧷: ${messa}`
+                })
+                console.log(`User ${user_get?.idvk} left ${gold} gold and ${xp} xp. Him/Her bank now ${money_put.gold}`)
+            }
+        }
+        //Модуль начислений
+        async function Gold_Up_Many(uids: number[]) {
+            const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: any = await prisma.user.findFirst({ where: { id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold + count } })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                    })
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                }
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `🗿 @id${context.senderId}(Admin) > "+💰" > ${money_put.gold-count}💰+${count}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                })
+                console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
+            }
+        }
+        async function Gold_Down_Many(uids: number[]) {
+            const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: any = await prisma.user.findFirst({ where: { id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                if (user_get.gold-count >= 0) {
+                    const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_get.idvk,
+                            random_id: 0,
+                            message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                        })
+                        await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
+                    } catch (error) {
+                        console.log(`User ${user_get.idvk} blocked chating with bank`)
+                        await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                    }
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `🗿 @id${context.senderId}(Admin) > "-💰" > ${money_put.gold+count}💰-${count}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                    })
+                    console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
+                } else {
+                    const confirmq = await context.question(`⌛ Вы хотите снять ${count} 💰галлеонов c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.gold}. Уверены, что хотите сделать баланс: ${user_get.gold-count}`,
+                        {
+                            keyboard: Keyboard.builder()
+                            .textButton({ label: 'Да', payload: { command: 'confirm' }, color: 'secondary' })
+                            .textButton({ label: 'Нет', payload: { command: 'gold_down' }, color: 'secondary' })
+                            .oneTime().inline(),
+                            answerTimeLimit
+                        }
+                    )
+                    if (confirmq.isTimeout) { return await context.send(`⏰ Время ожидания на снятие галлеонов с ${user_get.name} истекло!`) }
+                    if (confirmq.payload.command === 'confirm') {
+                        const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
+                        try {
+                            await vk.api.messages.send({
+                                user_id: user_get.idvk, random_id: 0,
+                                message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                            })
+                            await context.send(`⚙ Операция завершена успешно`)
+                        } catch (error) {
+                            console.log(`User ${user_get.idvk} blocked chating with bank`)
+                            await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                        }
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `🗿 @id${context.senderId}(Admin) > "-💰" > ${money_put.gold+count}💰-${count}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                        })
+                        console.log(`User ${user_get.idvk} lost ${count} gold. Him/Her bank now ${money_put.gold}`)
+                    } else {
+                        await context.send(`💡 Нужно быть жестче! Греби бабло`)
+                    }
+                }
+            }
+        }
+        async function Xp_Up_Many(uids: number[]) {
+            const count: number = await Ipnut_Gold() 
+            const messa: string = await Ipnut_Message()
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: any = await prisma.user.findFirst({ where: { id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp + count } })
+                try {
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \n Уведомление: ${messa}`
+                    })
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                    await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                }
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `🗿 @id${context.senderId}(Admin) > "+🧙" > ${money_put.xp-count}🧙+${count}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                })
+                console.log(`User ${user_get.idvk} got ${count} MO. Him/Her XP now ${money_put.xp}`)
+            }
+        }
+        async function Xp_Down_Many(uids: number[]) {
+            const count: number = await Ipnut_Gold() 
+            if (count === 0) { return }
+            const messa: string = await Ipnut_Message()
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: any = await prisma.user.findFirst({ where: { id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                if (user_get.xp-count >= 0) {
+                    const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_get.idvk,
+                            random_id: 0,
+                            message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                        })
+                        await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
+                    } catch (error) {
+                        console.log(`User ${user_get.idvk} blocked chating with bank`)
+                        await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                    }
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `🗿 @id${context.senderId}(Admin) > "-🧙" > ${money_put.xp+count}🧙-${count}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                    })
+                    console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
+                } else {
+                    await context.send(`⌛ Вы хотите снять ${count} 🧙магического опыта c счета ${user_get.name}, но счет этого ${user_get.spec} ${user_get.xp}. Уверены, что хотите сделать баланс: ${user_get.xp-count}? (Автоподтверждение)`)
+                    const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user_get.idvk,
+                            random_id: 0,
+                            message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                        })
+                        await context.send(`⚙ Операция завершена успешно`)
+                    } catch (error) {
+                        console.log(`User ${user_get.idvk} blocked chating with bank`)
+                        await context.send(`⚙ Операция с 💳UID ${id} завершена, но уведомление не доставлено пользователю!`)
+                    }
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `🗿 @id${context.senderId}(Admin) > "-🧙" > ${money_put.xp+count}🧙-${count}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                    })
+                    console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
+                }
+            }
+        }
+        //Модуль обработки ввода пользователем 
+        async function Ipnut_Gold() {
+            let golden: number = 0
+            let money_check = false
+            while (money_check == false) {
+                const gold: any = await context.question(`🧷 Введите количество для операции ${ans.text}: `, timer_text_oper)
+                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${ans.text} истекло!`); return golden }
+                if (typeof Number(gold.text) == "number") {
+                    money_check = true
+                    golden = Number(gold.text)
+                } 
+            }
+            return golden
+        }
+        async function Ipnut_Message() {
+            let golden = ''
+            let money_check = false
+            while (money_check == false) {
+                const gold = await context.question(`🧷 Введите уведомление пользователю ${ans.text}:`, timer_text_oper)
+                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${ans.text} истекло!`); return "Уведомление приняло ИСЛАМ!" }
+                if (gold.text) {
+                    money_check = true
+                    golden = gold.text
+                } 
+            }
+            return golden
+        }
+        //Модуль вовзврата
+        async function Back(id: number, count: number) {
+            console.log(`Admin ${context.senderId} canceled operation for user UID: ${id}`)
+            await context.send(`⚙ Операция отменена пользователем.`)
+        }
+    })
+
     hearManager.hear(/операции/, async (context) => {
         if (await Accessed(context) != 2) {
             return
@@ -593,7 +915,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (artefact.length > 0) {
                 for(const element of artefact) {
                     const item: any = await prisma.item.findFirst({ where: { id: element.id_item }, include: { category: true } })
-                    console.log(item.category)
                     await context.send(`💬: ${item.name}-${element.id} \n 🔧: ${item.category.name}-${item.price}💰`,
                         {
                             keyboard: Keyboard.builder()
