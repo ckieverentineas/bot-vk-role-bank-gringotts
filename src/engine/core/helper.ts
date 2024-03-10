@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { randomInt } from "crypto"
 import { Keyboard, KeyboardBuilder } from "vk-io"
-import { answerTimeLimit, chat_id, group_id, root, vk } from "../.."
+import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "../.."
 import { Image_Interface, Image_Random } from "./imagecpu"
 import { promises as fsPromises } from 'fs'
 import { MessagesGetHistoryResponse, MessagesSendResponse } from "vk-io/lib/api/schemas/responses"
@@ -303,4 +303,24 @@ export async function Gen_Inline_Button_Category(context: any, weapon_type: any,
             return skill.payload.command
         }
     }
+}
+
+export async function Worker_Checker() {
+    await vk.api.messages.send({
+        peer_id: chat_id,
+        random_id: 0,
+        message: `✅ Все ок! ${await Up_Time()}`,
+    })
+}
+
+async function Up_Time() {
+    const now = new Date();
+    const diff = now.getTime() - starting_date.getTime();
+    const timeUnits = [
+        { unit: "дней", value: Math.floor(diff / 1000 / 60 / 60 / 24) },
+        { unit: "часов", value: Math.floor((diff / 1000 / 60 / 60) % 24) },
+        { unit: "минут", value: Math.floor((diff / 1000 / 60) % 60) },
+        { unit: "секунд", value: Math.floor((diff / 1000) % 60) },
+    ];
+    return `Время работы: ${timeUnits.filter(({ value }) => value > 0).map(({ unit, value }) => `${value} ${unit}`).join(" ")}`
 }
