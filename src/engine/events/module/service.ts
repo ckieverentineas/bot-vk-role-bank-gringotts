@@ -431,11 +431,12 @@ export async function Service_Quest_Open(context: any) {
             ]
             const task = questuin_pull[Math.floor(Math.random() * questuin_pull.length)]
             const quest = task.quest[Math.floor(Math.random() * task.quest.length)]
-            const reward_mo: number = randomInt(5, 51) //15МО = 5Г => 3MO = 1 G \2G
-            const reward_gold: number = randomInt(1, 6) //2G
+            const pk: number = randomInt(10,50)
+            const reward_mo: number = Math.floor(pk/10*10)
+            const reward_gold: number = Math.floor(pk/10*5)
             await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `⌛ Загружается новое событие...`})
-            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с тем, с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${reward_mo*2 + reward_gold*5} ПК+ \n🏆 Для 👤 ${reward_gold+4}💰 ${reward_mo}🧙.  Для 👥 ${reward_gold}💰 ${reward_mo}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.` })
-            await vk.api.messages.send({ peer_id: chat_id, random_id: 0, message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${reward_mo*2 + reward_gold*5} ПК+ \n🏆 Для 👤 ${reward_gold+4}💰 ${reward_mo}🧙.  Для 👥 ${reward_gold}💰 ${reward_mo}🧙` })
+            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с тем, с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.\n Требование к ПК устанавливает то, сколько должен отролить строк каждый ролевик!` })
+            await vk.api.messages.send({ peer_id: chat_id, random_id: 0, message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙` })
             await Analyzer_Quest_Counter(context)
         } else {
             if (user) {
