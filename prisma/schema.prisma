@@ -107,3 +107,24 @@ model Analyzer {
   id_user      Int
   crdate       DateTime @default(now())
 }
+
+model Location {
+  id      Int      @id @default(autoincrement())
+  name    String
+  Sublocation Sublocation[]
+}
+
+model Sublocation {
+  id      Int      @id @default(autoincrement())
+  name    String
+  id_location Int
+  location    Location     @relation(fields: [id_location], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Quest Quest[]
+}
+
+model Quest {
+  id      Int      @id @default(autoincrement())
+  name    String
+  id_sublocation Int
+  sublocation    Sublocation     @relation(fields: [id_sublocation], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}

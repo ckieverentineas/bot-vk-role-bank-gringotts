@@ -25,7 +25,13 @@ export const timer_text_oper = { answerTimeLimit: 60_000 } // ожидать п�
 export const answerTimeLimit = 300_000 // ожидать пять минут
 export const starting_date = new Date(); // время работы бота
 //авторизация
-export const vk = new VK({ token: token, pollingGroupId: group_id, apiLimit: 20 });
+async function Group_Id_Get() {
+	const vk = new VK({ token: token, apiLimit: 1 });
+	const [group] = await vk.api.groups.getById(vk);
+	const groupId = group.id;
+	return groupId
+}
+export const vk = new VK({ token: token, pollingGroupId: Number(Group_Id_Get()), apiLimit: 20 });
 //инициализация
 const questionManager = new QuestionManager();
 const hearManager = new HearManager<IQuestionMessageContext>();
