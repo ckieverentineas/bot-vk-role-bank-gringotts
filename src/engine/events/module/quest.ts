@@ -16,21 +16,24 @@ async function Location_Get(cursor: number | undefined) {
 }
 export async function Location_Printer(context: any) {
     
-    let event_logger = `Выберите Локацию:\n\n`
+    
     let location_tr = false
     let cursor = 0
     while (!location_tr) {
         const keyboard = new KeyboardBuilder()
+        let event_logger = `Выберите Локацию:\n\n`
         for await (const location of await Location_Get(cursor)) {
-            keyboard.textButton({ label: `👀 ${location.id}-${location.name.slice(0,30)}`, payload: { command: 'location_select', cursor: cursor }, color: 'secondary' }).row()
+            keyboard.textButton({ label: `👀 ${location.id}-${location.name.slice(0,30)}`, payload: { command: 'location_select', cursor: cursor }, color: 'secondary' })
+            .textButton({ label: `⛔`, payload: { command: 'location_delete', cursor: cursor }, color: 'secondary' }).row()
             //.callbackButton({ label: '👀', payload: { command: 'builder_controller', command_sub: 'builder_open', office_current: i, target: builder.id }, color: 'secondary' })
             event_logger += `💬 ${location.id} - ${location.name}\n`
         }
-        if (cursor >= 5) { keyboard.textButton({ label: `<`, payload: { command: 'location_back', cursor: cursor }, color: 'secondary' }) }
+        if (cursor >= 5) { keyboard.textButton({ label: `←`, payload: { command: 'location_back', cursor: cursor }, color: 'secondary' }) }
         
-        keyboard.textButton({ label: `>`, payload: { command: 'location_next', cursor: cursor }, color: 'secondary' })
-        keyboard.textButton({ label: `+`, payload: { command: 'location_create', cursor: cursor }, color: 'secondary' }).row().inline().oneTime()
-        const location_bt = await context.question(`🧷 Выберите локацию:`,
+        keyboard.textButton({ label: `→`, payload: { command: 'location_next', cursor: cursor }, color: 'secondary' })
+        keyboard.textButton({ label: `➕`, payload: { command: 'location_create', cursor: cursor }, color: 'secondary' }).row()
+        .textButton({ label: `🚫`, payload: { command: 'location_back', cursor: cursor }, color: 'secondary' }).oneTime()
+        const location_bt = await context.question(`🧷 Выберите локацию: ${event_logger}`,
             {	
                 keyboard: keyboard, answerTimeLimit
             }
