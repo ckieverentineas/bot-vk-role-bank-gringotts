@@ -44,6 +44,7 @@ export async function Main_Menu(context: any) {
     .callbackButton({ label: 'Артефакты', payload: { command: 'artefact_enter' }, color: 'secondary' })
     .callbackButton({ label: 'Косой переулок', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
     .callbackButton({ label: 'Услуги', payload: { command: 'service_enter' }, color: 'primary' })
+    .callbackButton({ label: 'Хранилище', payload: { command: 'storage_enter' }, color: 'secondary' })
     if (user_check.id_role === 2) {
         keyboard.callbackButton({ label: 'Админы', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
         .callbackButton({ label: 'Операции⛔', payload: { command: 'operation_enter' }, color: 'negative' })

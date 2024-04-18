@@ -1,7 +1,7 @@
 import { KeyboardBuilder } from "vk-io"
 import prisma from "./prisma_client"
 import { chat_id, vk } from "../../.."
-import { Trigger, User } from "@prisma/client"
+import { Storage, Trigger, User } from "@prisma/client"
 import { Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "../../core/imagecpu"
 import { randomInt } from "crypto"
 import { Analyzer_Birthday_Counter } from "./analyzer"
@@ -122,6 +122,29 @@ export async function Inventory_Enter(context: any) {
         })
     })
 }
+
+export async function Storage_Enter(context: any) {
+    const attached = await Image_Random(context, "storage")
+    const get_user:any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    const storage: Storage[] = await prisma.storage.findMany({ where: { id_user: get_user.id } })
+    
+    const text = storage.length > 0 ? `✉ Ваше хранилище: \n\n ${storage.map(store => `📦 ${store.id}-${store.name}\n`).join('')}` : `✉ Увы, но пока пусто, добавьте свои ролевые предметы :(`
+    console.log(`User ${context.peerId} see self storage`)  
+    const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
+    keyboard.textButton({ label: '➕📦', payload: { command: 'Согласиться' }, color: 'secondary' })
+    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
+    let ii = `А че так можно было?`
+    await vk.api.messages.sendMessageEventAnswer({
+        event_id: context.eventId,
+        user_id: context.userId,
+        peer_id: context.peerId,
+        event_data: JSON.stringify({
+            type: "show_snackbar",
+            text: `🔔 ${ii}`
+        })
+    })
+}
+
 export async function Admin_Enter(context: any) {
     const attached = await Image_Random(context, "admin")
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })

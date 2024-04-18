@@ -1,8 +1,8 @@
 import { Location, Quest, Sublocation } from "@prisma/client";
 import { KeyboardBuilder } from "vk-io";
-import { answerTimeLimit, timer_text } from "../../..";
+import { answerTimeLimit, chat_id, timer_text } from "../../..";
 import prisma from "./prisma_client";
-import { Confirm_User_Success, Logger } from "../../core/helper";
+import { Confirm_User_Success, Logger, Send_Message } from "../../core/helper";
 
 //контроллер управления локациями
 async function Location_Get(cursor: number) {
@@ -76,6 +76,7 @@ async function Location_Delete(context: any, data: any) {
         if (location_del) {
             await Logger(`In database, deleted location: ${location_del.id}-${location_del.name} by admin ${context.senderId}`)
             await context.send(`Вы удалили локацию: ${location_del.id}-${location_del.name} со всеми включенными в нее подлокациями и квестами!`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > удаляет локацию: ${location_del.id}-${location_del.name} со всеми включенными в нее подлокациями и квестами!`)
         }
     }
     return res
@@ -120,6 +121,7 @@ async function Location_Create(context: any, data: any) {
         if (loc_cr) {
             await Logger(`In database, created location: ${loc_cr.id}-${loc_cr.name} by admin ${context.senderId}`)
             await context.send(`Вы создали новую локацию ${loc_cr.id}-${loc_cr.name}`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > создает новую локацию: ${loc_cr.id}-${loc_cr.name}`)
         }
     }
     return res
@@ -197,6 +199,7 @@ async function Sublocation_Delete(context: any, data: any, location: Location) {
         if (sublocation_del) {
             await Logger(`In database, deleted location: ${sublocation_del.id}-${sublocation_del.name} by admin ${context.senderId}`)
             await context.send(`Вы удалили подлокацию: ${sublocation_del.id}-${sublocation_del.name} со всеми квестами по ней для локации: ${location.id}-${location.name}`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > удаляет подлокацию: ${sublocation_del.id}-${sublocation_del.name} со всеми квестами по ней для локации: ${location.id}-${location.name}`)
         }
     }
     return res
@@ -241,6 +244,7 @@ async function Sublocation_Create(context: any, data: any, location: Location) {
         if (subloc_cr) {
             await Logger(`In database, created sublocation: ${subloc_cr.id}-${subloc_cr.name} by admin ${context.senderId}`)
             await context.send(`Вы создали новую подлокацию ${subloc_cr.id}-${subloc_cr.name} для локации: ${location.id}-${location.name}`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > создает новую подлокацию ${subloc_cr.id}-${subloc_cr.name} для локации: ${location.id}-${location.name}`)
         }
     }
     return res
@@ -318,6 +322,7 @@ async function Quest_Delete(context: any, data: any, sublocation: Sublocation) {
         if (quest_del) {
             await Logger(`In database, deleted quest: ${quest_del.id}-${quest_del.name} by admin ${context.senderId}`)
             await context.send(`Вы удалили квест: ${quest_del.id}-${quest_del.name} для подлокации: ${sublocation.id}-${sublocation.name}`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > удаляет квест: ${quest_del.id}-${quest_del.name} для подлокации: ${sublocation.id}-${sublocation.name}`)
         }
     }
     return res
@@ -347,6 +352,7 @@ async function Quest_Edit(context: any, data: any, sublocation: Sublocation) {
         if (quest_up) {
             await Logger(`In database, updated quest: ${quest_up.id}-${quest_up.name} by admin ${context.senderId}`)
             await context.send(`Вы скорректировали квест с ${quest_check?.id}-${quest_check?.name} на ${quest_up.id}-${quest_up.name} для подлокации: ${sublocation.id}-${sublocation.name}`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > изменяет квест с ${quest_check?.id}-${quest_check?.name} на ${quest_up.id}-${quest_up.name} для подлокации: ${sublocation.id}-${sublocation.name}`)
         }
     }
     return res
@@ -379,6 +385,7 @@ async function Quest_Create(context: any, data: any, sublocation: Sublocation) {
         if (quest_cr) {
             await Logger(`In database, created quest: ${quest_cr.id}-${quest_cr.name} by admin ${context.senderId}`)
             await context.send(`Вы создали новый квест ${quest_cr.id}-${quest_cr.name} для подлокации: ${sublocation.id}-${sublocation.name}`)
+            await Send_Message(chat_id, `📅 @id${context.senderId}(GameMaster) > создает новый квест ${quest_cr.id}-${quest_cr.name} для подлокации: ${sublocation.id}-${sublocation.name}`)
         }
     }
     return res

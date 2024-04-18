@@ -112,12 +112,13 @@ export async function Keyboard_Index(context: any, messa: any) {
     const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
     const keyboard = new KeyboardBuilder()
     if (user_check.idvk == root) {
-        keyboard.textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'positive' }).row()
-        .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'negative' }).row()
+        keyboard.textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'negative' }).row()
+        .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'primary' }).row()
     }
     if (user_check.id_role === 2) {
-        keyboard.textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'positive' }).row()
-        keyboard.textButton({ label: 'операция', payload: { command: 'sliz' }, color: 'negative' }).row()
+        keyboard.textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'secondary' })
+        keyboard.textButton({ label: 'операция', payload: { command: 'sliz' }, color: 'secondary' }).row()
+        keyboard.textButton({ label: 'ежедневный движок', payload: { command: 'sliz' }, color: 'primary' }).row()
     } 
     keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
@@ -360,4 +361,13 @@ export async function Confirm_User_Success(context: any, text: string) {
         res.text = `🚫 Success denied: ${text}`
     }
     return res
+}
+
+export async function Send_Message(idvk: number, message: string, keyboard?: Keyboard) {
+    message = message ? message : 'invalid message'
+    try {
+        keyboard ? await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) : await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } )
+    } catch (e) {
+        console.log(`Ошибка отправки сообщения: ${e}`)
+    }
 }

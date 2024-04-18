@@ -410,8 +410,8 @@ export async function Service_Quest_Open(context: any) {
     } else {
         attached = await Image_Random(context, "quest_drop")
         const dateold: any = new Date(trigger_check.crdate)
-        //timeouter
-        if (datenow-trigger_check.crdate > 0 && trigger_check.value) {
+        
+        if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             text += `📅 Вы точно хотите, приступить к новому квесту?`
         } else {
             text = `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
@@ -421,7 +421,7 @@ export async function Service_Quest_Open(context: any) {
             text = `⚙ Вы опустили в магический шредер листовку с прошлым заданием`
             console.log(`User ${context.peerId} ready for new quest`)
         } else {
-            if (datenow-trigger_check.crdate > 0 && trigger_check.value) {
+            if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
                 keyboard.callbackButton({ label: '-📅', payload: { command: 'service_quest_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
             }
         }

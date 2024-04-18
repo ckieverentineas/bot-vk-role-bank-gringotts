@@ -25,6 +25,7 @@ model User {
   Trigger     Trigger[]
   Achievement Achievement[]
   Analyzer    Analyzer[]
+  Storage Storage[]
 }
 
 model BlackBox {
@@ -127,4 +128,11 @@ model Quest {
   name    String
   id_sublocation Int
   sublocation    Sublocation     @relation(fields: [id_sublocation], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Storage {
+  id      Int      @id @default(autoincrement())
+  name    String
+  id_user Int
+  user    User     @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
