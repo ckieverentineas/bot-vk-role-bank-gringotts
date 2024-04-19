@@ -6,7 +6,7 @@ import {
 } from 'vk-io-question';
 import { registerUserRoutes } from './engine/player'
 import { InitGameRoutes } from './engine/init';
-import { Keyboard_Index, Worker_Checker } from './engine/core/helper';
+import { Keyboard_Index, Logger, Worker_Checker } from './engine/core/helper';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import prisma from './engine/events/module/prisma_client';
 import { Exit, Main_Menu_Init } from './engine/events/contoller';
@@ -190,7 +190,7 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 })
 
 vk.updates.start().then(() => {
-	console.log('Bank ready for services clients!')
+	Logger('running succes')
 }).catch(console.error);
 setInterval(Worker_Checker, 86400000);
 process.on('warning', e => console.warn(e.stack))

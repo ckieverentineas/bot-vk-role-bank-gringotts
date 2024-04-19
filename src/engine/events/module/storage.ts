@@ -92,7 +92,7 @@ async function Storage_Edit(context: any, data: any, user: User) {
     const res = { cursor: data.cursor }
     let spec_check = false
     let name_loc = null
-    const storage_check = await prisma.quest.findFirst({ where: { id: data.id_storage } })
+    const storage_check = await prisma.storage.findFirst({ where: { id: data.id_storage } })
 	while (spec_check == false) {
 		const name = await context.question( `🧷 Вы редактируете предмет: ${storage_check?.name}. Введите скорректированное название для него:`, timer_text)
 		if (name.isTimeout) { return await context.send(`⏰ Время ожидания ввода для корректировки предмета истекло!`) }
