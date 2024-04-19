@@ -368,67 +368,51 @@ export async function Service_Quest_Open(context: any) {
     
     const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
     const datenow: any = new Date()
-    if (trigger_check.value == false) {
-        if (context.eventPayload?.command_sub == 'beer_buying') {
-            text = `⚙ Кто-бы мог подумать, у дверей возникла бумажка с надписью, вам поручено новое ежедневное задание, подробности в новом полученном сообщении...`
-            console.log(`User ${context.peerId} got quest`)
-            const user_list: any = await prisma.user.findMany({ where: { private: false} })
-            
-            const questuin_pull: Array<{ location: String, name: String, quest: Array<String> }> = []
-            for (const loc of await prisma.location.findMany({})) {
-                for (const subloc of await prisma.sublocation.findMany({ where: { id_location: loc.id } })) {
-                    const questi = []
-                    for (const quest of await prisma.quest.findMany({ where: { id_sublocation: subloc.id } })) {
-                        questi.push(`${quest.name}`)
-                    }
+    const dateold: any = new Date(trigger_check.crdate)
+    if (datenow-trigger_check.crdate > timeouter) {
+        text = `⚙ Кто-бы мог подумать, у дверей возникла бумажка с надписью, вам поручено новое ежедневное задание, подробности в новом полученном сообщении...`
+        console.log(`User ${context.peerId} got quest`)
+        const user_list: any = await prisma.user.findMany({ where: { private: false} })
+        
+        const questuin_pull: Array<{ location: String, name: String, quest: Array<String> }> = []
+        for (const loc of await prisma.location.findMany({})) {
+            for (const subloc of await prisma.sublocation.findMany({ where: { id_location: loc.id } })) {
+                const questi = []
+                for (const quest of await prisma.quest.findMany({ where: { id_sublocation: subloc.id } })) {
+                    questi.push(`${quest.name}`)
+                }
+                if (questi.length > 0) {
                     questuin_pull.push({ location: loc.name, name: subloc.name, quest: questi })
                 }
             }
-            if (questuin_pull && questuin_pull.length > 0) {
-                const task = questuin_pull[Math.floor(Math.random() * questuin_pull.length)]
-                const quest = task.quest[Math.floor(Math.random() * task.quest.length)]
-                const pk: number = randomInt(10,50)
-                const reward_mo: number = Math.floor(pk/10*10)
-                const reward_gold: number = Math.floor(pk/10*5)
-                await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `⌛ Загружается новое событие...`})
-                await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с тем, с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.\n Требование к ПК устанавливает то, сколько должен отролить строк каждый ролевик!` })
-                await vk.api.messages.send({ peer_id: chat_id, random_id: 0, message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙` })
-                await Analyzer_Quest_Counter(context)
-                const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
-                const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-            } else {
-                text = `😢 Квестов пока что нет, приходите позже!`
-            }
+        }
+        if (questuin_pull && questuin_pull.length > 0) {
+            const task = questuin_pull[Math.floor(Math.random() * questuin_pull.length)]
+            const quest = task.quest[Math.floor(Math.random() * task.quest.length)]
+            const pk: number = randomInt(10,50)
+            const reward_mo: number = Math.floor(pk/10*10)
+            const reward_gold: number = Math.floor(pk/10*5)
+            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `⌛ Загружается новое событие...`})
+            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с тем, с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.\n Требование к ПК устанавливает то, сколько должен отролить строк каждый ролевик!` })
+            await vk.api.messages.send({ peer_id: chat_id, random_id: 0, message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙` })
+            await Analyzer_Quest_Counter(context)
+            const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
+            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
         } else {
-            if (user) {
-                text += `📅 Кто-то позвонил в дверь, открыть?`
-                keyboard.callbackButton({ label: '+📅', payload: { command: 'service_quest_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
-            } else {
-                text += `📅 Здесь должно было быть ваше ежедневное задание, но мы его еще не придумали!`
-            }
+            text = `😢 Квестов пока что нет, приходите позже!`
         }
     } else {
-        attached = await Image_Random(context, "quest_drop")
-        const dateold: any = new Date(trigger_check.crdate)
-        
-        if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
-            text += `📅 Вы точно хотите, приступить к новому квесту?`
+        if (user) {
+            text += `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
         } else {
-            text = `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
-        }
-        if (context.eventPayload?.command_sub == 'beer_selling') {
-            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
-            text = `⚙ Вы опустили в магический шредер листовку с прошлым заданием`
-            console.log(`User ${context.peerId} ready for new quest`)
-        } else {
-            if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
-                keyboard.callbackButton({ label: '-📅', payload: { command: 'service_quest_open', command_sub: "beer_selling" }, color: 'secondary' }).row()
-            }
+            text += `📅 Здесь должно было быть ваше ежедневное задание, но мы его еще не придумали!`
         }
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
-}
+
+} 
+    
 
 export async function Service_Underwear_Open(context: any) {
     let attached = await Image_Random(context, "underwear")

@@ -84,7 +84,7 @@ async function Storage_Delete(context: any, data: any, user: User) {
 
 async function Storage_Return(context: any, data: any, user: User) {
     const res = { cursor: data.cursor, stop: true }
-    await context.send(`Вы отменили меню управления ежедневными заданиями`)
+    await context.send(`Вы отменили меню управления хранилищем`)
     return res
 }
 
