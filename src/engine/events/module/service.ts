@@ -256,7 +256,7 @@ export async function Service_Beer_Open(context: any) {
         if (user.gold >= 5 && context.eventPayload?.command_sub == 'beer_buying') {
             const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-5 } })
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-            text = `⚙ Кто-бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`
+            text = `⚙ Кто бы мог подумать, у дверей возникло сливочное пиво прямиком из Хогсмида, снято 5💰. Теперь ваш баланс: ${underwear_sold.gold}`
             console.log(`User ${context.peerId} sold self beer`)
             await Analyzer_Beer_Counter(context)
         } else {
@@ -309,7 +309,7 @@ export async function Service_Beer_Premium_Open(context: any) {
         if (user.gold >= price_beer_prem && context.eventPayload?.command_sub == 'beer_buying') {
             const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: { decrement: price_beer_prem } } })
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-            text = `⚙ Кто-бы мог подумать, у дверей возникло бамбуковое пиво прямиком из Хогсмида, снято ${price_beer_prem}💰. Теперь ваш баланс: ${underwear_sold.gold}`
+            text = `⚙ Кто бы мог подумать, у дверей возникло бамбуковое пиво прямиком из Хогсмида, снято ${price_beer_prem}💰. Теперь ваш баланс: ${underwear_sold.gold}`
             console.log(`User ${context.peerId} sold self beer premium`)
             await Analyzer_Beer_Premium_Counter(context)
         } else {
@@ -360,7 +360,7 @@ export async function Service_Quest_Open(context: any) {
     const datenow: any = new Date()
     const dateold: any = new Date(trigger_check.crdate)
     if (datenow-trigger_check.crdate > timeouter) {
-        text = `⚙ Кто-бы мог подумать, у дверей возникла бумажка с надписью, вам поручено новое ежедневное задание, подробности в новом полученном сообщении...`
+        text = `⚙ Кто бы мог подумать, у дверей возникла бумажка с надписью, вам поручено новое ежедневное задание, подробности в новом полученном сообщении...`
         console.log(`User ${context.peerId} got quest`)
         const user_list: any = await prisma.user.findMany({ where: { private: false} })
         
@@ -421,7 +421,7 @@ export async function Service_Underwear_Open(context: any) {
     const keyboard = new KeyboardBuilder()
     
     const underwear = await prisma.trigger.count({ where: { name: 'underwear', value: true } })
-    text = `💡 ${underwear} человек уже заложили свои труселя, как на счёт твоих?`
+    text = `💡 ${underwear} человек уже заложили свои труселя, как на счёт твоих?\n\n`
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'underwear' } })
     if (!trigger) { 

@@ -1,6 +1,5 @@
 import { randomInt } from "crypto";
 import Jimp = require("jimp")
-import { UploadAllowedSource } from "vk-io";
 import { vk } from "../..";
 import { promises as fs } from 'fs';
 import prisma from "../events/module/prisma_client";

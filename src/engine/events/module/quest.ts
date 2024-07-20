@@ -31,7 +31,6 @@ export async function Location_Printer(context: any) {
         for await (const location of await Location_Get(cursor)) {
             keyboard.textButton({ label: `👀 ${location.id}-${location.name.slice(0,30)}`, payload: { command: 'location_select', cursor: cursor, id_location: location.id }, color: 'secondary' })
             .textButton({ label: `⛔`, payload: { command: 'location_delete', cursor: cursor, id_location: location.id }, color: 'secondary' }).row()
-            //.callbackButton({ label: '👀', payload: { command: 'builder_controller', command_sub: 'builder_open', office_current: i, target: builder.id }, color: 'secondary' })
             event_logger += `💬 ${location.id} - ${location.name}\n`
         }
         if (cursor >= 5) { keyboard.textButton({ label: `←`, payload: { command: 'location_back', cursor: cursor }, color: 'secondary' }) }

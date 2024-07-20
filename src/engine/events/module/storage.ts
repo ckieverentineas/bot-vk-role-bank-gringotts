@@ -32,7 +32,6 @@ export async function Storage_Printer(context: any) {
         for await (const storage of await Storage_Get(cursor, user)) {
             keyboard.textButton({ label: `✏ ${storage.id}-${storage.name.slice(0,30)}`, payload: { command: 'storage_edit', cursor: cursor, id_storage: storage.id }, color: 'secondary' })
             .textButton({ label: `⛔`, payload: { command: 'storage_delete', cursor: cursor, id_storage: storage.id }, color: 'secondary' }).row()
-            //.callbackButton({ label: '👀', payload: { command: 'builder_controller', command_sub: 'builder_open', office_current: i, target: builder.id }, color: 'secondary' })
             event_logger += `💬 ${storage.id} - ${storage.name}\n`
         }
         if (cursor >= 5) { keyboard.textButton({ label: `←`, payload: { command: 'storage_back', cursor: cursor }, color: 'secondary' }) }

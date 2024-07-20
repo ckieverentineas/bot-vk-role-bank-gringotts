@@ -4,7 +4,7 @@ import { Keyboard, KeyboardBuilder } from "vk-io"
 import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "../.."
 import { Image_Interface, Image_Random } from "./imagecpu"
 import { promises as fsPromises } from 'fs'
-import { MessagesGetHistoryResponse, MessagesSendResponse } from "vk-io/lib/api/schemas/responses"
+import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses"
 
 const prisma = new PrismaClient()
 
