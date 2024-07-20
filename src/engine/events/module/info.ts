@@ -170,7 +170,7 @@ export async function Admin_Enter(context: any) {
 }
 
 export async function Birthday_Enter(context: any) {
-    let attached = await Image_Random(context, "birthday")
+    const attached = await Image_Random(context, "birthday")
     const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (!user) { return }
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'birthday' } })
@@ -208,7 +208,6 @@ export async function Birthday_Enter(context: any) {
             keyboard.callbackButton({ label: '+🎁', payload: { command: 'birthday_enter', command_sub: "beer_buying" }, color: 'secondary' }).row()
         }
     } else {
-        attached = await Image_Random(context, "birthday_drop")
         text = `🔔 Последний ваш день Рождения отмечали всем банком: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! До вашего нового дня Рождения осталось ${((timeouter-(datenow-dateold))/60000/60).toFixed(2)} часов.`
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
@@ -222,7 +221,7 @@ export async function Statistics_Enter(context: any) {
     const stats = await prisma.analyzer.findFirst({ where: { id_user: user.id }})
     let text = ''
     const keyboard = new KeyboardBuilder()
-    text = `⚙ Конфиденциальная информация:\n\n🍺 Сливочное: ${stats?.beer}/20000\n🍵 Бамбуковое: ${stats?.beer_premiun}/1000\n🎁 Дни Рождения: ${stats?.birthday}/15\n🛒 Покупок: ${stats?.buying}/20000\n🧙 Конвертаций МО: ${stats?.convert_mo}/20000\n📅 Получено ЕЗ: ${stats?.quest}/20000\n👙 Залогов: ${stats?.underwear}/20000\n`
+    text = `⚙ Конфиденциальная информация:\n\n🍺 Сливочное: ${stats?.beer}/150\n🍵 Бамбуковое: ${stats?.beer_premiun}/150\n🎁 Дни Рождения: ${stats?.birthday}/15\n🛒 Покупок: ${stats?.buying}/70\n🧙 Конвертаций МО: ${stats?.convert_mo}/150\n📅 Получено ЕЗ: ${stats?.quest}/150\n👙 Залогов: ${stats?.underwear}/150\n`
     console.log(`User ${context.peerId} get statistics information`)
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 

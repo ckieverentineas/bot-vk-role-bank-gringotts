@@ -197,7 +197,7 @@ export async function Service_Level_Up_Change(context: any) {
         4: `4 уровень — доступно к покупке кольцо мыслей`,
         5: `5 уровень — разрешается использование невербальных заклинаний. Разрешается вступить в "Дуэльный Клуб"`,
         6: `6 уровень — доступно к покупке любовное зелье. Доступ к получению ингредиентов в кладовке профессора Снейпа с зельями`,
-        7: `7 уровень — возможность обучиться анимагии (при наличии среднего балла по трансфигурации 4,8 из 5 за первые пять лет обучения), доступна к покупке мантия невидимости. Использование заклинаний без волшебной палочки. Также становится возможным укорочение постов для изучения заклинаний. 7 строк ПК вместо 15`,
+        7: `7 уровень — возможность обучиться анимагии (при наличии среднего балла по трансфигурации 4,8 из 5 за первые пять лет обучения), доступна к покупке мантия невидимости. Также становится возможным укорочение постов для изучения заклинаний. 7 строк ПК вместо 15`,
         8: `8 уровень — открытие рынка магических животных от ХХХ. Можно купить зверька, на рынке будут выставлены его характеристики`,
         9: `9 уровень — возможность обучиться трансгресии (за плату)`,
         10: `10 уровень — создание собственных заклинаний и изобретение зелий/растений и т.д.`,
@@ -294,17 +294,6 @@ export async function Service_Beer_Open(context: any) {
 
 export async function Service_Beer_Premium_Open(context: any) {
     let attached = await Image_Random(context, "beer_premium")
-    /*if (context?.eventPayload?.command == "service_beer_open") {
-        await vk.api.messages.sendMessageEventAnswer({
-            event_id: context.eventId,
-            user_id: context.userId,
-            peer_id: context.peerId,
-            event_data: JSON.stringify({
-                type: "show_snackbar",
-                text: `🔔 Поставки нерентабельны, пройдите к клавиатуре...`
-            })
-        })
-    }*/
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer_premium' } })
     if (!trigger) { 
@@ -316,18 +305,19 @@ export async function Service_Beer_Premium_Open(context: any) {
     
     const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer_premium' } })
     if (trigger_check.value == false) {
-        if (user.gold >= 50 && context.eventPayload?.command_sub == 'beer_buying') {
-            const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-50 } })
+        const price_beer_prem = 15
+        if (user.gold >= price_beer_prem && context.eventPayload?.command_sub == 'beer_buying') {
+            const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: { decrement: price_beer_prem } } })
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-            text = `⚙ Кто-бы мог подумать, у дверей возникло бамбуковое пиво прямиком из Хогсмида, снято 50💰. Теперь ваш баланс: ${underwear_sold.gold}`
+            text = `⚙ Кто-бы мог подумать, у дверей возникло бамбуковое пиво прямиком из Хогсмида, снято ${price_beer_prem}💰. Теперь ваш баланс: ${underwear_sold.gold}`
             console.log(`User ${context.peerId} sold self beer premium`)
             await Analyzer_Beer_Premium_Counter(context)
         } else {
-            if (user.gold >= 50) {
-                text += `🍵 Желаете бамбукового пива PREMIUM прямиком из Хогсмида с доставкой на дом, всего лишь за 50💰?`
-                keyboard.callbackButton({ label: '-50💰+🍵', payload: { command: 'service_beer_premium_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
+            if (user.gold >= price_beer_prem) {
+                text += `🍵 Желаете бамбукового пива PREMIUM прямиком из Хогсмида с доставкой на дом, всего лишь за ${price_beer_prem}💰?`
+                keyboard.callbackButton({ label: `-${price_beer_prem}💰+🍵`, payload: { command: 'service_beer_premium_open', command_sub: "beer_buying" }, color: 'secondary' }).row()
             } else {
-                text += `🍵 Здесь должно было быть ваше бамбуковое PREMIUM пиво, но у вас нет даже 50💰!`
+                text += `🍵 Здесь должно было быть ваше бамбуковое PREMIUM пиво, но у вас нет даже ${price_beer_prem}💰!`
             }
         }
     } else {
@@ -356,7 +346,7 @@ export async function Service_Beer_Premium_Open(context: any) {
 }
 
 export async function Service_Quest_Open(context: any) {
-    let attached = await Image_Random(context, "quest")
+    const attached = await Image_Random(context, "quest")
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
     if (!trigger) { 

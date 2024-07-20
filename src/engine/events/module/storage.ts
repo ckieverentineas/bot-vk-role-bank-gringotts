@@ -46,7 +46,7 @@ export async function Storage_Printer(context: any) {
                 keyboard: keyboard, answerTimeLimit
             }
         )
-        if (storage_bt.isTimeout) { return await context.send(`⏰ Время ожидания выбора локации истекло!`) }
+        if (storage_bt.isTimeout) { return await context.send(`⏰ Время ожидания выбора предмета истекло!`) }
         if (!storage_bt.payload) {
             await context.send(`💡 Жмите только по кнопкам с иконками!`)
         } else {
