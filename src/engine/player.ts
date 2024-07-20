@@ -206,13 +206,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         const ans: any = await context.question( `✉ Доступны следующие операции с 💳UID: ${JSON.stringify(uids)}`,
             {   
                 keyboard: Keyboard.builder()
+                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
                 .textButton({ label: '+💰', payload: { command: 'gold_up_many' }, color: 'secondary' })
                 .textButton({ label: '—💰', payload: { command: 'gold_down_many' }, color: 'secondary' }).row()
                 .textButton({ label: '+🧙', payload: { command: 'xp_up_many' }, color: 'secondary' })
                 .textButton({ label: '—🧙', payload: { command: 'xp_down_many' }, color: 'secondary' }).row()
                 .textButton({ label: '+💰🧙', payload: { command: 'multi_up_many' }, color: 'secondary' })
                 .textButton({ label: '—💰🧙', payload: { command: 'multi_down_many' }, color: 'secondary' }).row()
-                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
+                .textButton({ label: '☠💀', payload: { command: 'multi_user_delete_many' }, color: 'negative' }).row()
                 .oneTime().inline(),
                 answerTimeLimit                                                                       
             }
@@ -226,7 +227,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 'xp_down_many': Xp_Down_Many,
                 'back': Back,
                 'multi_up_many': Multi_Up_Many,
-                'multi_down_many': Multi_Down_Many
+                'multi_down_many': Multi_Down_Many,
+                'multi_user_delete_many': Multi_User_Delete_Many
             }
             const answergot = await config[ans.payload.command](uids)
             
@@ -235,7 +237,57 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await context.send(`✅ Процедура массовых операций под названием операция "Ы" успешно завершена!`)
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
-
+        //Модуль мульти уничтожения персонажа
+        async function Multi_User_Delete_Many(uids: number[]) {
+            for (const ids of uids) {
+                const id = Number(ids)
+                const user_get: any = await prisma.user.findFirst({ where: { id: id } })
+                if (!user_get) { await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`); continue }
+                const confirmq = await context.question(`⁉ Вы уверены, что хотите удалить клиента ${user_get.name}`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: 'Да', payload: { command: 'confirm' }, color: 'secondary' })
+                        .textButton({ label: 'Нет', payload: { command: 'gold_down' }, color: 'secondary' })
+                        .oneTime().inline(),
+                        answerTimeLimit
+                    }
+                )
+                if (confirmq.isTimeout) { return await context.send(`⏰ Время ожидания на подтверждение удаления ${user_get.name} истекло!`) }
+                if (confirmq.payload.command === 'confirm' && user_get) {
+                    if (user_get) {
+                        const user_del = await prisma.user.delete({ where: { id: id } })
+                        await context.send(`❗ Удален пользователь ${user_del.name}`)
+                        if (user_del) {
+                            const check_bbox = await prisma.blackBox.findFirst({ where: { idvk: user_del.idvk } })
+                            if (!check_bbox) {
+                                const add_bbox = await prisma.blackBox.create({ data: { idvk: user_del.idvk } })
+                                add_bbox ? await context.send(`⚙ @id${user_del.idvk}(${user_del.name}) теперь является нелегалом.`) : await context.send(`⚙ @id${user_del.idvk}(${user_del.name}) не смог стать нелегалом.`)
+                            } else {
+                                await context.send(`⚙ @id${user_del.idvk}(${user_del.name}) депортируется НА РОДИНУ уже не в первый раз.`)
+                            }
+                            try {
+                                await vk.api.messages.send({
+                                    user_id: user_del.idvk,
+                                    random_id: 0,
+                                    message: `❗ Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
+                                })
+                                await context.send(`⚙ Операция удаления пользователя завершена успешно.`)
+                            } catch (error) {
+                                console.log(`User ${user_del.idvk} blocked chating with bank`)
+                            }
+                            await vk.api.messages.send({
+                                peer_id: chat_id,
+                                random_id: 0,
+                                message: `⚙ @id${context.senderId}(Admin) > "🚫👤" > удаляется из банковской системы карточка @id${user_del.idvk}(${user_del.name})`
+                            })
+                        }
+                        console.log(`Admin ${context.senderId} deleted user: ${user_del.idvk}`)
+                    } 
+                } else {
+                    await context.send(`⚙ Удаление ${user_get.name} отменено.`)
+                }
+            }
+        }
         //Модуль мульти начислений
         async function Multi_Up_Many(uids: number[]) {
             await context.send(`⚠ Приступаем к начислению галлеонов`)
