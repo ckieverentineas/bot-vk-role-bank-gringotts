@@ -55,7 +55,7 @@ export async function Service_Convert_Galleon(context: any) {
     if (user.gold >= 100) { keyboard.callbackButton({ label: '100💰 => 200🧙', payload: { command: 'service_convert_galleon_change', item: "gold", value: 100 }, color: 'secondary' }) }
     if (user.gold >= 1000) { keyboard.callbackButton({ label: '1000💰 => 2000🧙', payload: { command: 'service_convert_galleon_change', item: "gold", value: 1000 }, color: 'secondary' }).row() }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.gold <= 0 ? `\n\n💬 Ээээ, Бомжара, тикай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.gold}💰 ${user?.xp}🧙, сколько сконвертируем?`
+    text += user.gold <= 0 ? `\n\n💬 — Ээээ, бомжара, тикай с района! — кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.gold}💰 ${user?.xp}🧙, сколько сконвертируем?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_convert_galleon") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -114,7 +114,7 @@ export async function Service_Convert_Magic_Experience(context: any) {
     if (user.xp >= 75) { keyboard.callbackButton({ label: '75🧙 => 25💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 75 }, color: 'secondary' }) }
     if (user.xp >= 150) { keyboard.callbackButton({ label: '150🧙 => 50💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 150 }, color: 'secondary' }).row() }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.xp < 15 ? `\n\n💬 Ээээ, Бомжара, тикай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
+    text += user.xp < 15 ? `\n\n💬 — Ээээ, бомжара, тикай с района! — кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_convert_magic_experience") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -167,13 +167,13 @@ export async function Service_Convert_Magic_Experience_Change(context: any) {
 export async function Service_Level_Up(context: any) {
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const attached = await Image_Random(context, "lvl_up")
-    let text = `✉ Гоблин в темных очках, предлагает вам повысить свой уровень.`
+    let text = `✉ Гоблин в темных очках предлагает вам повысить свой уровень.`
     const keyboard = new KeyboardBuilder()
     let paying = 250
     if (user.lvl == 0) { paying = 0 }
     if (user.xp >= paying) { keyboard.callbackButton({ label: `${paying}🧙 => 1📈`, payload: { command: 'service_level_up_change', item: "xp", value: paying }, color: 'secondary' }) }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
-    text += user.xp < paying ? `\n\n💬 Ээээ, Бомжара, тикай с района! Кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
+    text += user.xp < paying ? `\n\n💬 — Ээээ, бомжара, тикай с района! — кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
     if (context?.eventPayload?.command == "service_level_up") {
         await vk.api.messages.sendMessageEventAnswer({
@@ -273,9 +273,9 @@ export async function Service_Beer_Open(context: any) {
         const dateold: any = new Date(trigger_check.crdate)
         if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
-            text += `🍺 Вы точно хотите, сдать бутылку 1.5 литра за 1💰?`
+            text += `🍺 Вы точно хотите сдать бутылку 1.5 литра за 1💰?`
         } else {
-            text = `🔔 Вы уже бухали по сливочному: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`
+            text = `🔔 Вы уже бухали по-сливочному: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов.`
         }
         if (context.eventPayload?.command_sub == 'beer_selling') {
             const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+1 } })
@@ -326,7 +326,7 @@ export async function Service_Beer_Premium_Open(context: any) {
         const dateold: any = new Date(trigger_check.crdate)
         if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
-            text += `🍵 Вы точно хотите, сдать бамбуковую PREMIUM бутылку 1.5 литра за 10💰?`
+            text += `🍵 Вы точно хотите сдать бамбуковую PREMIUM бутылку 1.5 литра за 10💰?`
         } else {
             text = `🔔 ТАААК, вам больше не наливаем, последний раз бухали: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новой порцией.`
         }
@@ -360,7 +360,7 @@ export async function Service_Quest_Open(context: any) {
     const datenow: any = new Date()
     const dateold: any = new Date(trigger_check.crdate)
     if (datenow-trigger_check.crdate > timeouter) {
-        text = `⚙ Кто бы мог подумать, у дверей возникла бумажка с надписью, вам поручено новое ежедневное задание, подробности в новом полученном сообщении...`
+        text = `⚙ Кто бы мог подумать, у дверей возникла бумажка с надписью: "вам поручено новое ежедневное задание, подробности в новом полученном сообщении"...`
         console.log(`User ${context.peerId} got quest`)
         const user_list: any = await prisma.user.findMany({ where: { private: false} })
         
@@ -383,7 +383,7 @@ export async function Service_Quest_Open(context: any) {
             const reward_mo: number = Math.floor(pk/10*10)
             const reward_gold: number = Math.floor(pk/10*5)
             await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `⌛ Загружается новое событие...`})
-            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с тем, с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.\n Требование к ПК устанавливает то, сколько должен отролить строк каждый ролевик!` })
+            await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.\n Требование к ПК устанавливает то, сколько должен отролить строк каждый ролевик!` })
             await vk.api.messages.send({ peer_id: chat_id, random_id: 0, message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙` })
             await Analyzer_Quest_Counter(context)
             const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
@@ -459,7 +459,7 @@ export async function Service_Underwear_Open(context: any) {
                 console.log(`User ${context.peerId} return self underwear`)
                 await Analyzer_Underwear_Counter(context)
             } else { 
-                text = 'Соболезнуем, для выкупа нужно 10 галлеонов, хотите в рабство? Дайте нам об этом знать:)'
+                text = 'Соболезнуем, для выкупа нужно 10 галлеонов, хотите в рабство? Дайте нам об этом знать!'
             }
         } else {
             if (user.gold >= 10) {
