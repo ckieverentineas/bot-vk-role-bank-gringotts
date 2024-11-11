@@ -31,9 +31,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         peer_id: chat_id,
                         random_id: 0,
-                        message: `⚙ @id${context.senderId}(ROOT) пользователь открывает следующий магазин ${shop_create.name}`
+                        message: `⚙ @id${context.senderId}(ROOT) пользователь открывает магазин ${shop_create.name}`
                     })
-                    await context.send(`⚙ Вы открыли следующий магазин ${shop_create.name}`)
+                    await context.send(`⚙ Вы открыли магазин ${shop_create.name}`)
                 }
             } else {
                 let keyboard = Keyboard.builder()
@@ -55,7 +55,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         peer_id: chat_id,
                         random_id: 0,
-                        message: `⚙ @id${context.senderId}(ROOT) пользователь закрывает следующий магазин ${shop_delete.name}`
+                        message: `⚙ @id${context.senderId}(ROOT) пользователь закрывает магазин ${shop_delete.name}`
                     })
                     await context.send(`⚙ Удален магазин ${shop_delete.name}`)
                 }
@@ -63,18 +63,18 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const shop: any = await context.question( `🧷 Введите название магазина:` )
                     const shop_create: any = await prisma.category.create({ data: { name: shop.text } })
                     console.log(`User ${context.senderId} open new shop`)
-                    await context.send(`⚙ Вы открыли следующий магазин ${shop_create.name}`)
+                    await context.send(`⚙ Вы открыли магазин ${shop_create.name}`)
                     await vk.api.messages.send({
                         peer_id: chat_id,
                         random_id: 0,
-                        message: `⚙ @id${context.senderId}(ROOT) пользователь открыл следующий магазин ${shop_create.name}`
+                        message: `⚙ @id${context.senderId}(ROOT) пользователь открыл магазин ${shop_create.name}`
                     })
                 }
                 if (category.find((i: any) => i.name == ans.text)) {
                     await context.send(`⌛ Вы оказались в ${ans.text}`)
                     const item: any= await prisma.item.findMany({ where: { id_category: Number(ans.payload.command) } })
                     if (item.length == 0) {
-                        await context.send(`✉ К сожалению приалвки пока что пусты=/`)
+                        await context.send(`✉ К сожалению, прилавки пока что пусты`)
                     } else {
                         item.forEach(async (element: any) => {
                             await context.send(`🛍 ${element.name} ${element.price}💰`,
@@ -118,11 +118,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             message: `⚙ @id${context.senderId}(ROOT) пользователь добавляет новый товар ${item_name.text} стоимостью ${item_price.text} галлеонов`
                         })
                     }
-                    if (ans_item.payload.command == 'continue') { await context.send(`💡 Нажимайте кнопку купить у желаемого товара`) }
+                    if (ans_item.payload.command == 'continue') { await context.send(`💡 Нажимайте кнопку "купить" у желаемого товара`) }
                 }
             }
         }
-        await Keyboard_Index(context, `💡 А может быть в косом переулке есть подполье?`)
+        await Keyboard_Index(context, `💡 А может быть, в Косом переулке есть подполье?`)
     })
     hearManager.hear(/✏Тип/, async (context) => {
         if (context.messagePayload == null && context.senderId != root) {
@@ -198,7 +198,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             } else {
                 if (uid.text == "🚫Отмена") { 
                     await context.send(`💡 Операции прерваны пользователем!`) 
-                    return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+                    return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
                 }
 				await context.send(`💡 Необходимо ввести корректный UID!`)
 			}
@@ -236,7 +236,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             await context.send(`⚙ Операция отменена пользователем.`)
         }
         await context.send(`✅ Процедура массовых операций под названием операция "Ы" успешно завершена!`)
-        await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+        await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
         //Модуль мульти уничтожения персонажа
         async function Multi_User_Delete_Many(uids: number[]) {
             for (const ids of uids) {
@@ -610,7 +610,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 			} else {
                 if (uid.text == "🚫Отмена") { 
                     await context.send(`💡 Операции прерваны пользователем!`) 
-                    return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+                    return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
                 }
 				await context.send(`💡 Необходимо ввести корректный UID!`)
 			}
@@ -647,7 +647,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         } else {
             await context.send(`⚙ Операция отменена пользователем.`)
         }
-        await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может позвать доктора?`)
+        await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
 
         //Модуль редактирования персонажей
         async function Editor(id: number) {
@@ -875,7 +875,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     datas.push({label: `${type.text}`})
                     datas.push({type: `${type.payload.command}`})
                 } else {
-                    await context.send(`💡 Может лучше по кнопочкам жать?`)
+                    await context.send(`💡 Может, лучше по кнопочкам жать?`)
                 }
             }
 
@@ -1264,7 +1264,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     peer_id: chat_id,
                     random_id: 0,
-                    message: `⚙ @id${context.senderId}(Admin) > "🚫🔮" > артефакт ${art_del.name} изьял ОМОН! у @id${user_find.idvk}(${user_find.name})`
+                    message: `⚙ @id${context.senderId}(Admin) > "🚫🔮" > артефакт ${art_del.name} изъял ОМОН! у @id${user_find.idvk}(${user_find.name})`
                 })
             }
             console.log(`Admin ${context.senderId} destroy artefact from user UID: ${user_find?.idvk}`)
