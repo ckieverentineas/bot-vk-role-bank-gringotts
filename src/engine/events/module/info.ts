@@ -20,7 +20,7 @@ export async function Card_Enter(context:any) {
         .callbackButton({ label: '🏆', payload: { command: 'rank_enter' }, color: 'secondary' })
         .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
         console.log(`User ${get_user.idvk} see card`)
-        let ii = `В общем вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
+        let ii = `В общем, вы ${get_user.gold > 100 ? "при деньгах" : "без денег"}. Вы ${get_user.lvl > 4 ? "слишком много знаете" : "должны узнать больше."}`
         await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
         if (context?.eventPayload?.command == "card_enter") {
             await vk.api.messages.sendMessageEventAnswer({
@@ -58,15 +58,15 @@ export async function Artefact_Enter(context: any) {
     const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
     if (artefact.length > 0) {
         for (const i in artefact) { artefact_list += `\n💬: ${artefact[i].name} \n 🔧: ${artefact[i].type}${artefact[i].label} \n 🧷:  ${artefact[i].description}` }
-    } else { artefact_list += `\n✉ У Вас еще нет артефактов =(` }
+    } else { artefact_list += `\n✉ У вас еще нет артефактов` }
     console.log(`User ${get_user.idvk} see artefacts`)
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${artefact_list}`, keyboard: keyboard, attachment: attached?.toString()})
     let ii = ''
     if (artefact.length > 0) {
-        ii += `${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизивание источает силу.'}`
+        ii += `${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизывание источает силу.'}`
     } else { 
-        ii += `Вероятно вы магл, раз у вас нет артефакта..`
+        ii += `Вероятно, вы маггл, раз у вас нет артефакта...`
     }
     await vk.api.messages.sendMessageEventAnswer({
         event_id: context.eventId,
@@ -107,7 +107,7 @@ export async function Inventory_Enter(context: any) {
     )
     const attached = await Image_Interface_Inventory(fUArr, context)
     let final: any = Array.from(new Set(compile));
-    const text = final.length > 0 ? `✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}` : `✉ Вы еще ничего не приобрели:(`
+    const text = final.length > 0 ? `✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}` : `✉ Вы еще ничего не приобрели`
     console.log(`User ${context.peerId} see self inventory`)  
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
     await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
@@ -195,7 +195,7 @@ export async function Birthday_Enter(context: any) {
             const xp = randomInt(15, 151)
             const user_update: any = await prisma.user.update({ where: { id: user.id }, data: { gold: { increment: gold }, xp: { increment: xp } } })
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: new Date(year, month, day) } })
-            text = `⚙ Развязав бантик бантиков c красивой упакованной коробочки, вы нашли внутри ${gold}💰 и ${xp}🧙. В самом дне коробки лежала записочка: С днем Рождения, сук@!`
+            text = `⚙ Развязав бантики на красиво упакованной коробочке, вы нашли внутри ${gold}💰 и ${xp}🧙. На самом дне коробки лежала записочка: С днем Рождения, сук@!`
             console.log(`User ${context.peerId} get gift for birthday`)
             await vk.api.messages.send({
                 peer_id: chat_id,
@@ -204,7 +204,7 @@ export async function Birthday_Enter(context: any) {
             })
             await Analyzer_Birthday_Counter(context)
         } else {
-            text += `🎁 Кто-бы мог подумать, у дверей возникла посылка с бантиками, красиво обтягивающими коробку!`
+            text += `🎁 Кто бы мог подумать, у дверей возникла посылка с бантиками, красиво обтягивающими коробку!`
             keyboard.callbackButton({ label: '+🎁', payload: { command: 'birthday_enter', command_sub: "beer_buying" }, color: 'secondary' }).row()
         }
     } else {
