@@ -4,11 +4,13 @@ import prisma from "./prisma_client"
 import { chat_id, vk } from "../../.."
 import { randomInt } from "crypto"
 import { Analyzer_Beer_Counter, Analyzer_Beer_Premium_Counter, Analyzer_Convert_MO_Counter, Analyzer_Quest_Counter, Analyzer_Underwear_Counter } from "./analyzer"
+import { image_beer, image_beer_drop, image_beer_premium, image_beer_premium_drop, image_conv_mo, image_lvl_up, image_quest, image_service, image_underwear } from "../../data_center/system_image"
+import { Send_Message_Universal } from "../../core/helper"
 
 const timeouter = 86400000 //время кд квестов
 
 export async function Service_Enter(context: any) {
-    const attached = await Image_Random(context, "service")
+    const attached = image_service//await Image_Random(context, "service")
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const keyboard = new KeyboardBuilder()
     .callbackButton({ label: '📈', payload: { command: 'service_level_up' }, color: 'secondary' })
@@ -20,18 +22,8 @@ export async function Service_Enter(context: any) {
     .callbackButton({ label: '🍵', payload: { command: 'service_beer_premium_open' }, color: 'secondary' }).row()
     .callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).row().inline().oneTime()
     const text = `✉ В данный момент доступны следующие операции:`
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})  
-    if (context?.eventPayload?.command == "service_enter") {
-        await vk.api.messages.sendMessageEventAnswer({
-            event_id: context.eventId,
-            user_id: context.userId,
-            peer_id: context.peerId,
-            event_data: JSON.stringify({
-                type: "show_snackbar",
-                text: `🔔 Ваш баланс: ${user?.xp}🧙 ${user?.gold}💰`
-            })
-        })
-    }
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})  
 }
 export async function Service_Cancel(context: any) {
     await Service_Enter(context)
@@ -106,7 +98,7 @@ export async function Service_Convert_Galleon_Change(context: any) {
 }
 export async function Service_Convert_Magic_Experience(context: any) {
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
-    const attached = await Image_Random(context, "conv_mo")
+    const attached = image_conv_mo//await Image_Random(context, "conv_mo")
     let text = `✉ Гоблин в черной одежде предлагает обменять магический опыт на галлеоны.`
     const keyboard = new KeyboardBuilder()
     if (user.xp >= 15) { keyboard.callbackButton({ label: '15🧙 => 5💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 15 }, color: 'secondary' }) }
@@ -115,18 +107,8 @@ export async function Service_Convert_Magic_Experience(context: any) {
     if (user.xp >= 150) { keyboard.callbackButton({ label: '150🧙 => 50💰', payload: { command: 'service_convert_magic_experience_change', item: "xp", value: 150 }, color: 'secondary' }).row() }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
     text += user.xp < 15 ? `\n\n💬 — Ээээ, бомжара, тикай с района! — кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙 ${user?.gold}💰, сколько сконвертируем?`
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
-    if (context?.eventPayload?.command == "service_convert_magic_experience") {
-        await vk.api.messages.sendMessageEventAnswer({
-            event_id: context.eventId,
-            user_id: context.userId,
-            peer_id: context.peerId,
-            event_data: JSON.stringify({
-                type: "show_snackbar",
-                text: `🔔 Услуга обмена 15 единиц магического опыта на 5 галлеонов.`
-            })
-        })
-    }
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
 export async function Service_Convert_Magic_Experience_Change(context: any) {
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
@@ -166,7 +148,7 @@ export async function Service_Convert_Magic_Experience_Change(context: any) {
 }
 export async function Service_Level_Up(context: any) {
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
-    const attached = await Image_Random(context, "lvl_up")
+    const attached = image_lvl_up//await Image_Random(context, "lvl_up")
     let text = `✉ Гоблин в темных очках предлагает вам повысить свой уровень.`
     const keyboard = new KeyboardBuilder()
     let paying = 250
@@ -174,21 +156,11 @@ export async function Service_Level_Up(context: any) {
     if (user.xp >= paying) { keyboard.callbackButton({ label: `${paying}🧙 => 1📈`, payload: { command: 'service_level_up_change', item: "xp", value: paying }, color: 'secondary' }) }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).row().inline().oneTime()
     text += user.xp < paying ? `\n\n💬 — Ээээ, бомжара, тикай с района! — кричали гоблины, выпинывая вас из учреждения...` : `\n\n🧷 На вашем балансе ${user?.xp}🧙, так давайте же прокачаемся?`
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
-    if (context?.eventPayload?.command == "service_level_up") {
-        await vk.api.messages.sendMessageEventAnswer({
-            event_id: context.eventId,
-            user_id: context.userId,
-            peer_id: context.peerId,
-            event_data: JSON.stringify({
-                type: "show_snackbar",
-                text: `🔔 Услуга повышения уровня.`
-            })
-        })
-    }
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
 export async function Service_Level_Up_Change(context: any) {
-    const attached = await Image_Random(context, "lvl_up")
+    const attached = image_lvl_up//await Image_Random(context, "lvl_up")
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const leveling: any = {
         1: `1 уровень — стандартные возможности. Разрешается использование только волшебной палочки.`,
@@ -229,19 +201,11 @@ export async function Service_Level_Up_Change(context: any) {
         text += user.lvl >= 15 ? `Вы достигли своего предела!` : `Недостаточно магического опыта! Необходимо ${paying}🧙 для повышения уровня.`
         console.log(`User ${context.peerId} have not enough MO for lvl up from ${user.lvl} to ${user.lvl++}`)
     }
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
-    await vk.api.messages.sendMessageEventAnswer({
-        event_id: context.eventId,
-        user_id: context.userId,
-        peer_id: context.peerId,
-        event_data: JSON.stringify({
-            type: "show_snackbar",
-            text: `🔔 Услуга повышения уровня.`
-        })
-    })
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
 export async function Service_Beer_Open(context: any) {
-    let attached = await Image_Random(context, "beer")
+    let attached = image_beer//await Image_Random(context, "beer")
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer' } })
     if (!trigger) { 
@@ -268,7 +232,7 @@ export async function Service_Beer_Open(context: any) {
             }
         }
     } else {
-        attached = await Image_Random(context, "beer_drop")
+        attached = image_beer_drop//await Image_Random(context, "beer_drop")
         const datenow: any = new Date()
         const dateold: any = new Date(trigger_check.crdate)
         if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
@@ -289,11 +253,12 @@ export async function Service_Beer_Open(context: any) {
         }
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
 
 export async function Service_Beer_Premium_Open(context: any) {
-    let attached = await Image_Random(context, "beer_premium")
+    let attached = image_beer_premium//await Image_Random(context, "beer_premium")
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'beer_premium' } })
     if (!trigger) { 
@@ -321,7 +286,7 @@ export async function Service_Beer_Premium_Open(context: any) {
             }
         }
     } else {
-        attached = await Image_Random(context, "beer_premium_drop")
+        attached = image_beer_premium_drop//await Image_Random(context, "beer_premium_drop")
         const datenow: any = new Date()
         const dateold: any = new Date(trigger_check.crdate)
         if (datenow-trigger_check.crdate > timeouter && trigger_check.value) {
@@ -342,11 +307,12 @@ export async function Service_Beer_Premium_Open(context: any) {
         }
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }
 
 export async function Service_Quest_Open(context: any) {
-    const attached = await Image_Random(context, "quest")
+    const attached = image_quest//await Image_Random(context, "quest")
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
     if (!trigger) { 
@@ -399,13 +365,13 @@ export async function Service_Quest_Open(context: any) {
         }
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
-
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 } 
     
 
 export async function Service_Underwear_Open(context: any) {
-    let attached = await Image_Random(context, "underwear")
+    let attached = image_underwear//await Image_Random(context, "underwear")
     /*if (context?.eventPayload?.command == "service_underwear_open") {
         await vk.api.messages.sendMessageEventAnswer({
             event_id: context.eventId,
@@ -468,5 +434,6 @@ export async function Service_Underwear_Open(context: any) {
         }
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
 }

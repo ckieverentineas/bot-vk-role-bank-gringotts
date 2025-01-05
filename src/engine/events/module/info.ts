@@ -5,6 +5,8 @@ import { Storage, Trigger, User } from "@prisma/client"
 import { Image_Interface_Inventory, Image_Random, Image_Text_Add_Card } from "../../core/imagecpu"
 import { randomInt } from "crypto"
 import { Analyzer_Birthday_Counter } from "./analyzer"
+import { image_admin, image_artefact, image_birthday, image_storage } from "../../data_center/system_image"
+import { Send_Message_Universal } from "../../core/helper"
 
 export async function Card_Enter(context:any) {
     const get_user: User | null | undefined = await prisma.user.findFirst({ where: { idvk: context.peerId } })
@@ -53,7 +55,7 @@ export async function Card_Private(context: any) {
 
 export async function Artefact_Enter(context: any) {
     const get_user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
-    const attached = await Image_Random(context, "artefact")
+    const attached = image_artefact //await Image_Random(context, "artefact")
     let artefact_list = `✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: \n`
     const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
     if (artefact.length > 0) {
@@ -61,7 +63,8 @@ export async function Artefact_Enter(context: any) {
     } else { artefact_list += `\n✉ У вас еще нет артефактов` }
     console.log(`User ${get_user.idvk} see artefacts`)
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${artefact_list}`, keyboard: keyboard, attachment: attached?.toString()})
+    await Send_Message_Universal(context.peerId, artefact_list, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${artefact_list}`, keyboard: keyboard, attachment: attached?.toString()})
     let ii = ''
     if (artefact.length > 0) {
         ii += `${artefact.length > 2 ? 'Вы тоже чувствуете эту силу мощи?' : 'Слабое пронизывание источает силу.'}`
@@ -105,26 +108,17 @@ export async function Inventory_Enter(context: any) {
         self.map( (itm: { [s: string]: any; } | ArrayLike<any>) => Object.values(itm).reduce((r, c) => r.concat(c), '') )
         .indexOf( Object.values(li).reduce((r, c) => r.concat(c), '') ) === idx
     )
-    const attached = await Image_Interface_Inventory(fUArr, context)
+    //const attached = await Image_Interface_Inventory(fUArr, context)
     let final: any = Array.from(new Set(compile));
     const text = final.length > 0 ? `✉ Вы приобрели следующее: \n ${final.toString().replace(/,/g, '')}` : `✉ Вы еще ничего не приобрели`
     console.log(`User ${context.peerId} see self inventory`)  
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
-    let ii = final.length > 0 ? 'А вы зажиточный клиент' : `Как можно было так лохануться?`
-    await vk.api.messages.sendMessageEventAnswer({
-        event_id: context.eventId,
-        user_id: context.userId,
-        peer_id: context.peerId,
-        event_data: JSON.stringify({
-            type: "show_snackbar",
-            text: `🔔 ${ii}`
-        })
-    })
+    await Send_Message_Universal(context.peerId, text, keyboard)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
 }
 
 export async function Storage_Enter(context: any) {
-    const attached = await Image_Random(context, "storage")
+    const attached = image_storage//await Image_Random(context, "storage")
     const get_user:any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const storage: Storage[] = await prisma.storage.findMany({ where: { id_user: get_user.id } })
     
@@ -132,21 +126,12 @@ export async function Storage_Enter(context: any) {
     console.log(`User ${context.peerId} see self storage`)  
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
     keyboard.textButton({ label: '➕📦', payload: { command: 'Согласиться' }, color: 'secondary' })
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
-    let ii = `А че так можно было?`
-    await vk.api.messages.sendMessageEventAnswer({
-        event_id: context.eventId,
-        user_id: context.userId,
-        peer_id: context.peerId,
-        event_data: JSON.stringify({
-            type: "show_snackbar",
-            text: `🔔 ${ii}`
-        })
-    })
+    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
 }
 
 export async function Admin_Enter(context: any) {
-    const attached = await Image_Random(context, "admin")
+    const attached = image_admin//await Image_Random(context, "admin")
     const user = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     let puller = '🏦 Полный спектр рабов... \n'
     if (user?.id_role == 2) {
@@ -156,21 +141,13 @@ export async function Admin_Enter(context: any) {
         puller += `\n🚫 Доступ запрещен\n`
     }
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${puller}`, keyboard: keyboard, attachment: attached?.toString()})
+    await Send_Message_Universal(context.peerId, puller, keyboard, attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${puller}`, keyboard: keyboard, attachment: attached?.toString()})
     console.log(`Admin ${context.peerId} see list administrators`) 
-    await vk.api.messages.sendMessageEventAnswer({
-        event_id: context.eventId,
-        user_id: context.userId,
-        peer_id: context.peerId,
-        event_data: JSON.stringify({
-            type: "show_snackbar",
-            text: `🔔 Им бы еще черные очки, и точно люди в черном!`
-        })
-    })
 }
 
 export async function Birthday_Enter(context: any) {
-    const attached = await Image_Random(context, "birthday")
+    const attached = image_birthday//await Image_Random(context, "birthday")
     const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (!user) { return }
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'birthday' } })
@@ -211,11 +188,10 @@ export async function Birthday_Enter(context: any) {
         text = `🔔 Последний ваш день Рождения отмечали всем банком: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! До вашего нового дня Рождения осталось ${((timeouter-(datenow-dateold))/60000/60).toFixed(2)} часов.`
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()}) 
+    await Send_Message_Universal(context.peerId, text, keyboard, attached) 
 }
 
 export async function Statistics_Enter(context: any) {
-    //let attached = await Image_Random(context, "birthday")
     const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (!user) { return }
     const stats = await prisma.analyzer.findFirst({ where: { id_user: user.id }})
@@ -224,7 +200,8 @@ export async function Statistics_Enter(context: any) {
     text = `⚙ Конфиденциальная информация:\n\n🍺 Сливочное: ${stats?.beer}/150\n🍵 Бамбуковое: ${stats?.beer_premiun}/150\n🎁 Дни Рождения: ${stats?.birthday}/15\n🧙 Конвертаций МО: ${stats?.convert_mo}/150\n📅 Получено ЕЗ: ${stats?.quest}/150\n👙 Залогов: ${stats?.underwear}/150\n`
     console.log(`User ${context.peerId} get statistics information`)
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
+    await Send_Message_Universal(context.peerId, text, keyboard)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
 }
 
 export async function Rank_Enter(context: any) {
@@ -268,5 +245,6 @@ export async function Rank_Enter(context: any) {
     text += `\n\n☠ В статистике участвует ${counter} ролевиков`
     console.log(`User ${context.peerId} get rank information`)
     keyboard.callbackButton({ label: '🚫', payload: { command: 'card_enter' }, color: 'secondary' }).inline().oneTime()
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
+    await Send_Message_Universal(context.peerId, text, keyboard)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, /*attachment: attached?.toString()*/}) 
 }

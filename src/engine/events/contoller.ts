@@ -3,6 +3,8 @@ import prisma from "./module/prisma_client"
 import { root, vk } from "../.."
 import { Image_Random } from "../core/imagecpu";
 import { User } from "@prisma/client";
+import { image_bank } from "../data_center/system_image";
+import { Send_Message_Universal } from "../core/helper";
 
 function Sleep(ms: number) {
     return new Promise((resolve) => {
@@ -11,9 +13,11 @@ function Sleep(ms: number) {
 }
 
 export async function Main_Menu_Init(context: any) {
-    const attached = await Image_Random(context, "bank")
+    const attached = image_bank//await Image_Random(context, "bank")
     const user: User | null = await prisma.user.findFirst({ where: { idvk: context.peerId } })
-    await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `🏦 Доступ разрешен, зашифрованное соединение по proxy: https:/hog_online/bank_gringotts/${user?.id}:${user?.idvk}\n✅ Вы авторизованы, ${user?.name}!\n💳 UID-${user?.id} Баланс: ${user?.gold}💰 ${user?.xp}🧙`, keyboard: await Main_Menu(context), attachment: attached.toString() })
+    const text = `🏦 Доступ разрешен, зашифрованное соединение по proxy: https:/hog_online/bank_gringotts/${user?.id}:${user?.idvk}\n✅ Вы авторизованы, ${user?.name}!\n💳 UID-${user?.id} Баланс: ${user?.gold}💰 ${user?.xp}🧙`
+    await Send_Message_Universal(context.peerId, text, await Main_Menu(context), attached)
+    //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `🏦 Доступ разрешен, зашифрованное соединение по proxy: https:/hog_online/bank_gringotts/${user?.id}:${user?.idvk}\n✅ Вы авторизованы, ${user?.name}!\n💳 UID-${user?.id} Баланс: ${user?.gold}💰 ${user?.xp}🧙`, keyboard: await Main_Menu(context), attachment: attached.toString() })
     await vk.api.messages.sendMessageEventAnswer({
         event_id: context.eventId,
         user_id: context.userId,

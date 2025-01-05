@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client"
 import { randomInt } from "crypto"
-import { Keyboard, KeyboardBuilder } from "vk-io"
+import { Keyboard, KeyboardBuilder, PhotoAttachment } from "vk-io"
 import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "../.."
 import { Image_Interface, Image_Random } from "./imagecpu"
 import { promises as fsPromises } from 'fs'
@@ -342,6 +342,13 @@ export async function Logger(text: String) {
     console.log(`[${project_name}] --> ${text} <-- (${new Date().toLocaleString("ru"/*, options*/)})`)
 }
 
+export async function Fixed_Number_To_Five(num: number) {
+    let res = 0
+    res = num < 5 ? 0 : Math.floor(num / 5) * 5
+    //console.log(`${num} --> ${res}`)
+	return res
+}
+
 export async function Confirm_User_Success(context: any, text: string) {
     let res = { status: false, text: `` }
     const confirmq = await context.question(`⁉ Вы уверены, что хотите ${text}`,
@@ -367,6 +374,18 @@ export async function Send_Message(idvk: number, message: string, keyboard?: Key
     message = message ? message : 'invalid message'
     try {
         keyboard ? await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) : await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } )
+    } catch (e) {
+        console.log(`Ошибка отправки сообщения: ${e}`)
+    }
+}
+
+export async function Send_Message_Universal(idvk: number, message: string, keyboard?: Keyboard, attachment?: string | PhotoAttachment | null) {
+    message = message ? message : 'invalid message'
+    try {
+        if (!attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } ) }
+        if (attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, attachment: attachment } ) }
+        if (!attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) }
+        if (attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard, attachment: attachment } ) }
     } catch (e) {
         console.log(`Ошибка отправки сообщения: ${e}`)
     }

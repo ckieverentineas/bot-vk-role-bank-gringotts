@@ -3,7 +3,7 @@ import prisma from "./prisma_client"
 import { KeyboardBuilder } from "vk-io"
 import { Image_Interface, Image_Random } from "../../core/imagecpu"
 import { chat_id, vk } from "../../.."
-
+/*
 async function Searcher(data: any, target: number) {
     let counter = 0
     while (data.length != counter) {
@@ -163,3 +163,4 @@ export async function Shop_Category_Enter(context: any) {
         })
     }
 }
+*/

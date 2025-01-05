@@ -4,7 +4,7 @@ import { randomInt } from "crypto";
 import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { root } from "..";
-import { Logger } from "./core/helper";
+import { Logger, Send_Message_Universal } from "./core/helper";
 
 const prisma = new PrismaClient()
 
@@ -168,4 +168,69 @@ export function InitGameRoutes(hearManager: HearManager<IQuestionMessageContext>
 			}
 		}
 	})*/
+	hearManager.hear(/init/, async (context: any) => {
+		if (context.senderId != root) { return }
+		const res = { count_shop: 0, count_item: 0 }
+		const categories_shop = [ `Лавка Олливандера`, `Волшебный зверинец`, `Флориш и Блоттс`, `Все для квиддича`]
+		for (const cat of categories_shop) {
+			const cat_check = await prisma.category.findFirst({ where: { name: cat } })
+			if (!cat_check) { 
+				const cat_cr = await prisma.category.create({ data: { name: cat } }) 
+				await Logger(`In database, init category shop id: ${cat_cr.id} name: ${cat_cr.name} for users by admin ${context.senderId}`)
+				res.count_shop++
+			} else {
+				await Logger(`In database, already init category shop id ${cat_check.id} name ${cat_check.name} for users by admin ${context.senderId}`)
+			}
+		}
+		const items = [
+			{ 
+				target: `Волшебный зверинец`, item: [
+					{ name: `Сипуха`, description: ``, price: 10, type: 'unlimited', image: 'photo-200587399_457314609' },
+					{ name: `Сова`, description: ``, price: 10, type: 'unlimited', image: 'photo-200587399_457314610' },
+					{ name: `Ушастая сова`, description: ``, price: 15, type: 'unlimited', image: 'photo-200587399_457314612' },
+					{ name: `Рыжая кошка`, description: ``, price: 9, type: 'unlimited', image: 'photo-200587399_457314608' }, 
+					{ name: `Жаба`, description: ``, price: 7, type: 'unlimited', image: 'photo-200587399_457314602' },
+					{ name: `Черный кот`, description: ``, price: 9, type: 'unlimited', image: 'photo-200587399_457314614' }, 
+				]
+			},
+			{ 
+				target: `Лавка Олливандера`, item: [
+					{ name: `Волшебная палочка`, description: ``, price: 7, type: 'limited', image: 'photo-200587399_457314601' },
+				]
+			},
+			{ 
+				target: `Флориш и Блоттс`, item: [
+					{ name: `Стандартный набор учебников`, description: ``, price: 30, type: 'limited', image: 'photo-200587399_457314611' },
+					{ name: `Фантастические звери и где их найти`, description: ``, price: 3, type: 'limited', image: 'photo-200587399_457314613' }, 
+					{ name: `Прорицания`, description: ``, price: 5, type: 'limited', image: 'photo-200587399_457314607' }, 
+				]
+			},
+			{ 
+				target: `Все для квиддича`, item: [
+					{ name: `Нимбус 2000`, description: ``, price: 11, type: 'limited', image: 'photo-200587399_457314604' },
+					{ name: `Нимбус 2001`, description: ``, price: 11, type: 'limited', image: 'photo-200587399_457314605' },
+					{ name: `Молния (+подсказка)`, description: ``, price: 15, type: 'limited', image: 'photo-200587399_457314603' },
+					{ name: `Чистомет (+подсказка)`, description: ``, price: 15, type: 'limited', image: 'photo-200587399_457314615' },
+					{ name: `Обмундирование`, description: ``, price: 5, type: 'limited', image: 'photo-200587399_457314606' },
+				]
+			}
+		]
+		for (const el of items) {
+			const category = await prisma.category.findFirst({ where: { name: el.target } })
+			if (!category) { await context.send(`Нет категории ${el.target}`); continue }
+			for (const item of el.item) {
+				const item_check = await prisma.item.findFirst({ where: { name: item.name, id_category: category.id } })
+				if (!item_check) { 
+					const item_cr = await prisma.item.create({ data: { name: item.name, description: item.description, price: item.price, id_category: category.id, type: item.type, image: item.image } }) 
+					await Logger(`In database, init item shop id: ${item_cr.id} name: ${item_cr.name} for users by admin ${context.senderId}`)
+					res.count_item++
+				} else {
+					const item_up = await prisma.item.update({ where: { id: item_check.id }, data: { description: item.description, image: item.image } })
+					await Logger(`In database, already init item shop id: ${item_check.id} name: ${item_check.name} and updated for users by admin ${context.senderId}`)
+				}
+			}
+		}
+	
+		await Send_Message_Universal(context.senderId, `✅ Игра инициализирована успешно.\n\n 🎪 Добавлено новых магазинов: ${res.count_shop}\n 👜 Добавлено новых предметов: ${res.count_item}\n`)
+	})
 }
