@@ -848,7 +848,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let datas: any = []
             let trigger = false
             while (trigger == false) {
-                const name: any = await context.question(`⌛ Внимание! запущена процедура генерации Артефакта для банковского счёта 💳:${id} \n 🧷 Укажите для нового 🔮артефакта название: `, timer_text)
+                const name: any = await context.question(`⌛ Внимание! запущена процедура генерации артефакта для банковского счёта 💳:${id} \n 🧷 Укажите для нового 🔮артефакта название: `, timer_text)
                 if (name.isTimeout) { return await context.send(`⏰ Время ожидания на задание имени артефакта истекло!`) }
                 if (name.text.length <= 30) {
                     trigger = true
@@ -1392,7 +1392,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         const artefact_counter = await prisma.artefact.count({ where: { id_user: user_check.id } })
         const achievement_counter = await prisma.achievement.count({ where: { id_user: user_check.id } })
 		await Image_Random(context, "bank")
-        let text = `⌛ Пожалуйста подождите и дождитесь выдачи кнопки для входа, подготавливаем для вас систему: \n\n`
+        let text = `⌛ Пожалуйста, подождите и дождитесь выдачи кнопки для входа, подготавливаем для вас систему: \n\n`
 		if (user_check.id_role != 1) {
             text += `🏦 Банк Гринготтс Онлайн 1.25v, общая статистика:\n👥 ${user_count}\n💰 ${sums._sum.gold}\n🧙 ${sums._sum.lvl*250+sums._sum.xp}\n🔮 ${artefacts}\n🌟 ${achievement}\n\n`
 			await Keyboard_Index(context, `${text}`)

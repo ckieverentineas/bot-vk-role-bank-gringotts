@@ -116,8 +116,8 @@ export async function Keyboard_Index(context: any, messa: any) {
         .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'primary' }).row()
     }
     if (user_check.id_role === 2) {
-        keyboard.textButton({ label: 'операции', payload: { command: 'sliz' }, color: 'secondary' })
-        keyboard.textButton({ label: 'операция', payload: { command: 'sliz' }, color: 'secondary' }).row()
+        keyboard.textButton({ label: 'опсоло', payload: { command: 'sliz' }, color: 'secondary' })
+        keyboard.textButton({ label: 'опмасс', payload: { command: 'sliz' }, color: 'secondary' }).row()
         keyboard.textButton({ label: 'ежедневный движок', payload: { command: 'sliz' }, color: 'primary' }).row()
     } 
     keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
@@ -240,7 +240,7 @@ export async function Gen_Inline_Button_Item(category: any, context: any) {
                     await context.send(`⚙ Ваша покупка доставится в течение нескольких секунд: ${item_buy.name}`)
                 } else {
                     console.log(`User ${context.senderId} can't buy new item ${item_buy.id}`)
-                    !item_inventory ? context.send(`💡 У вас  недостаточно средств для покупки ${item_buy.name}!!`) : context.send(`💡 У вас уже есть ${item_buy.name}!`)
+                    !item_inventory ? context.send(`💡 У вас недостаточно средств для покупки ${item_buy.name}!!`) : context.send(`💡 У вас уже есть ${item_buy.name}!`)
                 }
             }
             if (push.payload.command == 'back') { await context.send(`⌛ Возврат в Косой переулок...`); return false }

@@ -387,7 +387,7 @@ export async function Service_Underwear_Open(context: any) {
     const keyboard = new KeyboardBuilder()
     
     const underwear = await prisma.trigger.count({ where: { name: 'underwear', value: true } })
-    text = `💡 ${underwear} человек уже заложили свои труселя, как на счёт твоих?\n\n`
+    text = `💡 ${underwear} человек уже заложили свои труселя, как насчёт твоих?\n\n`
     const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'underwear' } })
     if (!trigger) { 
@@ -400,7 +400,7 @@ export async function Service_Underwear_Open(context: any) {
         if (context.eventPayload?.command_sub == 'underwear_buying') {
             const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold+5 } })
             const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
-            text = `⚙ Вы заложили свои трусы Гоблинам, держите 5💰. Теперь ваш баланс: ${underwear_sold.gold}`
+            text = `⚙ Вы заложили свои трусы гоблинам, держите 5💰. Теперь ваш баланс: ${underwear_sold.gold}`
             await vk.api.messages.send({
                 peer_id: chat_id,
                 random_id: 0,
@@ -411,12 +411,12 @@ export async function Service_Underwear_Open(context: any) {
             keyboard.callbackButton({ label: '+5💰-👙', payload: { command: 'service_underwear_open', command_sub: "underwear_buying" }, color: 'secondary' }).row()
         }
     } else {
-        text += `✉ Выкупить трусы, не хотите?`
+        text += `✉ Выкупить трусы не хотите?`
         if (context.eventPayload?.command_sub == 'underwear_selling') {
             if (user.gold >= 10) {
                 const underwear_sold: any = await prisma.user.update({ where: { id: user.id }, data: { gold: user.gold-10 } })
                 const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: false } })
-                text = `⚙ Вы выкупили свои трусы у Гоблинов, держите за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n — Забирайте свои вонючие труханы, все хранилище нам завоняли!`
+                text = `⚙ Вы выкупили свои трусы у гоблинов за 10💰. Теперь ваш баланс: ${underwear_sold.gold} Когда вы их забирали, то стоял шум от всего персонала банка: \n — Забирайте свои вонючие труханы, все хранилище нам завоняли!`
                 await vk.api.messages.send({
                     peer_id: chat_id,
                     random_id: 0,

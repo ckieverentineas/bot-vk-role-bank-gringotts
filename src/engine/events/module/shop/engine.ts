@@ -159,7 +159,7 @@ export async function Shop_Cancel(context: any) {
         peer_id: context.peerId,
         event_data: JSON.stringify({
             type: "show_snackbar",
-            text: `🔔 Возврат в центральный холл Маголавки "Чудо в перьях".`
+            text: `🔔 Возврат обратно.`
         })
     })
 }
