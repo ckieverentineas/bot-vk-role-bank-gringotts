@@ -116,9 +116,9 @@ export async function Keyboard_Index(context: any, messa: any) {
         .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'primary' }).row()
     }
     if (user_check.id_role === 2) {
-        keyboard.textButton({ label: 'опсоло', payload: { command: 'sliz' }, color: 'secondary' })
-        keyboard.textButton({ label: 'опмасс', payload: { command: 'sliz' }, color: 'secondary' }).row()
-        keyboard.textButton({ label: 'ежедневный движок', payload: { command: 'sliz' }, color: 'primary' }).row()
+        keyboard.textButton({ label: '!опсоло', payload: { command: 'sliz' }, color: 'secondary' })
+        keyboard.textButton({ label: '!опмасс', payload: { command: 'sliz' }, color: 'secondary' }).row()
+        keyboard.textButton({ label: '!ездвиж', payload: { command: 'sliz' }, color: 'primary' }).row()
     } 
     keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
