@@ -175,7 +175,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Может еще что-нибудь отредактировать?`)
     })
-    hearManager.hear(/операция/, async (context) => {
+    hearManager.hear(/!опмасс/, async (context) => {
         if (await Accessed(context) != 2) {
             return
         }
@@ -549,7 +549,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
     })
 
-    hearManager.hear(/операции/, async (context) => {
+    hearManager.hear(/!опсоло/, async (context) => {
         if (await Accessed(context) != 2) {
             return
         }
@@ -1373,7 +1373,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Повышение в должности, не всегда понижение!`)
     })
-    hearManager.hear(/енотик/, async (context: any) => {
+    hearManager.hear(/енотик|!енотик/, async (context: any) => {
         if (await Accessed(context) == 2) {
             await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );
             await vk.api.messages.send({
@@ -1411,7 +1411,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 			}).inline()
 		})
     })
-    hearManager.hear(/ежедневный движок/, async (context) => {
+    hearManager.hear(/!ездвиж/, async (context) => {
         await Location_Printer(context)
         await Keyboard_Index(context, `🏦 Хорошая работа, любители ез оценят! \n\n`)
     })
