@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "dotenv": "^16.0.3",
+    "express": "^5.1.0",
     "jimp": "^0.16.2"
   }
 }

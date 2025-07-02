@@ -14,6 +14,7 @@ import { Admin_Enter, Artefact_Enter, Birthday_Enter, Card_Enter, Card_Private, 
 import { Operation_Enter, Right_Enter } from './engine/events/module/tool';
 import { Service_Beer_Open, Service_Beer_Premium_Open, Service_Cancel, Service_Convert_Galleon, Service_Convert_Galleon_Change, Service_Convert_Magic_Experience, Service_Convert_Magic_Experience_Change, Service_Enter, Service_Level_Up, Service_Level_Up_Change, Service_Quest_Open, Service_Underwear_Open } from './engine/events/module/service';
 import { Shop_Bought, Shop_Buy, Shop_Cancel, Shop_Category_Enter, Shop_Enter, Shop_Enter_Multi } from './engine/events/module/shop/engine';
+import { Start_Worker_API_Bot } from './api';
 dotenv.config()
 
 export const token: string = String(process.env.token)
@@ -146,7 +147,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	} else {
 		await Keyboard_Index(context, `⌛ Загрузка, пожалуйста, подождите...`)
 	}
-	return next();
+	return await next();
 })
 vk.updates.on('message_event', async (context: any, next: any) => { 
 	const config: any = {
@@ -190,8 +191,9 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 	return await next();
 })
 
-vk.updates.start().then(() => {
-	Logger('running succes')
+vk.updates.start().then(async () => {
+	await Logger('running succes')
+	await Start_Worker_API_Bot()
 }).catch(console.error);
 setInterval(Worker_Checker, 86400000);
 process.on('warning', e => console.warn(e.stack))
