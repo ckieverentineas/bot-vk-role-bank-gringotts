@@ -10,6 +10,35 @@ import { Item, User } from "@prisma/client";
 import { Location_Printer } from "./events/module/quest";
 import { Storage_Printer } from "./events/module/storage";
 
+// МОДУЛЬ ОБРАБОТКИ ВВОДА ПОЛЬЗОВАТЕЛЕМ 
+async function Ipnut_Gold(context: IQuestionMessageContext, operationName: string) {
+    let golden: number = 0
+    let money_check = false
+    while (money_check == false) {
+        const gold: any = await context.question(`🧷 Введите количество для операции ${operationName}: `, timer_text_oper)
+        if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${operationName} истекло!`); return golden }
+        if (typeof Number(gold.text) == "number") {
+            money_check = true
+            golden = Number(gold.text)
+        } 
+    }
+    return golden
+}
+
+async function Ipnut_Message(context: IQuestionMessageContext, operation_type: string) {
+    let golden = ''
+    let money_check = false
+    while (money_check == false) {
+        const gold = await context.question(`🧷 Введите уведомление пользователю для ${operation_type}:`, timer_text_oper)
+        if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${operation_type} истекло!`); return "Уведомление приняло ИСЛАМ!" }
+        if (gold.text) {
+            money_check = true
+            golden = gold.text
+        } 
+    }
+    return golden
+}
+
 export function registerUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
     hearManager.hear(/Косой переулок/, async (context) => {
         if (context.senderId == root) {
@@ -182,7 +211,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         let name_check = false
         let uids = null
         while (name_check == false) {
-            const uid: any = await context.question( `🧷 Введите список 💳UID банковских счетов получателей формата:\n"UID1 UID2 .. UIDN"`,
+            const uid: any = await context.question( 
+                `🧷 Введите список 💳UID банковских счетов получателей формата:\n"UID1 UID2 .. UIDN"\n\n` +
+                `💡 Или введите 0, если хотите указать разные суммы для каждого пользователя`,
                 {   
                     keyboard: Keyboard.builder()
                     .textButton({ label: '🚫Отмена', payload: { command: 'limited' }, color: 'secondary' })
@@ -191,8 +222,40 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 }
             )
             if (uid.isTimeout) { return await context.send('⏰ Время ожидания на ввод банковского счета получателя истекло!')}
+            
+            if (uid.text === "0") {
+                // Пользователь хочет кастомные операции - сразу переходим к выбору типа
+                uids = []
+                name_check = true
+                await context.send(`⚙ Переходим к операциям с разными суммами`)
+                
+                // Показываем только кастомные операции
+                const ans: any = await context.question( `✉ Выберите тип операции с разными суммами:`,
+                    {   
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
+                        .textButton({ label: '🎯💰', payload: { command: 'gold_custom_many' }, color: 'primary' })
+                        .textButton({ label: '🎯🧙', payload: { command: 'xp_custom_many' }, color: 'primary' }).row()
+                        .oneTime().inline(),
+                        answerTimeLimit                                                                       
+                    }
+                )
+                
+                if (ans.isTimeout) { return await context.send(`⏰ Время ожидания выбора операции истекло!`) }
+                if (ans.payload && ans.payload.command != 'back') {
+                    if (ans.payload.command === 'gold_custom_many') {
+                        await Gold_Custom_Many()
+                    } else if (ans.payload.command === 'xp_custom_many') {
+                        await Xp_Custom_Many()
+                    }
+                } else {
+                    await context.send(`⚙ Операция отменена пользователем.`)
+                }
+                return // Завершаем обработчик
+            }
+            
             if (/(?:^|\s)(\d+)(?=\s|$)/g.test(uid.text)) {
-                uids = uid.text.match(/(?:^|\s)(\d+)(?=\s|$)/g)
+                uids = uid.text.match(/(?:^|\s)(\d+)(?=\s|$)/g).map((u: string) => Number(u.trim()))
                 await context.send(`⚙ Подготовка к массовым операциям, товарищ ДОК!`)
                 name_check = true
             } else {
@@ -200,9 +263,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await context.send(`💡 Операции прерваны пользователем!`) 
                     return await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
                 }
-				await context.send(`💡 Необходимо ввести корректный UID!`)
-			}
+                await context.send(`💡 Необходимо ввести корректные UID или 0 для разных сумм!`)
+            }
         }
+
+        // Обычный процесс для стандартных операций
         const ans: any = await context.question( `✉ Доступны следующие операции с 💳UID: ${JSON.stringify(uids)}`,
             {   
                 keyboard: Keyboard.builder()
@@ -213,6 +278,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 .textButton({ label: '—🧙', payload: { command: 'xp_down_many' }, color: 'secondary' }).row()
                 .textButton({ label: '+💰🧙', payload: { command: 'multi_up_many' }, color: 'secondary' })
                 .textButton({ label: '—💰🧙', payload: { command: 'multi_down_many' }, color: 'secondary' }).row()
+                .textButton({ label: '🎯💰', payload: { command: 'gold_custom_many' }, color: 'primary' })
+                .textButton({ label: '🎯🧙', payload: { command: 'xp_custom_many' }, color: 'primary' }).row()
                 .textButton({ label: '☠💀', payload: { command: 'multi_user_delete_many' }, color: 'negative' }).row()
                 .oneTime().inline(),
                 answerTimeLimit                                                                       
@@ -228,7 +295,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 'back': Back,
                 'multi_up_many': Multi_Up_Many,
                 'multi_down_many': Multi_Down_Many,
-                'multi_user_delete_many': Multi_User_Delete_Many
+                'multi_user_delete_many': Multi_User_Delete_Many,
+                'gold_custom_many': Gold_Custom_Many,
+                'xp_custom_many': Xp_Custom_Many
             }
             const answergot = await config[ans.payload.command](uids)
             
@@ -237,6 +306,267 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await context.send(`✅ Процедура массовых операций под названием операция "Ы" успешно завершена!`)
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
+
+        // УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ГАЛЛЕОНОВ (без проверки на uids)
+        async function Gold_Custom_Many(uids?: number[]) {
+            const messa: string = await Ipnut_Message(context, 'массовых операций с галлеонами')
+            
+            const users_target = await context.question(`📊 Введите список UID и операций в формате:\nUID1+СУММА1\nUID2-СУММА2\nUID3+СУММА3\n...\n\nПример:\n5+3402\n6-23\n7+53\n44-100`, 
+                { answerTimeLimit }
+            )
+            
+            if (users_target.isTimeout) { return await context.send(`⏰ Время ожидания ввода данных истекло!`) }
+
+            const lines = users_target.text.split('\n').map((line: string) => line.trim());
+            const uid_res: Array<{ id: number, amount: number, operation: string }> = []
+
+            for (const line of lines) {
+                if (!line.includes('+') && !line.includes('-')) {
+                    await context.send(`⚠ Неверный формат: ${line} - нет операции (+ или -)`);
+                    continue;
+                }
+
+                // Определяем операцию и разделяем строку
+                let operation = '';
+                let parts: string[] = [];
+                
+                if (line.includes('+')) {
+                    operation = '+';
+                    parts = line.split('+');
+                } else if (line.includes('-')) {
+                    operation = '-';
+                    parts = line.split('-');
+                }
+
+                if (parts.length !== 2) {
+                    await context.send(`⚠ Неверный формат: ${line}`);
+                    continue;
+                }
+
+                const uidStr = parts[0].trim();
+                const amountStr = parts[1].trim();
+                const uid = parseInt(uidStr);
+                const amount = parseFloat(amountStr);
+
+                if (isNaN(uid) || isNaN(amount)) {
+                    await context.send(`⚠ Неверный формат: ${line}`);
+                    continue;
+                }
+
+                // УДАЛЕНА проверка на uids.includes(uid) - для кастомных операций не нужна
+
+                const user = await prisma.user.findFirst({ where: { id: uid } });
+                if (!user) {
+                    await context.send(`❌ Пользователь с UID ${uid} не найден.`);
+                    continue;
+                }
+
+                uid_res.push({ id: uid, amount: amount, operation: operation });
+            }
+
+            if (uid_res.length === 0) {
+                return await context.send(`❌ Не удалось обработать ни одной записи. Операция отменена.`);
+            }
+
+            // Выполнение операций (остальной код без изменений)
+            for (const ui of uid_res) {
+                const user_get: any = await prisma.user.findFirst({ where: { id: ui.id } })
+                if (!user_get) { 
+                    await context.send(`⛔ Банковская карточка с 💳UID ${ui.id} не найдена`); 
+                    continue 
+                }
+                
+                let new_balance = 0;
+                let operation_text = '';
+                
+                if (ui.operation === '+') {
+                    // НАЧИСЛЕНИЕ
+                    new_balance = user_get.gold + ui.amount;
+                    operation_text = `+${ui.amount}💰`;
+                } else {
+                    // СНЯТИЕ - проверяем баланс
+                    if (user_get.gold - ui.amount >= 0) {
+                        new_balance = user_get.gold - ui.amount;
+                        operation_text = `-${ui.amount}💰`;
+                    } else {
+                        // Запрашиваем подтверждение для отрицательного баланса
+                        const confirmq = await context.question(`⚠ Недостаточно средств! UID ${ui.id} (${user_get.name}): ${user_get.gold}💰 ${ui.operation}${ui.amount}💰 = ${user_get.gold - ui.amount}💰\nПродолжить снятие?`,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({ label: 'Да', payload: { command: 'confirm' }, color: 'secondary' })
+                                .textButton({ label: 'Нет', payload: { command: 'cancel' }, color: 'secondary' })
+                                .oneTime().inline(),
+                                answerTimeLimit
+                            }
+                        )
+                        
+                        if (confirmq.isTimeout) { 
+                            await context.send(`⏰ Время ожидания подтверждения истекло! Пропускаем UID ${ui.id}`)
+                            continue
+                        }
+                        
+                        if (confirmq.payload?.command === 'confirm') {
+                            new_balance = user_get.gold - ui.amount;
+                            operation_text = `-${ui.amount}💰`;
+                        } else {
+                            await context.send(`❌ Операция для UID ${ui.id} отменена`)
+                            continue
+                        }
+                    }
+                }
+                
+                // Выполняем операцию
+                const money_put = await prisma.user.update({ 
+                    where: { id: user_get.id }, 
+                    data: { gold: new_balance } 
+                })
+                
+                try {
+                    const operation_message = ui.operation === '+' 
+                        ? `⚙ Вам начислено ${ui.amount}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
+                        : `⚙ С вас снято ${ui.amount}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`;
+                        
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: operation_message
+                    })
+                    await context.send(`✅ Успешная операция для UID ${ui.id}: ${operation_text}`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                    await context.send(`⚙ Операция с 💳UID ${ui.id} завершена, но уведомление не доставлено пользователю!`)
+                }
+                
+                const log_message = ui.operation === '+'
+                    ? `🎯 @id${context.senderId}(Admin) > "+💰" > ${user_get.gold}💰+${ui.amount}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                    : `🎯 @id${context.senderId}(Admin) > "-💰" > ${user_get.gold}💰-${ui.amount}💰=${money_put.gold}💰 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`;
+                    
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: log_message
+                })
+                
+                console.log(`User ${user_get.idvk} ${ui.operation === '+' ? 'got' : 'lost'} ${ui.amount} gold. Him/Her bank now ${money_put.gold}`)
+            }
+        }
+
+        // УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ МАГИЧЕСКОГО ОПЫТА (без проверки на uids)
+        async function Xp_Custom_Many(uids?: number[]) {
+            const messa: string = await Ipnut_Message(context, 'массовых операций с магическим опытом')
+            
+            const users_target = await context.question(`📊 Введите список UID и операций в формате:\nUID1+СУММА1\nUID2-СУММА2\nUID3+СУММА3\n...\n\nПример:\n5+340\n6-23\n7+53\n44-100`, 
+                { answerTimeLimit }
+            )
+            
+            if (users_target.isTimeout) { return await context.send(`⏰ Время ожидания ввода данных истекло!`) }
+
+            const lines = users_target.text.split('\n').map((line: string) => line.trim());
+            const uid_res: Array<{ id: number, amount: number, operation: string }> = []
+
+            for (const line of lines) {
+                if (!line.includes('+') && !line.includes('-')) {
+                    await context.send(`⚠ Неверный формат: ${line} — нет операции (+ или -)`);
+                    continue;
+                }
+
+                // Определяем операцию и разделяем строку
+                let operation = '';
+                let parts: string[] = [];
+                
+                if (line.includes('+')) {
+                    operation = '+';
+                    parts = line.split('+');
+                } else if (line.includes('-')) {
+                    operation = '-';
+                    parts = line.split('-');
+                }
+
+                if (parts.length !== 2) {
+                    await context.send(`⚠ Неверный формат: ${line}`);
+                    continue;
+                }
+
+                const uidStr = parts[0].trim();
+                const amountStr = parts[1].trim();
+                const uid = parseInt(uidStr);
+                const amount = parseFloat(amountStr);
+
+                if (isNaN(uid) || isNaN(amount)) {
+                    await context.send(`⚠ Неверный формат: ${line}`);
+                    continue;
+                }
+
+                // УДАЛЕНА проверка на uids.includes(uid) - для кастомных операций не нужна
+
+                const user = await prisma.user.findFirst({ where: { id: uid } });
+                if (!user) {
+                    await context.send(`❌ Пользователь с UID ${uid} не найден.`);
+                    continue;
+                }
+
+                uid_res.push({ id: uid, amount: amount, operation: operation });
+            }
+
+            if (uid_res.length === 0) {
+                return await context.send(`❌ Не удалось обработать ни одной записи. Операция отменена.`);
+            }
+
+            // Выполнение операций (остальной код без изменений)
+            for (const ui of uid_res) {
+                const user_get: any = await prisma.user.findFirst({ where: { id: ui.id } })
+                if (!user_get) { 
+                    await context.send(`⛔ Банковская карточка с 💳UID ${ui.id} не найдена`); 
+                    continue 
+                }
+                
+                let new_balance = 0;
+                let operation_text = '';
+                
+                if (ui.operation === '+') {
+                    new_balance = user_get.xp + ui.amount;
+                    operation_text = `+${ui.amount}🧙`;
+                } else {
+                    new_balance = user_get.xp - ui.amount;
+                    operation_text = `-${ui.amount}🧙`;
+                }
+                
+                // Выполняем операцию
+                const money_put = await prisma.user.update({ 
+                    where: { id: user_get.id }, 
+                    data: { xp: new_balance } 
+                })
+                
+                try {
+                    const operation_message = ui.operation === '+' 
+                        ? `⚙ Вам начислено ${ui.amount}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`
+                        : `⚙ С вас снято ${ui.amount}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`;
+                        
+                    await vk.api.messages.send({
+                        user_id: user_get.idvk,
+                        random_id: 0,
+                        message: operation_message
+                    })
+                    await context.send(`✅ Успешная операция для UID ${ui.id}: ${operation_text}`)
+                } catch (error) {
+                    console.log(`User ${user_get.idvk} blocked chating with bank`)
+                    await context.send(`⚙ Операция с 💳UID ${ui.id} завершена, но уведомление не доставлено пользователю!`)
+                }
+                
+                const log_message = ui.operation === '+'
+                    ? `🎯 @id${context.senderId}(Admin) > "+🧙" > ${user_get.xp}🧙+${ui.amount}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`
+                    : `🎯 @id${context.senderId}(Admin) > "-🧙" > ${user_get.xp}🧙-${ui.amount}🧙=${money_put.xp}🧙 для @id${user_get.idvk}(${user_get.name}) 🧷: ${messa}`;
+                    
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: log_message
+                })
+                
+                console.log(`User ${user_get.idvk} ${ui.operation === '+' ? 'got' : 'lost'} ${ui.amount} MO. Him/Her XP now ${money_put.xp}`)
+            }
+        }
+
         //Модуль мульти уничтожения персонажа
         async function Multi_User_Delete_Many(uids: number[]) {
             for (const ids of uids) {
@@ -291,10 +621,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         //Модуль мульти начислений
         async function Multi_Up_Many(uids: number[]) {
             await context.send(`⚠ Приступаем к начислению галлеонов`)
-            const gold: number = await Ipnut_Gold() 
+            const gold: number = await Ipnut_Gold(context, ans.text) 
             await context.send(`⚠ Приступаем к начислению магического опыта`)
-            const xp: number = await Ipnut_Gold()
-            const messa: string = await Ipnut_Message()
+            const xp: number = await Ipnut_Gold(context, ans.text)
+            const messa: string = await Ipnut_Message(context, ans.text)
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: User | null = await prisma.user.findFirst({ where: { id } })
@@ -304,7 +634,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get?.idvk,
                         random_id: 0,
-                        message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\n Уведомление: ${messa}`
+                        message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
                 } catch (error) {
@@ -321,10 +651,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         async function Multi_Down_Many(uids: number[]) {
             await context.send(`⚠ Приступаем к снятию галлеонов`)
-            const gold: number = await Ipnut_Gold() 
+            const gold: number = await Ipnut_Gold(context, ans.text) 
             await context.send(`⚠ Приступаем к снятию магического опыта`)
-            const xp: number = await Ipnut_Gold()
-            const messa: string = await Ipnut_Message()
+            const xp: number = await Ipnut_Gold(context, ans.text)
+            const messa: string = await Ipnut_Message(context, ans.text)
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: User | null = await prisma.user.findFirst({ where: { id } })
@@ -334,7 +664,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get?.idvk,
                         random_id: 0,
-                        message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\n Уведомление: ${messa}`
+                        message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
                 } catch (error) {
@@ -351,8 +681,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         //Модуль начислений
         async function Gold_Up_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold() 
-            const messa: string = await Ipnut_Message()
+            const count: number = await Ipnut_Gold(context, ans.text) 
+            const messa: string = await Ipnut_Message(context, ans.text)
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -362,7 +692,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                        message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
                 } catch (error) {
@@ -378,8 +708,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         async function Gold_Down_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold() 
-            const messa: string = await Ipnut_Message()
+            const count: number = await Ipnut_Gold(context, ans.text) 
+            const messa: string = await Ipnut_Message(context, ans.text)
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -390,7 +720,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await vk.api.messages.send({
                             user_id: user_get.idvk,
                             random_id: 0,
-                            message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                            message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                         })
                         await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
                     } catch (error) {
@@ -419,7 +749,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         try {
                             await vk.api.messages.send({
                                 user_id: user_get.idvk, random_id: 0,
-                                message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                                message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                             })
                             await context.send(`⚙ Операция завершена успешно`)
                         } catch (error) {
@@ -439,8 +769,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         async function Xp_Up_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold() 
-            const messa: string = await Ipnut_Message()
+            const count: number = await Ipnut_Gold(context, ans.text) 
+            const messa: string = await Ipnut_Message(context, ans.text)
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -450,7 +780,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \n Уведомление: ${messa}`
+                        message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
                 } catch (error) {
@@ -466,9 +796,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         async function Xp_Down_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold() 
+            const count: number = await Ipnut_Gold(context, ans.text) 
             if (count === 0) { return }
-            const messa: string = await Ipnut_Message()
+            const messa: string = await Ipnut_Message(context, ans.text)
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -479,7 +809,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await vk.api.messages.send({
                             user_id: user_get.idvk,
                             random_id: 0,
-                            message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                            message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                         })
                         await context.send(`⚙ Операция с 💳UID ${id} завершена успешно`)
                     } catch (error) {
@@ -499,7 +829,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await vk.api.messages.send({
                             user_id: user_get.idvk,
                             random_id: 0,
-                            message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                            message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                         })
                         await context.send(`⚙ Операция завершена успешно`)
                     } catch (error) {
@@ -514,33 +844,6 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
                 }
             }
-        }
-        //Модуль обработки ввода пользователем 
-        async function Ipnut_Gold() {
-            let golden: number = 0
-            let money_check = false
-            while (money_check == false) {
-                const gold: any = await context.question(`🧷 Введите количество для операции ${ans.text}: `, timer_text_oper)
-                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${ans.text} истекло!`); return golden }
-                if (typeof Number(gold.text) == "number") {
-                    money_check = true
-                    golden = Number(gold.text)
-                } 
-            }
-            return golden
-        }
-        async function Ipnut_Message() {
-            let golden = ''
-            let money_check = false
-            while (money_check == false) {
-                const gold = await context.question(`🧷 Введите уведомление пользователю ${ans.text}:`, timer_text_oper)
-                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${ans.text} истекло!`); return "Уведомление приняло ИСЛАМ!" }
-                if (gold.text) {
-                    money_check = true
-                    golden = gold.text
-                } 
-            }
-            return golden
         }
         //Модуль вовзврата
         async function Back(id: number, count: number) {
@@ -995,7 +1298,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get?.idvk,
                     random_id: 0,
-                    message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\n Уведомление: ${messa}`
+                    message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                 })
                 await context.send(`⚙ Операция завершена успешно`)
             } catch (error) {
@@ -1020,7 +1323,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get?.idvk,
                     random_id: 0,
-                    message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\n Уведомление: ${messa}`
+                    message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                 })
                 await context.send(`⚙ Операция завершена успешно`)
             } catch (error) {
@@ -1043,7 +1346,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                    message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                 })
                 await context.send(`⚙ Операция завершена успешно`)
             } catch (error) {
@@ -1066,7 +1369,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                        message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция завершена успешно`)
                 } catch (error) {
@@ -1094,7 +1397,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     try {
                         await vk.api.messages.send({
                             user_id: user_get.idvk, random_id: 0,
-                            message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \n Уведомление: ${messa}`
+                            message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                         })
                         await context.send(`⚙ Операция завершена успешно`)
                     } catch (error) {
@@ -1120,7 +1423,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await vk.api.messages.send({
                     user_id: user_get.idvk,
                     random_id: 0,
-                    message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \n Уведомление: ${messa}`
+                    message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`
                 })
                 await context.send(`⚙ Операция завершена успешно`)
             } catch (error) {
@@ -1144,7 +1447,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                        message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция завершена успешно`)
                 } catch (error) {
@@ -1163,7 +1466,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await vk.api.messages.send({
                         user_id: user_get.idvk,
                         random_id: 0,
-                        message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \n Уведомление: ${messa}`
+                        message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                     })
                     await context.send(`⚙ Операция завершена успешно`)
                 } catch (error) {
