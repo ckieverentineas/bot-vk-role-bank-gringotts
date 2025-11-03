@@ -316,6 +316,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             )
             
             if (users_target.isTimeout) { return await context.send(`⏰ Время ожидания ввода данных истекло!`) }
+            
+            // Проверка на null
+            if (!users_target.text) {
+                return await context.send(`❌ Не получен текст для обработки. Операция отменена.`);
+            }
 
             const lines = users_target.text.split('\n').map((line: string) => line.trim());
             const uid_res: Array<{ id: number, amount: number, operation: string }> = []
@@ -368,7 +373,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 return await context.send(`❌ Не удалось обработать ни одной записи. Операция отменена.`);
             }
 
-            // Выполнение операций (остальной код без изменений)
+            // Остальной код без изменений...
             for (const ui of uid_res) {
                 const user_get: any = await prisma.user.findFirst({ where: { id: ui.id } })
                 if (!user_get) { 
@@ -460,6 +465,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             )
             
             if (users_target.isTimeout) { return await context.send(`⏰ Время ожидания ввода данных истекло!`) }
+            
+            // Проверка на null
+            if (!users_target.text) {
+                return await context.send(`❌ Не получен текст для обработки. Операция отменена.`);
+            }
 
             const lines = users_target.text.split('\n').map((line: string) => line.trim());
             const uid_res: Array<{ id: number, amount: number, operation: string }> = []
@@ -512,7 +522,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 return await context.send(`❌ Не удалось обработать ни одной записи. Операция отменена.`);
             }
 
-            // Выполнение операций (остальной код без изменений)
+            // Остальной код без изменений...
             for (const ui of uid_res) {
                 const user_get: any = await prisma.user.findFirst({ where: { id: ui.id } })
                 if (!user_get) { 
@@ -1725,3 +1735,4 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 }
 
     
+
