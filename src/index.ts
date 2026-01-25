@@ -70,7 +70,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	//если пользователя нет, то начинаем регистрацию
 	if (!user_check) {
 		//согласие на обработку
-		const answer = await context.question(`⌛ Как только вы открыли дверь банка Гринготтс 🏦, из ниоткуда перед вами предстали два гоблина и надменно сказали: \n — Видимо, вы здесь впервые. Прежде чем войти, распишитесь здесь о своем согласии на обработку персональных данных. \n В тот же миг в ваших руках магическим образом появился пергамент. \n 💡 Предупреждение, любые вопросы в банковской системе ограничены 5 минутами на ваши ответы в процессе обслуживания!`,
+		const answer = await context.question(`⌛ Как только вы открыли дверь банка Гринготтс 🏦, из ниоткуда перед вами предстали два гоблина и надменно сказали: \n\n— Видимо, вы здесь впервые. Прежде чем войти, распишитесь здесь о своем согласии на обработку персональных данных. \n\nВ тот же миг в ваших руках магическим образом появился пергамент. \n\n💡 Предупреждение: любые вопросы в банковской системе ограничены 5 минутами на ваши ответы в процессе обслуживания!`,
 			{	
 				keyboard: Keyboard.builder()
 				.textButton({ label: '✏', payload: { command: 'Согласиться' }, color: 'positive' }).row()
@@ -96,7 +96,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		let name_check = false
 		let datas: any = []
 		while (name_check == false) {
-			const name = await context.question( `🧷 Приветствую в банке Гринготтс🏦! Судя по всему, вы здесь впервые. Назовите ваше имя и фамилию. \n ❗ Внимание! Предоставление заведомо ложных данных преследуются законом!`, timer_text)
+			const name = await context.question( `🧷 Приветствую в банке Гринготтс🏦! Назовите ваше имя и фамилию. \n\n❗ Внимание! Предоставление заведомо ложных данных преследуются законом!`, timer_text)
 			if (name.isTimeout) { return await context.send(`⏰ Время ожидания ввода имени истекло!`) }
 			if (name.text.length <= 64) {
 				name_check = true
@@ -125,17 +125,51 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 		}
 		let spec_check = false
 		while (spec_check == false) {
-			const name = await context.question( `🧷 Укажите вашу специализацию в Хогвартс Онлайн. Если вы профессор/житель, введите должность. Если вы студент, укажите факультет`, timer_text)
-			if (name.isTimeout) { return await context.send(`⏰ Время ожидания выбора специализации истекло!`) }
-			if (name.text.length <= 30) {
-				spec_check = true
-				datas.push({spec: `${name.text}`})
-			} else { await context.send(`💡 Ввведите до 30 символов включительно!`) }
+			// Проверяем, является ли пользователь студентом
+			if (datas[1].class === 'Ученик') {
+				// Для студентов показываем кнопки с факультетами
+				const faculty = await context.question(`🧷 Выберите ваш факультет:`,
+					{
+						keyboard: Keyboard.builder()
+						.textButton({ label: 'Гриффиндор', payload: { command: 'gryffindor' }, color: 'secondary' })
+						.textButton({ label: 'Когтевран', payload: { command: 'ravenclaw' }, color: 'secondary' }).row()
+						.textButton({ label: 'Пуффендуй', payload: { command: 'hufflepuff' }, color: 'secondary' })
+						.textButton({ label: 'Слизерин', payload: { command: 'slytherin' }, color: 'secondary' }).row()
+						.oneTime().inline(),
+						answerTimeLimit
+					}
+				)
+				if (faculty.isTimeout) { return await context.send(`⏰ Время ожидания выбора факультета истекло!`) }
+				
+				if (faculty.payload) {
+					// Преобразуем command в читаемое название
+					const facultyNames: any = {
+						'gryffindor': 'Гриффиндор',
+						'ravenclaw': 'Когтевран',
+						'hufflepuff': 'Пуффендуй',
+						'slytherin': 'Слизерин'
+					}
+					datas.push({spec: facultyNames[faculty.payload.command] || faculty.text})
+					spec_check = true
+				} else {
+					await context.send(`💡 Пожалуйста, выберите факультет с помощью кнопок!`)
+				}
+			} else {
+				// Для профессоров и жителей - текстовый ввод
+				const name = await context.question(`🧷 Укажите вашу специализацию в Хогвартс Онлайн. Если вы профессор/житель, введите должность.`, timer_text)
+				if (name.isTimeout) { return await context.send(`⏰ Время ожидания выбора специализации истекло!`) }
+				if (name.text.length <= 30) {
+					spec_check = true
+					datas.push({spec: `${name.text}`})
+				} else { 
+					await context.send(`💡 Введите до 30 символов включительно!`) 
+				}
+			}
 		}
 		const save = await prisma.user.create({	data: {	idvk: context.senderId, name: datas[0].name, class: datas[1].class, spec: datas[2].spec, id_role: 1, gold: 65 } })
-		await context.send(`⌛ Благодарю за сотрудничество ${save.class} ${save.name}, ${save.spec}. \n ⚖Вы получили банковскую карту UID: ${save.id}. \n 🏦Вам зачислено ${save.gold} галлеонов`)
+		await context.send(`⌛ Благодарю за сотрудничество ${save.class} ${save.name}, ${save.spec}. \n⚖ Вы получили банковскую карту UID: ${save.id}. \n🏦 Вам зачислено ${save.gold} галлеонов`)
 		console.log(`Success save user idvk: ${context.senderId}`)
-		await context.send(`‼ Список обязательных для покупки вещей: \n 1. Волшебная палочка \n 2. Сова, кошка или жаба \n 3. Комплект учебников \n \n Посетите Косой переулок и приобретите их первым делом!`)
+		await context.send(`‼ Список обязательных для покупки вещей: \n1. Волшебная палочка \n2. Сова, кошка или жаба \n3. Комплект учебников (на первых порах вам хватит стандартного набора) \n \nПосетите Косой переулок и приобретите их первым делом!`)
 		const check_bbox = await prisma.blackBox.findFirst({ where: { idvk: context.senderId } })
 		const ans_selector = `⁉ ${save.class} @id${save.idvk}(${save.name}) ${save.spec} ${!check_bbox ? "легально" : "НЕЛЕГАЛЬНО"} получает банковскую карту UID: ${save.id}!`
 		await vk.api.messages.send({

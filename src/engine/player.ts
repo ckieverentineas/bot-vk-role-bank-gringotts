@@ -889,7 +889,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             id_user: Number(uid.text)
                         }
                     })
-                    await context.send(`🏦 Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}: \n https://vk.com/id${get_user.idvk} \n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter}` )
+                    await context.send(`🏦 Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}: \nhttps://vk.com/id${get_user.idvk} \n💳 UID: ${get_user.id} \n💰 Галлеоны: ${get_user.gold} \n🧙 Магический опыт: ${get_user.xp} \n📈 Уровень: ${get_user.lvl} \n🔮 Количество артефактов: ${artefact_counter}` )
                     const inventory = await prisma.inventory.findMany({ where: { id_user: get_user?.id } })
                     let cart = ''
                     const underwear = await prisma.trigger.count({ where: {    id_user: get_user.id, name:   'underwear', value:  false } })
@@ -917,7 +917,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             counter = 0
                         }
                         let final: any = Array.from(new Set(compile));
-                        await context.send(`✉ Были совершены следующие покупки:: \n ${final.toString().replace(/,/g, '')}`)
+                        await context.send(`✉ Были совершены следующие покупки: \n${final.toString().replace(/,/g, '')}`)
                     }
                 } else { await context.send(`💡 Нет такого банковского счета!`) }
 			} else {
@@ -962,24 +962,35 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
 
-        //Модуль редактирования персонажей
         async function Editor(id: number) {
+            const user: any = await prisma.user.findFirst({ where: { id: id } })
+            
             let answer_check = false
             while (answer_check == false) {
-                const answer1: any = await context.question(`⌛ Переходим в режим редактирования данных, выберите сие злодейство: `,
+                const answer1: any = await context.question(
+                    `⌛ Переходим в режим редактирования данных для ${user.name}, выберите сие злодейство:`,
                     {
                         keyboard: Keyboard.builder()
-                        .textButton({ label: '✏Положение', payload: { command: 'edit_class' }, color: 'secondary' }).row()
-                        .textButton({ label: '✏Специализация', payload: { command: 'edit_spec' }, color: 'secondary' }).row()
-                        .textButton({ label: '✏ФИО', payload: { command: 'edit_name' }, color: 'secondary' }).row()
+                        .textButton({ label: '✏ Положение', payload: { command: 'edit_class' }, color: 'secondary' }).row()
+                        .textButton({ label: '✏ Специализация', payload: { command: 'edit_spec' }, color: 'secondary' }).row()
+                        .textButton({ label: '✏ ФИО', payload: { command: 'edit_name' }, color: 'secondary' }).row()
                         .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
                         .oneTime().inline(),
                         answerTimeLimit
                     }
                 )
-                if (answer1.isTimeout) { return await context.send(`⏰ Время ожидания на корректировку данных юзера истекло!`) }
+                
+                if (answer1.isTimeout) { 
+                    return await context.send(`⏰ Время ожидания на корректировку данных юзера истекло!`) 
+                }
+                
+                // Проверка на отмену (возврат в предыдущее меню)
+                if (answer1.text === '🔙' || answer1.payload?.command === 'back') {
+                    return
+                }
+                
                 if (!answer1.payload) {
-                    await context.send(`💡 Жмите только по кнопкам с иконками!`)
+                    await context.send(`💡 Пожалуйста, выберите действие с помощью кнопок!`)
                 } else {
                     if (answer1.payload && answer1.payload.command != 'back') {
                         answer_check = true
@@ -989,9 +1000,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             'edit_name': Edit_Name
                         }
                         await config[answer1.payload.command](id)
-                    } else {
-                        answer_check = true
-                        await context.send(`⚙ Отмена редактирования`)
+                        // После выполнения редактирования возвращаемся в меню редактора
+                        answer_check = false // сбрасываем, чтобы показать меню снова
                     }
                 }
             }
@@ -1002,89 +1012,162 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     id: id
                 }
             })
-            let name_check = false
-            while (name_check == false) {
-                const name: any = await context.question(`🧷 Укажите имя в Хогвартс Онлайн. Для ${user.name}. Введите новое имя до 64 символов:`, timer_text)
-                if (name.isTimeout) { return await context.send(`⏰ Время ожидания на изменение имени для ${user.name} истекло!`) }
-                if (name.text.length <= 64) {
-                    name_check = true
-                    const update_name = await prisma.user.update({ where: { id: user.id }, data: { name: name.text } })
-                    if (update_name) {
-                        await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена имени с ${user.name} на ${update_name.name}.`)
-                        try {
-                            await vk.api.messages.send({
-                                user_id: user.idvk,
-                                random_id: 0,
-                                message: `⚙ Ваше имя в Хогвартс Онлайн изменилось с ${user.name} на ${update_name.name}.`
-                            })
-                            await context.send(`⚙ Операция смены имени пользователя завершена успешно.`)
-                        } catch (error) {
-                            console.log(`User ${user.idvk} blocked chating with bank`)
-                        }
-                        await vk.api.messages.send({
-                            peer_id: chat_id,
-                            random_id: 0,
-                            message: `⚙ @id${context.senderId}(Admin) > "✏👤ФИО" > имя изменилось с ${user.name} на ${update_name.name} для @id${user.idvk}(${user.name})`
-                        })
-                    }
-                    if (name.text.length > 32) {
-                        await context.send(`⚠ Новые инициалы не влезают на стандартный бланк (32 символа)! Придется использовать бланк повышенной ширины, с доплатой 1G за каждый не поместившийся символ.`)
-                    }
-                } else {
-                    await context.send(`⛔ Новое ФИО не влезают на бланк повышенной ширины (64 символа), и вообще, запрещены магическим законодательством! Заставим его/ее выплатить штраф в 30G или с помощию ОМОНА переехать в Азкабан.`)
+            
+            const name: any = await context.question(
+                `🧷 Укажите имя в Хогвартс Онлайн. Для ${user.name}. Введите новое имя до 64 символов:`,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                    .oneTime().inline(),
+                    timer_text
                 }
+            )
+            
+            if (name.isTimeout) { 
+                return await context.send(`⏰ Время ожидания на изменение имени для ${user.name} истекло!`) 
+            }
+            
+            // Проверка на отмену
+            if (name.text === '🔙' || name.payload?.command === 'back') {
+                await context.send(`⚙ Отмена изменения имени`)
+                return
+            }
+            
+            // Проверка длины имени
+            if (name.text.length <= 64) {
+                const update_name = await prisma.user.update({ 
+                    where: { id: user.id }, 
+                    data: { name: name.text } 
+                })
+                
+                if (update_name) {
+                    await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена имени с ${user.name} на ${update_name.name}.`)
+                    try {
+                        await vk.api.messages.send({
+                            user_id: user.idvk,
+                            random_id: 0,
+                            message: `⚙ Ваше имя в Хогвартс Онлайн изменилось с ${user.name} на ${update_name.name}.`
+                        })
+                        await context.send(`⚙ Операция смены имени пользователя завершена успешно.`)
+                    } catch (error) {
+                        console.log(`User ${user.idvk} blocked chating with bank`)
+                    }
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⚙ @id${context.senderId}(Admin) > "✏👤ФИО" > имя изменилось с ${user.name} на ${update_name.name} для @id${user.idvk}(${user.name})`
+                    })
+                }
+                
+                if (name.text.length > 32) {
+                    await context.send(`⚠ Новые инициалы не влезают на стандартный бланк (32 символа)! Придется использовать бланк повышенной ширины, с доплатой 1G за каждый не поместившийся символ.`)
+                }
+            } else {
+                await context.send(`⛔ Новое ФИО не влезают на бланк повышенной ширины (64 символа), и вообще, запрещены магическим законодательством! Заставим его/ее выплатить штраф в 30G или с помощию ОМОНА переехать в Азкабан.`)
             }
         }
         async function Edit_Class(id: number){
             const user: any = await prisma.user.findFirst({ where: { id: id } })
-            let answer_check = false
-            while (answer_check == false) {
-                const answer1: any = await context.question(`🧷 Укажите положение в Хогвартс Онлайн для ${user.name}, имеющего текущий статус: ${user.class}. `,
-                    {
-                        keyboard: Keyboard.builder()
-                        .textButton({ label: 'Ученик', payload: { command: 'grif' }, color: 'secondary' })
-                        .textButton({ label: 'Профессор', payload: { command: 'coga' }, color: 'secondary' })
-                        .textButton({ label: 'Житель', payload: { command: 'sliz' }, color: 'secondary'})
-                        .oneTime().inline(),
-                        answerTimeLimit
-                    }
-                )
-                if (answer1.isTimeout) { return await context.send(`⏰ Время ожидания на изменение положения для ${user.name} истекло!`) }
-                if (!answer1.payload) {
-                    await context.send(`💡 Жмите только по кнопкам с иконками!`)
-                } else {
-                    const update_class = await prisma.user.update({ where: { id: user.id }, data: { class: answer1.text } })
-                    if (update_class) {
-                        await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена положения с ${user.class} на ${update_class.class}.`)
-                        try {
-                            await vk.api.messages.send({
-                                user_id: user.idvk,
-                                random_id: 0,
-                                message: `⚙ Ваше положение в Хогвартс Онлайн изменилось с ${user.class} на ${update_class.class}.`
-                            })
-                            await context.send(`⚙ Операция смены положения пользователя завершена успешно.`)
-                        } catch (error) {
-                            console.log(`User ${user.idvk} blocked chating with bank`)
-                        }
-                        await vk.api.messages.send({
-                            peer_id: chat_id,
-                            random_id: 0,
-                            message: `⚙ @id${context.senderId}(Admin) > "✏👤Положение" > положение изменилось с ${user.class} на ${update_class.class} для @id${user.idvk}(${user.name})`
-                        })
-                    }
-                    answer_check = true
+            
+            const answer1: any = await context.question(
+                `🧷 Укажите положение в Хогвартс Онлайн для ${user.name}, имеющего текущий статус: ${user.class}.`,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({ label: 'Ученик', payload: { command: 'student' }, color: 'secondary' })
+                    .textButton({ label: 'Профессор', payload: { command: 'professor' }, color: 'secondary' })
+                    .textButton({ label: 'Житель', payload: { command: 'citizen' }, color: 'secondary' }).row()
+                    .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                    .oneTime().inline(),
+                    answerTimeLimit
                 }
+            )
+            
+            if (answer1.isTimeout) { 
+                return await context.send(`⏰ Время ожидания на изменение положения для ${user.name} истекло!`) 
+            }
+            
+            // Проверка на отмену
+            if (answer1.text === '🔙' || answer1.payload?.command === 'back') {
+                await context.send(`⚙ Отмена изменения положения`)
+                return
+            }
+            
+            // Проверка, что нажали кнопку
+            if (!answer1.payload) {
+                await context.send(`💡 Пожалуйста, выберите положение с помощью кнопок!`)
+                return
+            }
+            
+            const update_class = await prisma.user.update({ 
+                where: { id: user.id }, 
+                data: { class: answer1.text } 
+            })
+            
+            if (update_class) {
+                await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена положения с ${user.class} на ${update_class.class}.`)
+                try {
+                    await vk.api.messages.send({
+                        user_id: user.idvk,
+                        random_id: 0,
+                        message: `⚙ Ваше положение в Хогвартс Онлайн изменилось с ${user.class} на ${update_class.class}.`
+                    })
+                    await context.send(`⚙ Операция смены положения пользователя завершена успешно.`)
+                } catch (error) {
+                    console.log(`User ${user.idvk} blocked chating with bank`)
+                }
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `⚙ @id${context.senderId}(Admin) > "✏👤Положение" > положение изменилось с ${user.class} на ${update_class.class} для @id${user.idvk}(${user.name})`
+                })
             }
         }
         async function Edit_Spec(id: number){
             const user: any = await prisma.user.findFirst({ where: { id: id } })
-            let spec_check = false
-		    while (spec_check == false) {
-                const spec: any = await context.question(`🧷 Укажите специализацию в Хогвартс Онлайн. Для ${user.name}.Если он/она профессор/житель, введите должность. Если студент(ка), укажите факультет. \nТекущая специализация: ${user.spec}\nВведите новую:`, timer_text)
-                if (spec.isTimeout) { return await context.send(`⏰ Время ожидания на изменение специализации для ${user.name} истекло!`) }
-                if (spec.text.length <= 32) {
-                    spec_check = true
-                    const update_spec = await prisma.user.update({ where: { id: user.id }, data: { spec: spec.text } })
+            
+            // Проверяем, является ли пользователь студентом
+            if (user.class === 'Ученик') {
+                // Для студентов показываем кнопки с факультетами
+                const spec: any = await context.question(
+                    `🧷 Укажите специализацию в Хогвартс Онлайн. Для ${user.name}.\nТекущая специализация: ${user.spec}\nВыберите новый факультет:`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: 'Гриффиндор', payload: { command: 'gryffindor' }, color: 'secondary' })
+                        .textButton({ label: 'Когтевран', payload: { command: 'ravenclaw' }, color: 'secondary' }).row()
+                        .textButton({ label: 'Пуффендуй', payload: { command: 'hufflepuff' }, color: 'secondary' })
+                        .textButton({ label: 'Слизерин', payload: { command: 'slytherin' }, color: 'secondary' }).row()
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
+                        .oneTime().inline(),
+                        timer_text
+                    }
+                )
+                
+                if (spec.isTimeout) { 
+                    return await context.send(`⏰ Время ожидания на изменение специализации для ${user.name} истекло!`) 
+                }
+                
+                // Проверка на отмену
+                if (spec.text === '🔙' || spec.payload?.command === 'back') {
+                    await context.send(`⚙ Отмена изменения специализации`)
+                    return
+                }
+                
+                if (spec.payload) {
+                    // Преобразуем command в читаемое название
+                    const facultyNames: any = {
+                        'gryffindor': 'Гриффиндор',
+                        'ravenclaw': 'Когтевран',
+                        'hufflepuff': 'Пуффендуй',
+                        'slytherin': 'Слизерин'
+                    }
+                    
+                    const newSpec = facultyNames[spec.payload.command] || spec.text
+                    
+                    const update_spec = await prisma.user.update({ 
+                        where: { id: user.id }, 
+                        data: { spec: newSpec } 
+                    })
+                    
                     if (update_spec) {
                         await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена специализации с ${user.spec} на ${update_spec.spec}.`)
                         try {
@@ -1104,11 +1187,58 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         })
                     }
                 } else {
-                    await context.send(`💡 Ввведите до 32 символов включительно!`)
+                    await context.send(`💡 Пожалуйста, выберите факультет с помощью кнопок!`)
+                }
+            } else {
+                const spec: any = await context.question(
+                    `🧷 Укажите специализацию в Хогвартс Онлайн. Для ${user.name}.\nТекущая специализация: ${user.spec}\nВведите новую должность:`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                        .oneTime().inline(),
+                        timer_text
+                    }
+                )
+                
+                if (spec.isTimeout) { 
+                    return await context.send(`⏰ Время ожидания на изменение специализации для ${user.name} истекло!`) 
+                }
+                
+                // Проверка на отмену
+                if (spec.text === '🔙' || spec.payload?.command === 'back') {
+                    await context.send(`⚙ Отмена изменения специализации`)
+                    return
+                }
+                
+                if (spec.text && spec.text.length <= 32) {
+                    const update_spec = await prisma.user.update({ 
+                        where: { id: user.id }, 
+                        data: { spec: spec.text } 
+                    })
+                    
+                    if (update_spec) {
+                        await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена специализации с ${user.spec} на ${update_spec.spec}.`)
+                        try {
+                            await vk.api.messages.send({
+                                user_id: user.idvk,
+                                random_id: 0,
+                                message: `⚙ Ваша специализация в Хогвартс Онлайн изменилась с ${user.spec} на ${update_spec.spec}.`
+                            })
+                            await context.send(`⚙ Операция смены специализации пользователя завершена успешно.`)
+                        } catch (error) {
+                            console.log(`User ${user.idvk} blocked chating with bank`)
+                        }
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `⚙ @id${context.senderId}(Admin) > "✏👤Специализация" > специализация изменилась с ${user.spec} на ${update_spec.spec} для @id${user.idvk}(${user.name})`
+                        })
+                    }
+                } else {
+                    await context.send(`💡 Введите до 32 символов включительно!`)
                 }
             }
         }
-
         //Модуль уничтожения персонажа
         async function User_delete(id: number) {
             const user_get: any = await prisma.user.findFirst({ where: { id: id } })
@@ -1161,13 +1291,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let datas: any = []
             let trigger = false
             while (trigger == false) {
-                const name: any = await context.question(`⌛ Внимание! запущена процедура генерации артефакта для банковского счёта 💳:${id} \n 🧷 Укажите для нового 🔮артефакта название: `, timer_text)
+                const name: any = await context.question(`⌛ Внимание! Запущена процедура генерации артефакта для банковского счёта 💳:${id} \n🧷 Укажите для нового 🔮артефакта название: `, timer_text)
                 if (name.isTimeout) { return await context.send(`⏰ Время ожидания на задание имени артефакта истекло!`) }
-                if (name.text.length <= 30) {
+                if (name.text.length <= 1000) {
                     trigger = true
                     datas.push({name: `${name.text}`})
                 } else {
-                    await context.send(`💡 Ввведите до 30 символов включительно!`)
+                    await context.send(`💡 Ввведите до 1000 символов включительно!`)
                 }
             }
 
@@ -1281,7 +1411,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (artefact.length > 0) {
                 for(const element of artefact) {
                     const item: any = await prisma.item.findFirst({ where: { id: element.id_item }, include: { category: true } })
-                    await context.send(`💬: ${item.name}-${element.id} \n 🔧: ${item.category.name}-${item.price}💰`,
+                    await context.send(`💬: ${item.name}-${element.id} \n🔧: ${item.category.name}-${item.price}💰`,
                         {
                             keyboard: Keyboard.builder()
                             .textButton({ label: 'Удалить👜', payload: { command: `${element.id}` }, color: 'secondary' })
@@ -1612,7 +1742,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 if (get_user) {
                     const artefact_counter = await prisma.artefact.count({ where: { id_user: Number(uid.text) } })
                     const role: any = await prisma.role.findFirst({ where: { id: get_user.id_role } })
-                    await context.send(`✉ Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}: \n\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🔮Количество артефактов: ${artefact_counter}\n \n Права пользователя: ${role.name} `)
+                    await context.send(`✉ Открыта следующая карточка: ${get_user.class} ${get_user.name}, ${get_user.spec}: \n\n💳 UID: ${get_user.id} \n💰 Галлеоны: ${get_user.gold} \n🧙 Магический опыт: ${get_user.xp} \n📈 Уровень: ${get_user.lvl} \n🔮 Количество артефактов: ${artefact_counter}\n \nПрава пользователя: ${role.name} `)
                     const answer1 = await context.question(`⌛ Что будем делать?`,
                         {
                             keyboard: Keyboard.builder()

@@ -14,7 +14,7 @@ export async function Card_Enter(context:any) {
         const attached = await Image_Text_Add_Card(context, 50, 650, get_user)
         const artefact_counter = await prisma.artefact.count({ where: { id_user: get_user.id } })
         const achievement_counter = await prisma.achievement.count({ where: { id_user: get_user.id } })
-        const text = `✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user?.spec}:\n 💳UID: ${get_user.id} \n 💰Галлеоны: ${get_user.gold} \n 🧙Магический опыт: ${get_user.xp} \n 📈Уровень: ${get_user.lvl} \n 🌟Достижения: ${achievement_counter} \n 🔮Артефакты: ${artefact_counter} \n`
+        const text = `✉ Вы достали свою карточку, ${get_user.class} ${get_user.name}, ${get_user?.spec}:\n💳 UID: ${get_user.id} \n💰 Галлеоны: ${get_user.gold} \n🧙 Магический опыт: ${get_user.xp} \n📈 Уровень: ${get_user.lvl} \n🌟 Достижения: ${achievement_counter} \n🔮 Артефакты: ${artefact_counter} \n`
         const keyboard = new KeyboardBuilder()
         //.callbackButton({ label: '⚙', payload: { command: 'card_private' }, color: 'secondary' })
         .callbackButton({ label: '🎁', payload: { command: 'birthday_enter' }, color: 'secondary' })
@@ -59,7 +59,7 @@ export async function Artefact_Enter(context: any) {
     let artefact_list = `✉ Ваши артефакты, ${get_user.class} ${get_user.name}, ${get_user.spec}: \n`
     const artefact = await prisma.artefact.findMany({ where: { id_user: get_user.id } })
     if (artefact.length > 0) {
-        for (const i in artefact) { artefact_list += `\n💬: ${artefact[i].name} \n 🔧: ${artefact[i].type}${artefact[i].label} \n 🧷:  ${artefact[i].description}` }
+        for (const i in artefact) { artefact_list += `\n💬: ${artefact[i].name} \n 🔧: ${artefact[i].type} ${artefact[i].label} \n 🧷:  ${artefact[i].description}` }
     } else { artefact_list += `\n✉ У вас еще нет артефактов` }
     console.log(`User ${get_user.idvk} see artefacts`)
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
