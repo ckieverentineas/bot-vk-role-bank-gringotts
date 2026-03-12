@@ -313,22 +313,27 @@ export async function Service_Beer_Premium_Open(context: any) {
 
 export async function Service_Quest_Open(context: any) {
     const attached = image_quest//await Image_Random(context, "quest")
-    const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
-    const trigger: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
-    if (!trigger) { 
-        const trigger_init: any = await prisma.trigger.create({ data: { id_user: user.id, name: 'quest', value: false } })
-        console.log(`Init question for user ${context.peerId}`)
-    }
     let text = ''
     const keyboard = new KeyboardBuilder()
-    
-    const trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
+    const user: any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
+    if (!user) {
+        text = `📅 Здесь должно было быть ваше ежедневное задание, но ваш банковский счет не найден. Начните диалог с банком для регистрации.`
+        console.log(`Quest request rejected, no user for peer ${context.peerId}`)
+        keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
+        await Send_Message_Universal(context.peerId, text, keyboard, attached)
+        return
+    }
+    let trigger_check: any = await prisma.trigger.findFirst({ where: { id_user: user.id, name: 'quest' } })
+    if (!trigger_check) {
+        trigger_check = await prisma.trigger.create({ data: { id_user: user.id, name: 'quest', value: false, crdate: new Date(0) } })
+        console.log(`Init quest trigger for user ${context.peerId}`)
+    }
+
     const datenow: any = new Date()
     const dateold: any = new Date(trigger_check.crdate)
-    if (datenow-trigger_check.crdate > timeouter) {
+    if (datenow.getTime()-dateold.getTime() > timeouter) {
         text = `⚙ Кто бы мог подумать, у дверей возникла бумажка с надписью: "вам поручено новое ежедневное задание, подробности в новом полученном сообщении"...`
         console.log(`User ${context.peerId} got quest`)
-        const user_list: any = await prisma.user.findMany({ where: { private: false} })
         
         const questuin_pull: Array<{ location: String, name: String, quest: Array<String> }> = []
         for (const loc of await prisma.location.findMany({})) {
@@ -352,17 +357,13 @@ export async function Service_Quest_Open(context: any) {
             await vk.api.messages.send({ user_id: context.peerId, random_id: 0, message: `📅 Как насчет отролить с 👥 кем захотите?\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙\n\n💡 После выполнения квеста напишите в обсуждениях группы для ежедневных заданий. Если вам локация недоступна, выберите любую из доступных сами. Укажите ваш UID и вашего сорола, ссылки/скриншоты на ваши отролы.\n Требование к ПК устанавливает то, сколько должен отролить строк каждый ролевик!` })
             await vk.api.messages.send({ peer_id: chat_id, random_id: 0, message: `📅 Обнаружен квест для 👤@id${user.idvk}(${user.name}):\n\n🌐 ${task.location}\n👣 ${task.name}\n⚡ ${quest}\n✅ ${pk} ПК+ \n🏆 Для 👤 ${reward_gold}💰 ${reward_mo}🧙.  Для 👥 ${Math.floor(reward_gold*1.1)}💰 ${Math.floor(reward_mo*1.1)}🧙` })
             await Analyzer_Quest_Counter(context)
-            const trigger_change: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow } })
-            const trigger_update: any = await prisma.trigger.update({ where: { id: trigger_check.id }, data: { value: true } })
+            await prisma.trigger.update({ where: { id: trigger_check.id }, data: { crdate: datenow, value: true } })
         } else {
             text = `😢 Квестов пока что нет, приходите позже!`
+            console.log(`Quest request for user ${context.peerId} returned empty quest pool`)
         }
     } else {
-        if (user) {
-            text += `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow-trigger_check.crdate))/60000/60).toFixed(2)} часов за новым ЕЗ.`
-        } else {
-            text += `📅 Здесь должно было быть ваше ежедневное задание, но мы его еще не придумали!`
-        }
+        text += `🔔 Вы уже получали задание: ${dateold.getDate()}-${dateold.getMonth()}-${dateold.getFullYear()} ${dateold.getHours()}:${dateold.getMinutes()}! Приходите через ${((timeouter-(datenow.getTime()-dateold.getTime()))/60000/60).toFixed(2)} часов за новым ЕЗ.`
     }
     keyboard.callbackButton({ label: '🚫', payload: { command: 'service_cancel' }, color: 'secondary' }).inline().oneTime()
     await Send_Message_Universal(context.peerId, text, keyboard, attached)
