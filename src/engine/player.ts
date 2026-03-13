@@ -1338,71 +1338,159 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         //Модуль артефактов
-        async function Artefact_Add(id: number, count: number) {
-            let datas: any = []
-            let trigger = false
-            while (trigger == false) {
-                const name: any = await context.question(`⌛ Внимание! Запущена процедура генерации артефакта для банковского счёта 💳:${id} \n🧷 Укажите для нового 🔮артефакта название: `, timer_text)
-                if (name.isTimeout) { return await context.send(`⏰ Время ожидания на задание имени артефакта истекло!`) }
-                if (name.text.length <= 1000) {
-                    trigger = true
-                    datas.push({name: `${name.text}`})
+        function Is_Stop_Command(answer: any): boolean {
+            const text = String(answer?.text ?? '').trim().toLowerCase()
+            return answer?.payload?.command === 'stop' || text === 'стоп' || text === '⏹ стоп'
+        }
+
+        function Artefact_Link_Is_Valid(value: string): boolean {
+            const text = String(value ?? '').trim()
+            if (!text || text.length > 1000) {
+                return false
+            }
+            return /^https?:\/\/\S+/i.test(text) || /^photo-?\d+_\d+$/i.test(text)
+        }
+
+        function Chunk_By_Length(lines: string[], maxLength: number = 3200): string[] {
+            const chunks: string[] = []
+            let current = ''
+
+            for (const line of lines) {
+                const candidate = current ? `${current}\n${line}` : line
+                if (candidate.length > maxLength) {
+                    if (current) {
+                        chunks.push(current)
+                    }
+                    current = line
                 } else {
-                    await context.send(`💡 Ввведите до 1000 символов включительно!`)
+                    current = candidate
                 }
             }
 
-            trigger = false
-            while (trigger == false) {
-                const type: any = await context.question(`🧷 Укажите для нового 🔮артефакта тип применения: \n 🕐 — одноразовое; ♾ — многоразовое. `,
+            if (current) {
+                chunks.push(current)
+            }
+
+            return chunks
+        }
+
+        async function Artefact_Add(id: number) {
+            const target: any = await prisma.user.findFirst({ where: { id } })
+            if (!target) {
+                await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`)
+                return
+            }
+
+            let created = 0
+            while (true) {
+                const name: any = await context.question(
+                    `⌛ Массовая выдача артефактов для 💳UID ${id}.\n🧷 Укажите название нового 🔮артефакта:`,
                     {
                         keyboard: Keyboard.builder()
-                        .textButton({ label: '🕐', payload: { command: 'Одноразовый' }, color: 'secondary' })
-                        .textButton({ label: '♾', payload: { command: 'Многоразовый' }, color: 'secondary' })
+                        .textButton({ label: '⏹ Стоп', payload: { command: 'stop' }, color: 'secondary' })
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                        .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
                         .oneTime().inline(),
                         answerTimeLimit
                     }
                 )
-                if (type.isTimeout) { return await context.send(`⏰ Время ожидания на задание типа артефакта истекло!`) }
-                if (type.payload) {
-                    trigger = true
-                    datas.push({label: `${type.text}`})
-                    datas.push({type: `${type.payload.command}`})
-                } else {
-                    await context.send(`💡 Может, лучше по кнопочкам жать?`)
-                }
-            }
 
-            trigger = false
-            while (trigger == false) {
-                const description: any = await context.question(`🧷 Укажите для нового 🔮артефакта ссылку на картинку самого артефакта из альбома группы Хогвартс Онлайн:`, timer_text)
-                if (description.isTimeout) { return await context.send(`⏰ Время ожидания на задание ссылки артефакта истекло!`) }
-                if (description.text.length <= 1000) {
-                    trigger = true
-                    datas.push({description: `${description.text}`})
-                } else {
-                    await context.send(`💡 Ввведите до 1000 символов включительно!`)
+                if (Question_Is_Cancel(name)) { return }
+                if (name.isTimeout) {
+                    return await context.send(`⏰ Время ожидания на задание имени артефакта истекло!`)
+                }
+                if (Question_Is_Back(name) || Is_Stop_Command(name)) {
+                    return await context.send(`⚙ Массовая выдача артефактов завершена. Добавлено: ${created}`)
+                }
+
+                const artefactName = String(name.text ?? '').trim()
+                if (!artefactName || artefactName.length > 1000) {
+                    await context.send(`💡 Введите название артефакта до 1000 символов.`)
+                    continue
+                }
+
+                const description: any = await context.question(
+                    `🧷 Укажите ссылку на картинку артефакта. Допустимы форматы: https://... или photo-...`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: '⏹ Стоп', payload: { command: 'stop' }, color: 'secondary' })
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                        .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                        .oneTime().inline(),
+                        answerTimeLimit
+                    }
+                )
+
+                if (Question_Is_Cancel(description)) { return }
+                if (description.isTimeout) {
+                    return await context.send(`⏰ Время ожидания на задание ссылки артефакта истекло!`)
+                }
+                if (Question_Is_Back(description)) {
+                    await context.send(`↩ Возврат к вводу названия артефакта.`)
+                    continue
+                }
+                if (Is_Stop_Command(description)) {
+                    return await context.send(`⚙ Массовая выдача артефактов завершена. Добавлено: ${created}`)
+                }
+
+                const artefactLink = String(description.text ?? '').trim()
+                if (!Artefact_Link_Is_Valid(artefactLink)) {
+                    await context.send(`💡 Введите корректную ссылку вида https://... или photo-...`)
+                    continue
+                }
+
+                const artefact_create = await prisma.artefact.create({
+                    data: {
+                        id_user: id,
+                        name: artefactName,
+                        label: '♾',
+                        type: 'Многоразовый',
+                        description: artefactLink
+                    }
+                })
+                created++
+
+                try {
+                    await vk.api.messages.send({
+                        user_id: target.idvk,
+                        random_id: 0,
+                        message: `⚙ Поздравляем! Вы получили новый 🔮: ${artefact_create.name}\n${artefact_create.label}: ${artefact_create.type}`
+                    })
+                    await context.send(`⚙ Артефакт ${artefact_create.name} добавлен`)
+                } catch (error) {
+                    console.log(`User ${target.idvk} blocked chating with bank`)
+                }
+
+                await vk.api.messages.send({
+                    peer_id: chat_id,
+                    random_id: 0,
+                    message: `⚙ @id${context.senderId}(Admin) > "➕🔮" > артефакт ${artefact_create.name} получает @id${target.idvk}(${target.name}) [авто тип: Многоразовый ♾]`
+                })
+
+                const nextStep: any = await context.question(
+                    `➕ Добавить еще один артефакт пользователю @id${target.idvk}(${target.name})?`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: 'Да', payload: { command: 'continue' }, color: 'positive' })
+                        .textButton({ label: '⏹ Стоп', payload: { command: 'stop' }, color: 'secondary' })
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                        .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                        .oneTime().inline(),
+                        answerTimeLimit
+                    }
+                )
+
+                if (Question_Is_Cancel(nextStep)) { return }
+                if (nextStep.isTimeout) {
+                    return await context.send(`⏰ Время ожидания подтверждения истекло. Добавлено: ${created}`)
+                }
+                if (Question_Is_Back(nextStep) || Is_Stop_Command(nextStep)) {
+                    return await context.send(`⚙ Массовая выдача артефактов завершена. Добавлено: ${created}`)
+                }
+                if (nextStep?.payload?.command !== 'continue') {
+                    return await context.send(`⚙ Массовая выдача артефактов завершена. Добавлено: ${created}`)
                 }
             }
-            const target: any = await prisma.user.findFirst({ where: { id } })
-            const artefact_create = await prisma.artefact.create({ data: { id_user: id, name: datas[0].name, label: datas[1].label, type: datas[2].type, description: datas[3].description } })
-            try {
-                await vk.api.messages.send({
-                    user_id: target.idvk,
-                    random_id: 0,
-                    message: `⚙ Поздравляем! Вы получили новый 🔮: ${artefact_create.name} \n ${artefact_create.label}: ${artefact_create.type} `
-                })
-                await context.send(`⚙ Добавление артефакта успешно завершено`)
-            } catch (error) {
-                console.log(`User ${target.idvk} blocked chating with bank`)
-            }
-            await vk.api.messages.send({
-                peer_id: chat_id,
-                random_id: 0,
-                message: `⚙ @id${context.senderId}(Admin) > "➕🔮" > артефакт ${artefact_create.name} получает @id${target.idvk}(${target.name})`
-            })
-            console.log(`Admin ${context.senderId} create artefact for user: ${target.idvk}`)
-            await context.send(`⚙ Операция завершена успешно`)
         }
 
         //Модуль вовзврата
@@ -1449,22 +1537,358 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
 
         // Модуль отображения инвентаря и артефактов
-        async function Artefact_Show(id: number) { 
-            const artefact = await prisma.artefact.findMany({ where: { id_user: id } })
-            if (artefact.length > 0) {
-                artefact.forEach(async element => {
-                    await context.send(`💬: ${element.name} \n 🔧: ${element.type}${element.label} \n 🧷:  ${element.description} `,
+        async function Artefact_Show(id: number) {
+            const target: any = await prisma.user.findFirst({ where: { id } })
+            if (!target) {
+                await context.send(`⛔ Банковская карточка с 💳UID ${id} не найдена`)
+                return
+            }
+
+            while (true) {
+                const artefacts: any[] = await prisma.artefact.findMany({
+                    where: { id_user: id },
+                    orderBy: { id: 'asc' }
+                })
+
+                if (artefacts.length === 0) {
+                    await context.send(`✉ У пользователя @id${target.idvk}(${target.name}) нет артефактов`)
+                    return
+                }
+
+                const lines = artefacts.map((element: any, index: number) =>
+                    `${index + 1}) 🔮ID ${element.id} | 🧷 ${element.name} | ${element.type}${element.label}\n🔗 ${element.description}`
+                )
+                const chunks = Chunk_By_Length(lines, 3200)
+                await context.send(`📚 Артефакты пользователя @id${target.idvk}(${target.name}), 💳UID ${id}. Всего: ${artefacts.length}`)
+                for (const chunk of chunks) {
+                    await context.send(chunk)
+                }
+
+                const action: any = await context.question(
+                    `⚙ Выберите действие для артефактов пользователя ${target.name}:`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: '➕ Добавить', payload: { command: 'artefact_add' }, color: 'secondary' })
+                        .textButton({ label: '✏ Редактировать', payload: { command: 'artefact_edit' }, color: 'secondary' }).row()
+                        .textButton({ label: '🗑 Удалить', payload: { command: 'artefact_delete' }, color: 'negative' })
+                        .textButton({ label: '🔄 Обновить', payload: { command: 'artefact_refresh' }, color: 'primary' }).row()
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                        .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                        .oneTime().inline(),
+                        answerTimeLimit
+                    }
+                )
+
+                if (Question_Is_Cancel(action)) { return }
+                if (action.isTimeout) { return await context.send(`⏰ Время ожидания действия по артефактам истекло!`) }
+                if (Question_Is_Back(action) || Is_Stop_Command(action)) { return }
+
+                const command = action?.payload?.command
+                if (command === 'artefact_add') {
+                    await Artefact_Add(id)
+                    continue
+                }
+                if (command === 'artefact_edit') {
+                    await Artefact_Edit(id)
+                    continue
+                }
+                if (command === 'artefact_delete') {
+                    const deleteTarget: any = await context.question(
+                        `🧷 Введите ID артефакта для удаления у ${target.name}:`,
                         {
                             keyboard: Keyboard.builder()
-                            .textButton({ label: 'Удалить🔮', payload: { command: `${element.id}` }, color: 'secondary' })
-                            .oneTime().inline()
+                            .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                            .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                            .oneTime().inline(),
+                            answerTimeLimit
                         }
                     )
-                });
-            } else {
-                await context.send(`✉ Артефакты отсутствуют =(`)
+
+                    if (Question_Is_Cancel(deleteTarget)) { return }
+                    if (deleteTarget.isTimeout) { return await context.send(`⏰ Время ожидания выбора артефакта для удаления истекло!`) }
+                    if (Question_Is_Back(deleteTarget) || Is_Stop_Command(deleteTarget)) { continue }
+
+                    const artefactId = Number(String(deleteTarget.text ?? '').trim())
+                    if (Number.isNaN(artefactId) || artefactId <= 0) {
+                        await context.send(`💡 Введите корректный ID артефакта.`)
+                        continue
+                    }
+
+                    const artefactToDelete: any = await prisma.artefact.findFirst({ where: { id: artefactId, id_user: id } })
+                    if (!artefactToDelete) {
+                        await context.send(`💡 У пользователя ${target.name} нет артефакта с ID ${artefactId}.`)
+                        continue
+                    }
+
+                    const deleted = await prisma.artefact.delete({ where: { id: artefactId } })
+                    await context.send(`⚙ Удален артефакт ${deleted.name} ID ${deleted.id}`)
+
+                    try {
+                        await vk.api.messages.send({
+                            user_id: target.idvk,
+                            random_id: 0,
+                            message: `⚙ Ваш артефакт ${deleted.name} изъял ОМОН!`
+                        })
+                    } catch (error) {
+                        console.log(`User ${target.idvk} blocked chating with bank`)
+                    }
+
+                    await vk.api.messages.send({
+                        peer_id: chat_id,
+                        random_id: 0,
+                        message: `⚙ @id${context.senderId}(Admin) > "🚫🔮" > артефакт ${deleted.name} удален у @id${target.idvk}(${target.name})`
+                    })
+                    continue
+                }
+                if (command === 'artefact_refresh') {
+                    continue
+                }
+
+                await context.send(`💡 Выберите действие кнопками.`)
             }
-            console.log(`Admin ${context.senderId} see artefacts from user UID: ${id}`)
+        }
+        async function Artefact_Show_All(id: number) {
+            const artefacts: any[] = await prisma.artefact.findMany({
+                include: { user: true },
+                orderBy: { id: 'asc' }
+            })
+
+            if (artefacts.length === 0) {
+                await context.send(`✉ Общий список артефактов пуст`)
+                return
+            }
+
+            const lines = artefacts.map((element: any, index: number) => {
+                return `${index + 1}) 🔮ID ${element.id} | 💳UID ${element.id_user} | 👤 ${element?.user?.name ?? 'неизвестно'}\n🧷 ${element.name} | ${element.type}${element.label}\n🔗 ${element.description}`
+            })
+
+            const chunks = Chunk_By_Length(lines, 3200)
+            await context.send(`📚 Общий список артефактов. Всего: ${artefacts.length}`)
+            for (const chunk of chunks) {
+                await context.send(chunk)
+            }
+
+            await vk.api.messages.send({
+                peer_id: chat_id,
+                random_id: 0,
+                message: `⚙ @id${context.senderId}(Admin) запросил общий список артефактов. Всего: ${artefacts.length}`
+            })
+        }
+
+        async function Artefact_Edit(id: number) {
+            while (true) {
+                const artefactTarget: any = await context.question(
+                    `🧷 Введите 🔮ID артефакта для редактирования:`,
+                    {
+                        keyboard: Keyboard.builder()
+                        .textButton({ label: '⏹ Стоп', payload: { command: 'stop' }, color: 'secondary' })
+                        .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                        .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                        .oneTime().inline(),
+                        answerTimeLimit
+                    }
+                )
+
+                if (Question_Is_Cancel(artefactTarget)) { return }
+                if (artefactTarget.isTimeout) { return await context.send(`⏰ Время ожидания выбора артефакта истекло!`) }
+                if (Question_Is_Back(artefactTarget) || Is_Stop_Command(artefactTarget)) {
+                    return await context.send(`⚙ Редактирование артефактов завершено`)
+                }
+
+                const artefactId = Number(String(artefactTarget.text ?? '').trim())
+                if (Number.isNaN(artefactId) || artefactId <= 0) {
+                    await context.send(`💡 Введите корректный ID артефакта.`)
+                    continue
+                }
+
+                let artefact: any = await prisma.artefact.findFirst({ where: { id: artefactId }, include: { user: true } })
+                if (!artefact) {
+                    await context.send(`💡 Артефакт с ID ${artefactId} не найден.`)
+                    continue
+                }
+
+                while (true) {
+                    const action: any = await context.question(
+                        `✏ Редактирование артефакта ${artefact.id}\n👤 Владелец: ${artefact?.user?.name ?? 'неизвестно'} | 💳UID ${artefact.id_user}\n🧷 ${artefact.name}\n🔧 ${artefact.type}${artefact.label}\n🔗 ${artefact.description}`,
+                        {
+                            keyboard: Keyboard.builder()
+                            .textButton({ label: '✏ Имя', payload: { command: 'edit_name' }, color: 'secondary' })
+                            .textButton({ label: '✏ Тип', payload: { command: 'edit_type' }, color: 'secondary' }).row()
+                            .textButton({ label: '✏ Метка', payload: { command: 'edit_label' }, color: 'secondary' })
+                            .textButton({ label: '✏ Ссылка', payload: { command: 'edit_description' }, color: 'secondary' }).row()
+                            .textButton({ label: '✅ Готово', payload: { command: 'finish' }, color: 'positive' })
+                            .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                            .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                            .oneTime().inline(),
+                            answerTimeLimit
+                        }
+                    )
+
+                    if (Question_Is_Cancel(action)) { return }
+                    if (action.isTimeout) { return await context.send(`⏰ Время ожидания выбора действия редактирования истекло!`) }
+                    if (Question_Is_Back(action) || Is_Stop_Command(action) || action?.payload?.command === 'finish') {
+                        await context.send(`⚙ Редактирование артефакта ${artefact.id} завершено`)
+                        break
+                    }
+
+                    if (!action.payload) {
+                        await context.send(`💡 Выберите действие кнопками.`)
+                        continue
+                    }
+
+                    if (action.payload.command === 'edit_name') {
+                        const answerName: any = await context.question(
+                            `🧷 Введите новое название артефакта:`,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                                .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                                .oneTime().inline(),
+                                answerTimeLimit
+                            }
+                        )
+
+                        if (Question_Is_Cancel(answerName)) { return }
+                        if (answerName.isTimeout) { return await context.send(`⏰ Время ожидания ввода имени артефакта истекло!`) }
+                        if (Question_Is_Back(answerName)) { continue }
+                        if (Is_Stop_Command(answerName)) { return await context.send(`⚙ Редактирование артефактов завершено`) }
+
+                        const value = String(answerName.text ?? '').trim()
+                        if (!value || value.length > 1000) {
+                            await context.send(`💡 Введите название до 1000 символов.`)
+                            continue
+                        }
+
+                        artefact = await prisma.artefact.update({ where: { id: artefact.id }, data: { name: value }, include: { user: true } })
+                        await context.send(`⚙ Поле имени обновлено: ${artefact.name}`)
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `⚙ @id${context.senderId}(Admin) изменил имя артефакта ${artefact.id} для @id${artefact?.user?.idvk}(${artefact?.user?.name})`
+                        })
+                        continue
+                    }
+
+                    if (action.payload.command === 'edit_type') {
+                        const answerType: any = await context.question(
+                            `🧷 Введите новый тип артефакта или выберите кнопку:`,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({ label: 'Многоразовый', payload: { command: 'type_multi' }, color: 'secondary' })
+                                .textButton({ label: 'Одноразовый', payload: { command: 'type_single' }, color: 'secondary' }).row()
+                                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                                .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                                .oneTime().inline(),
+                                answerTimeLimit
+                            }
+                        )
+
+                        if (Question_Is_Cancel(answerType)) { return }
+                        if (answerType.isTimeout) { return await context.send(`⏰ Время ожидания ввода типа артефакта истекло!`) }
+                        if (Question_Is_Back(answerType)) { continue }
+                        if (Is_Stop_Command(answerType)) { return await context.send(`⚙ Редактирование артефактов завершено`) }
+
+                        let value = String(answerType.text ?? '').trim()
+                        if (answerType?.payload?.command === 'type_multi') {
+                            value = 'Многоразовый'
+                        }
+                        if (answerType?.payload?.command === 'type_single') {
+                            value = 'Одноразовый'
+                        }
+
+                        if (!value || value.length > 100) {
+                            await context.send(`💡 Введите тип до 100 символов.`)
+                            continue
+                        }
+
+                        artefact = await prisma.artefact.update({ where: { id: artefact.id }, data: { type: value }, include: { user: true } })
+                        await context.send(`⚙ Поле типа обновлено: ${artefact.type}`)
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `⚙ @id${context.senderId}(Admin) изменил тип артефакта ${artefact.id} для @id${artefact?.user?.idvk}(${artefact?.user?.name})`
+                        })
+                        continue
+                    }
+
+                    if (action.payload.command === 'edit_label') {
+                        const answerLabel: any = await context.question(
+                            `🧷 Введите новую метку артефакта или выберите кнопку:`,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({ label: '♾', payload: { command: 'label_multi' }, color: 'secondary' })
+                                .textButton({ label: '🕐', payload: { command: 'label_single' }, color: 'secondary' }).row()
+                                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                                .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                                .oneTime().inline(),
+                                answerTimeLimit
+                            }
+                        )
+
+                        if (Question_Is_Cancel(answerLabel)) { return }
+                        if (answerLabel.isTimeout) { return await context.send(`⏰ Время ожидания ввода метки артефакта истекло!`) }
+                        if (Question_Is_Back(answerLabel)) { continue }
+                        if (Is_Stop_Command(answerLabel)) { return await context.send(`⚙ Редактирование артефактов завершено`) }
+
+                        let value = String(answerLabel.text ?? '').trim()
+                        if (answerLabel?.payload?.command === 'label_multi') {
+                            value = '♾'
+                        }
+                        if (answerLabel?.payload?.command === 'label_single') {
+                            value = '🕐'
+                        }
+
+                        if (!value || value.length > 32) {
+                            await context.send(`💡 Введите метку до 32 символов.`)
+                            continue
+                        }
+
+                        artefact = await prisma.artefact.update({ where: { id: artefact.id }, data: { label: value }, include: { user: true } })
+                        await context.send(`⚙ Поле метки обновлено: ${artefact.label}`)
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `⚙ @id${context.senderId}(Admin) изменил метку артефакта ${artefact.id} для @id${artefact?.user?.idvk}(${artefact?.user?.name})`
+                        })
+                        continue
+                    }
+
+                    if (action.payload.command === 'edit_description') {
+                        const answerDescription: any = await context.question(
+                            `🧷 Введите новую ссылку артефакта:`,
+                            {
+                                keyboard: Keyboard.builder()
+                                .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                                .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                                .oneTime().inline(),
+                                answerTimeLimit
+                            }
+                        )
+
+                        if (Question_Is_Cancel(answerDescription)) { return }
+                        if (answerDescription.isTimeout) { return await context.send(`⏰ Время ожидания ввода ссылки артефакта истекло!`) }
+                        if (Question_Is_Back(answerDescription)) { continue }
+                        if (Is_Stop_Command(answerDescription)) { return await context.send(`⚙ Редактирование артефактов завершено`) }
+
+                        const value = String(answerDescription.text ?? '').trim()
+                        if (!Artefact_Link_Is_Valid(value)) {
+                            await context.send(`💡 Введите корректную ссылку вида https://... или photo-...`)
+                            continue
+                        }
+
+                        artefact = await prisma.artefact.update({ where: { id: artefact.id }, data: { description: value }, include: { user: true } })
+                        await context.send(`⚙ Ссылка артефакта обновлена`)
+                        await vk.api.messages.send({
+                            peer_id: chat_id,
+                            random_id: 0,
+                            message: `⚙ @id${context.senderId}(Admin) изменил ссылку артефакта ${artefact.id} для @id${artefact?.user?.idvk}(${artefact?.user?.name})`
+                        })
+                        continue
+                    }
+                }
+
+                return
+            }
         }
         async function Inventory_Show(id: number) { 
             const artefact = await prisma.inventory.findMany({ where: { id_user: id } })
@@ -1706,8 +2130,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 {   
                     keyboard: Keyboard.builder()
                     .textButton({ label: '➕🔮', payload: { command: 'artefact_add' }, color: 'secondary' })
-                    .textButton({ label: '👁🔮', payload: { command: 'artefact_show' }, color: 'secondary' }).row()
-                    .textButton({ label: '✏', payload: { command: 'editor' }, color: 'secondary' })
+                    .textButton({ label: '📚🔮', payload: { command: 'artefact_show_selected' }, color: 'secondary' }).row()
+                    .textButton({ label: '✏🔮', payload: { command: 'artefact_edit' }, color: 'secondary' })
+                    .textButton({ label: '✏', payload: { command: 'editor' }, color: 'secondary' }).row()
                     .textButton({ label: '👁👜', payload: { command: 'inventory_show' }, color: 'secondary' }).row()
                     .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
                     .textButton({ label: '☠', payload: { command: 'user_delete' }, color: 'secondary' })
@@ -1721,6 +2146,8 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     'back': Back,
                     'artefact_add': Artefact_Add,
                     'artefact_show': Artefact_Show,
+                    'artefact_show_selected': Artefact_Show,
+                    'artefact_edit': Artefact_Edit,
                     'inventory_show': Inventory_Show,
                     'user_delete': User_delete,
                     'editor': Editor,
@@ -1730,6 +2157,54 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await context.send(`⚙ Операция отменена пользователем.`)
             }
         }
+    })
+
+    hearManager.hear(/^!артефактывсе$/i, async (context) => {
+        if (await Accessed(context) != 2) {
+            return
+        }
+
+        const artefacts: any[] = await prisma.artefact.findMany({
+            include: { user: true },
+            orderBy: { id: 'asc' }
+        })
+
+        if (artefacts.length === 0) {
+            await context.send(`✉ Общий список артефактов пуст`)
+            return
+        }
+
+        const lines = artefacts.map((element: any, index: number) => {
+            return `${index + 1}) 🔮ID ${element.id} | 💳UID ${element.id_user} | 👤 ${element?.user?.name ?? 'неизвестно'}\n🧷 ${element.name} | ${element.type}${element.label}\n🔗 ${element.description}`
+        })
+
+        const chunks: string[] = []
+        let current = ''
+        for (const line of lines) {
+            const candidate = current ? `${current}\n${line}` : line
+            if (candidate.length > 3200) {
+                if (current) {
+                    chunks.push(current)
+                }
+                current = line
+            } else {
+                current = candidate
+            }
+        }
+        if (current) {
+            chunks.push(current)
+        }
+
+        await context.send(`📚 Общий список артефактов. Всего: ${artefacts.length}`)
+        for (const chunk of chunks) {
+            await context.send(chunk)
+        }
+
+        await vk.api.messages.send({
+            peer_id: chat_id,
+            random_id: 0,
+            message: `⚙ @id${context.senderId}(Admin) запросил общий список артефактов через !артефактывсе. Всего: ${artefacts.length}`
+        })
     })
     //Обработчики удаления инвентаря и артефактов
     hearManager.hear(/Удалить👜/, async (context) => {

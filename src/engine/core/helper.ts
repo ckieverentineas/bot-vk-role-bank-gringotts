@@ -239,6 +239,7 @@ export async function Keyboard_Index(context: any, messa: any) {
     if (user_check.id_role === 2) {
         keyboard.textButton({ label: '!опсоло', payload: { command: 'sliz' }, color: 'secondary' })
         keyboard.textButton({ label: '!опмасс', payload: { command: 'sliz' }, color: 'secondary' }).row()
+        keyboard.textButton({ label: '!артефактывсе', payload: { command: 'sliz' }, color: 'primary' }).row()
         keyboard.textButton({ label: '!ездвиж', payload: { command: 'sliz' }, color: 'primary' }).row()
     } 
     keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
