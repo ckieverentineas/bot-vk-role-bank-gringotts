@@ -2,7 +2,7 @@ import { HearManager } from "@vk-io/hear";
 import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, timer_text_oper, vk } from '../index';
-import { Accessed, Keyboard_Index } from "./core/helper";
+import { Accessed, Keyboard_Index, Question_Is_Back, Question_Is_Cancel } from "./core/helper";
 import { Image_Random} from "./core/imagecpu";
 import prisma from "./events/module/prisma_client";
 import { User_Info } from "./events/module/tool";
@@ -11,26 +11,33 @@ import { Location_Printer } from "./events/module/quest";
 import { Storage_Printer } from "./events/module/storage";
 
 // МОДУЛЬ ОБРАБОТКИ ВВОДА ПОЛЬЗОВАТЕЛЕМ 
-async function Ipnut_Gold(context: IQuestionMessageContext, operationName: string) {
+async function Ipnut_Gold(context: IQuestionMessageContext, operationName: string): Promise<number | null> {
     let golden: number = 0
     let money_check = false
     while (money_check == false) {
         const gold: any = await context.question(`🧷 Введите количество для операции ${operationName}: `, timer_text_oper)
-        if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${operationName} истекло!`); return golden }
-        if (typeof Number(gold.text) == "number") {
+        if (Question_Is_Cancel(gold)) { return null }
+        if (Question_Is_Back(gold)) { return null }
+        if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${operationName} истекло!`); return null }
+        const parsed = Number(gold.text)
+        if (!Number.isNaN(parsed)) {
             money_check = true
-            golden = Number(gold.text)
-        } 
+            golden = parsed
+        } else {
+            await context.send(`💡 Введите число для операции ${operationName}!`)
+        }
     }
     return golden
 }
 
-async function Ipnut_Message(context: IQuestionMessageContext, operation_type: string) {
+async function Ipnut_Message(context: IQuestionMessageContext, operation_type: string): Promise<string | null> {
     let golden = ''
     let money_check = false
     while (money_check == false) {
         const gold = await context.question(`🧷 Введите уведомление пользователю для ${operation_type}:`, timer_text_oper)
-        if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${operation_type} истекло!`); return "Уведомление приняло ИСЛАМ!" }
+        if (Question_Is_Cancel(gold)) { return null }
+        if (Question_Is_Back(gold)) { return null }
+        if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${operation_type} истекло!`); return null }
         if (gold.text) {
             money_check = true
             golden = gold.text
@@ -300,26 +307,38 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 'xp_custom_many': Xp_Custom_Many
             }
             const answergot = await config[ans.payload.command](uids)
+            if (answergot === false) {
+                await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
+                return
+            }
             
         } else {
             await context.send(`⚙ Операция отменена пользователем.`)
+            await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
+            return
         }
         await context.send(`✅ Процедура массовых операций под названием операция "Ы" успешно завершена!`)
         await Keyboard_Index(context, `💡 Как насчет еще одной операции? Может, позвать доктора?`)
 
         // УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ ГАЛЛЕОНОВ (без проверки на uids)
         async function Gold_Custom_Many(uids?: number[]) {
-            const messa: string = await Ipnut_Message(context, 'массовых операций с галлеонами')
+            const messa = await Ipnut_Message(context, 'массовых операций с галлеонами')
+            if (messa === null) { return false }
             
             const users_target = await context.question(`📊 Введите список UID и операций в формате:\nUID1+СУММА1\nUID2-СУММА2\nUID3+СУММА3\n...\n\nПример:\n5+3402\n6-23\n7+53\n44-100`, 
                 { answerTimeLimit }
             )
             
-            if (users_target.isTimeout) { return await context.send(`⏰ Время ожидания ввода данных истекло!`) }
+            if (Question_Is_Cancel(users_target)) { return false }
+            if (users_target.isTimeout) {
+                await context.send(`⏰ Время ожидания ввода данных истекло!`)
+                return false
+            }
             
             // Проверка на null
             if (!users_target.text) {
-                return await context.send(`❌ Не получен текст для обработки. Операция отменена.`);
+                await context.send(`❌ Не получен текст для обработки. Операция отменена.`);
+                return false
             }
 
             const lines = users_target.text.split('\n').map((line: string) => line.trim());
@@ -454,21 +473,28 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 
                 console.log(`User ${user_get.idvk} ${ui.operation === '+' ? 'got' : 'lost'} ${ui.amount} gold. Him/Her bank now ${money_put.gold}`)
             }
+            return true
         }
 
         // УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ МАГИЧЕСКОГО ОПЫТА (без проверки на uids)
         async function Xp_Custom_Many(uids?: number[]) {
-            const messa: string = await Ipnut_Message(context, 'массовых операций с магическим опытом')
+            const messa = await Ipnut_Message(context, 'массовых операций с магическим опытом')
+            if (messa === null) { return false }
             
             const users_target = await context.question(`📊 Введите список UID и операций в формате:\nUID1+СУММА1\nUID2-СУММА2\nUID3+СУММА3\n...\n\nПример:\n5+340\n6-23\n7+53\n44-100`, 
                 { answerTimeLimit }
             )
             
-            if (users_target.isTimeout) { return await context.send(`⏰ Время ожидания ввода данных истекло!`) }
+            if (Question_Is_Cancel(users_target)) { return false }
+            if (users_target.isTimeout) {
+                await context.send(`⏰ Время ожидания ввода данных истекло!`)
+                return false
+            }
             
             // Проверка на null
             if (!users_target.text) {
-                return await context.send(`❌ Не получен текст для обработки. Операция отменена.`);
+                await context.send(`❌ Не получен текст для обработки. Операция отменена.`);
+                return false
             }
 
             const lines = users_target.text.split('\n').map((line: string) => line.trim());
@@ -575,6 +601,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 
                 console.log(`User ${user_get.idvk} ${ui.operation === '+' ? 'got' : 'lost'} ${ui.amount} MO. Him/Her XP now ${money_put.xp}`)
             }
+            return true
         }
 
         //Модуль мульти уничтожения персонажа
@@ -631,10 +658,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         //Модуль мульти начислений
         async function Multi_Up_Many(uids: number[]) {
             await context.send(`⚠ Приступаем к начислению галлеонов`)
-            const gold: number = await Ipnut_Gold(context, ans.text) 
+            const gold = await Ipnut_Gold(context, ans.text)
+            if (gold === null) { return false }
             await context.send(`⚠ Приступаем к начислению магического опыта`)
-            const xp: number = await Ipnut_Gold(context, ans.text)
-            const messa: string = await Ipnut_Message(context, ans.text)
+            const xp = await Ipnut_Gold(context, ans.text)
+            if (xp === null) { return false }
+            const messa = await Ipnut_Message(context, ans.text)
+            if (messa === null) { return false }
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: User | null = await prisma.user.findFirst({ where: { id } })
@@ -658,13 +688,17 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 console.log(`User ${user_get?.idvk} got ${gold} gold and ${xp} xp. Him/Her bank now ${money_put.gold}`)
             }
+            return true
         }
         async function Multi_Down_Many(uids: number[]) {
             await context.send(`⚠ Приступаем к снятию галлеонов`)
-            const gold: number = await Ipnut_Gold(context, ans.text) 
+            const gold = await Ipnut_Gold(context, ans.text)
+            if (gold === null) { return false }
             await context.send(`⚠ Приступаем к снятию магического опыта`)
-            const xp: number = await Ipnut_Gold(context, ans.text)
-            const messa: string = await Ipnut_Message(context, ans.text)
+            const xp = await Ipnut_Gold(context, ans.text)
+            if (xp === null) { return false }
+            const messa = await Ipnut_Message(context, ans.text)
+            if (messa === null) { return false }
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: User | null = await prisma.user.findFirst({ where: { id } })
@@ -688,11 +722,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 console.log(`User ${user_get?.idvk} left ${gold} gold and ${xp} xp. Him/Her bank now ${money_put.gold}`)
             }
+            return true
         }
         //Модуль начислений
         async function Gold_Up_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold(context, ans.text) 
-            const messa: string = await Ipnut_Message(context, ans.text)
+            const count = await Ipnut_Gold(context, ans.text)
+            if (count === null) { return false }
+            const messa = await Ipnut_Message(context, ans.text)
+            if (messa === null) { return false }
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -716,10 +753,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
             }
+            return true
         }
         async function Gold_Down_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold(context, ans.text) 
-            const messa: string = await Ipnut_Message(context, ans.text)
+            const count = await Ipnut_Gold(context, ans.text)
+            if (count === null) { return false }
+            const messa = await Ipnut_Message(context, ans.text)
+            if (messa === null) { return false }
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -753,7 +793,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             answerTimeLimit
                         }
                     )
-                    if (confirmq.isTimeout) { return await context.send(`⏰ Время ожидания на снятие галлеонов с ${user_get.name} истекло!`) }
+                    if (confirmq.isTimeout) {
+                        await context.send(`⏰ Время ожидания на снятие галлеонов с ${user_get.name} истекло!`)
+                        return false
+                    }
                     if (confirmq.payload.command === 'confirm') {
                         const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
                         try {
@@ -777,10 +820,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     }
                 }
             }
+            return true
         }
         async function Xp_Up_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold(context, ans.text) 
-            const messa: string = await Ipnut_Message(context, ans.text)
+            const count = await Ipnut_Gold(context, ans.text)
+            if (count === null) { return false }
+            const messa = await Ipnut_Message(context, ans.text)
+            if (messa === null) { return false }
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -804,11 +850,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 })
                 console.log(`User ${user_get.idvk} got ${count} MO. Him/Her XP now ${money_put.xp}`)
             }
+            return true
         }
         async function Xp_Down_Many(uids: number[]) {
-            const count: number = await Ipnut_Gold(context, ans.text) 
-            if (count === 0) { return }
-            const messa: string = await Ipnut_Message(context, ans.text)
+            const count = await Ipnut_Gold(context, ans.text)
+            if (count === null) { return false }
+            if (count === 0) { return false }
+            const messa = await Ipnut_Message(context, ans.text)
+            if (messa === null) { return false }
             for (const ids of uids) {
                 const id = Number(ids)
                 const user_get: any = await prisma.user.findFirst({ where: { id } })
@@ -854,6 +903,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     console.log(`User ${user_get.idvk} lost ${count} MO. Him/Her XP now ${money_put.xp}`)
                 }
             }
+            return true
         }
         //Модуль вовзврата
         async function Back(id: number, count: number) {
@@ -944,6 +994,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 answerTimeLimit                                                                       
             }
         )
+        console.log(`[diag !опсоло] operation_select text=${ans?.text} payload=${JSON.stringify(ans?.payload)} timeout=${ans?.isTimeout}`)
         if (ans.isTimeout) { return await context.send(`⏰ Время ожидания на ввод операции с 💳UID: ${datas[0].id} истекло!`) }
         if (ans.payload && ans.payload.command != 'back') {
             const config: any = {
@@ -1366,11 +1417,17 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let money_check = false
             while (money_check == false) {
                 const gold: any = await context.question(`🧷 Введите количество для операции ${ans.text}: `, timer_text_oper)
-                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${ans.text} истекло!`); return golden }
-                if (typeof Number(gold.text) == "number") {
+                console.log(`[diag !опсоло] input_gold text=${gold?.text} payload=${JSON.stringify(gold?.payload)} timeout=${gold?.isTimeout} cancel=${Question_Is_Cancel(gold)} parsed=${Number(gold?.text)} parsed_is_nan=${Number.isNaN(Number(gold?.text))}`)
+                if (Question_Is_Cancel(gold)) { return null }
+                if (Question_Is_Back(gold)) { return null }
+                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание количества ${ans.text} истекло!`); return null }
+                const parsed = Number(gold.text)
+                if (!Number.isNaN(parsed)) {
                     money_check = true
-                    golden = Number(gold.text)
-                } 
+                    golden = parsed
+                } else {
+                    await context.send(`💡 Введите число для операции ${ans.text}!`)
+                }
             }
             return golden
         }
@@ -1379,7 +1436,10 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             let money_check = false
             while (money_check == false) {
                 const gold = await context.question(`🧷 Введите уведомление пользователю ${ans.text}:`, timer_text_oper)
-                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${ans.text} истекло!`); return "Уведомление приняло ИСЛАМ!" }
+                console.log(`[diag !опсоло] input_message text=${gold?.text} payload=${JSON.stringify(gold?.payload)} timeout=${gold?.isTimeout} cancel=${Question_Is_Cancel(gold)}`)
+                if (Question_Is_Cancel(gold)) { return null }
+                if (Question_Is_Back(gold)) { return null }
+                if (gold.isTimeout) { await context.send(`⏰ Время ожидания на задание уведомления пользователю ${ans.text} истекло!`); return null }
                 if (gold.text) {
                     money_check = true
                     golden = gold.text
@@ -1428,10 +1488,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         //Модуль мульти начислений
         async function Multi_Up(id: number) {
             await context.send(`⚠ Приступаем к начислению галлеонов`)
-            const gold: number = await Ipnut_Gold() 
+            const gold = await Ipnut_Gold() 
+            if (gold === null || Number.isNaN(gold)) { return await context.send(`⚙ Операция начисления отменена`) }
             await context.send(`⚠ Приступаем к начислению магического опыта`)
-            const xp: number = await Ipnut_Gold()
-            const messa: string = await Ipnut_Message()
+            const xp = await Ipnut_Gold()
+            if (xp === null || Number.isNaN(xp)) { return await context.send(`⚙ Операция начисления отменена`) }
+            const messa = await Ipnut_Message()
+            if (messa === null) { return await context.send(`⚙ Операция начисления отменена`) }
             const user_get: User | null = await prisma.user.findFirst({ where: { id } })
             const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { increment: gold }, xp: { increment: xp } } })
             try {
@@ -1453,10 +1516,13 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         async function Multi_Down(id: number) {
             await context.send(`⚠ Приступаем к снятию галлеонов`)
-            const gold: number = await Ipnut_Gold() 
+            const gold = await Ipnut_Gold() 
+            if (gold === null || Number.isNaN(gold)) { return await context.send(`⚙ Операция списания отменена`) }
             await context.send(`⚠ Приступаем к снятию магического опыта`)
-            const xp: number = await Ipnut_Gold()
-            const messa: string = await Ipnut_Message()
+            const xp = await Ipnut_Gold()
+            if (xp === null || Number.isNaN(xp)) { return await context.send(`⚙ Операция списания отменена`) }
+            const messa = await Ipnut_Message()
+            if (messa === null) { return await context.send(`⚙ Операция списания отменена`) }
             const user_get: User | null = await prisma.user.findFirst({ where: { id } })
             const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { decrement: gold }, xp: { decrement: xp } } })
             try {
@@ -1478,9 +1544,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
         }
         //Модуль начислений
         async function Gold_Up(id: number) {
-            const count: number = await Ipnut_Gold() 
-            const messa: string = await Ipnut_Message()
+            const count = await Ipnut_Gold() 
+            const messa = await Ipnut_Message()
+            if (count === null || Number.isNaN(count) || messa === null) {
+                console.log(`[diag !опсоло] gold_up_abort uid=${id} count=${count} messa=${messa}`)
+                return await context.send(`⚙ Операция начисления отменена`)
+            }
             const user_get: any = await prisma.user.findFirst({ where: { id } })
+            console.log(`[diag !опсоло] gold_up_before_update uid=${id} count=${count} count_is_nan=${Number.isNaN(count)} messa=${messa}`)
             const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold + count } })
             try {
                 await vk.api.messages.send({
@@ -1500,8 +1571,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             console.log(`User ${user_get.idvk} got ${count} gold. Him/Her bank now ${money_put.gold}`)
         }
         async function Gold_Down(id: number) {
-            const count: number = await Ipnut_Gold() 
-            const messa: string = await Ipnut_Message()
+            const count = await Ipnut_Gold() 
+            const messa = await Ipnut_Message()
+            if (count === null || Number.isNaN(count) || messa === null) {
+                return await context.send(`⚙ Операция списания отменена`)
+            }
             const user_get: any = await prisma.user.findFirst({ where: { id } })
             if (user_get.gold-count >= 0) {
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
@@ -1555,8 +1629,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             }
         }
         async function Xp_Up(id: number) {
-            const count: number = await Ipnut_Gold() 
-            const messa: string = await Ipnut_Message()
+            const count = await Ipnut_Gold() 
+            const messa = await Ipnut_Message()
+            if (count === null || Number.isNaN(count) || messa === null) {
+                return await context.send(`⚙ Операция начисления отменена`)
+            }
             const user_get: any = await prisma.user.findFirst({ where: { id } })
             const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp + count } })
             try {
@@ -1577,9 +1654,11 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             console.log(`User ${user_get.idvk} got ${count} MO. Him/Her XP now ${money_put.xp}`)
         }
         async function Xp_Down(id: number) {
-            const count: number = await Ipnut_Gold() 
+            const count = await Ipnut_Gold() 
+            if (count === null || Number.isNaN(count)) { return await context.send(`⚙ Операция списания отменена`) }
             if (count === 0) { return }
-            const messa: string = await Ipnut_Message()
+            const messa = await Ipnut_Message()
+            if (messa === null) { return await context.send(`⚙ Операция списания отменена`) }
             const user_get: any = await prisma.user.findFirst({ where: { id } })
             if (user_get.xp-count >= 0) {
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })

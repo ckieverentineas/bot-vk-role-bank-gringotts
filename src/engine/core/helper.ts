@@ -8,6 +8,127 @@ import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses"
 
 const prisma = new PrismaClient()
 
+const QUESTION_CONTEXT_PATCH_FLAG = '__question_context_patched'
+const QUESTION_CONTEXT_SEND_PATCH_FLAG = '__question_context_send_patched'
+const QUESTION_CONTEXT_SUPPRESS_TIMEOUT_FLAG = '__question_context_suppress_timeout'
+const QUESTION_BACK_COMMANDS = new Set(['back', 'назад', '🔙', 'вернуться'])
+const QUESTION_CANCEL_COMMANDS = new Set(['cancel', 'отмена', '🚫', 'выход', 'стоп', 'exit'])
+
+function Normalize_Question_Command(input: any): string {
+    return String(input ?? '').trim().toLowerCase()
+}
+
+function Build_Question_Control_Keyboard() {
+    return Keyboard.builder()
+    .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+    .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+    .oneTime()
+}
+
+export function Question_Is_Back(answer: any): boolean {
+    const command = Normalize_Question_Command(answer?.payload?.command)
+    if (command === 'back') {
+        return true
+    }
+    const text = Normalize_Question_Command(answer?.text)
+    if (QUESTION_BACK_COMMANDS.has(text)) {
+        return true
+    }
+    return text.includes('back') || text.includes('назад')
+}
+
+export function Question_Is_Cancel(answer: any): boolean {
+    const command = Normalize_Question_Command(answer?.payload?.command)
+    if (command === 'cancel') {
+        return true
+    }
+    const text = Normalize_Question_Command(answer?.text)
+    return QUESTION_CANCEL_COMMANDS.has(text)
+}
+
+async function Question_Cancel_To_Main_Menu(context: any) {
+    const idvk = Number(context?.senderId ?? context?.peerId ?? context?.userId)
+    if (!idvk || Number.isNaN(idvk)) {
+        return
+    }
+
+    const user = await prisma.user.findFirst({ where: { idvk } })
+    if (!user) {
+        await Send_Message_Universal(context.peerId, `⚙ Операция отменена. Для запуска новой сессии напишите !банк`)
+        return
+    }
+
+    try {
+        const { Main_Menu } = await import('../events/contoller')
+        const { image_bank } = await import('../data_center/system_image')
+        const keyboard = await Main_Menu(context)
+        await Send_Message_Universal(context.peerId, `⚙ Операция отменена пользователем. Возврат в главное меню.`, keyboard, image_bank)
+    } catch (e) {
+        console.log(`Ошибка возврата в главное меню после отмены: ${e}`)
+    }
+}
+
+export function Patch_Question_Context(context: any) {
+    if (!context || typeof context.question !== 'function') {
+        return
+    }
+
+    if (!context[QUESTION_CONTEXT_SEND_PATCH_FLAG] && typeof context.send === 'function') {
+        const sourceSend = context.send.bind(context)
+        context.send = async (message: any, params?: any) => {
+            const suppressTimeout = Boolean(context[QUESTION_CONTEXT_SUPPRESS_TIMEOUT_FLAG])
+            const text = String(message ?? '').toLowerCase()
+            if (suppressTimeout && (text.includes('время ожидания') || text.startsWith('⏰'))) {
+                context[QUESTION_CONTEXT_SUPPRESS_TIMEOUT_FLAG] = false
+                return null
+            }
+            return sourceSend(message, params)
+        }
+        context[QUESTION_CONTEXT_SEND_PATCH_FLAG] = true
+    }
+
+    if (context[QUESTION_CONTEXT_PATCH_FLAG]) {
+        return
+    }
+
+    const sourceQuestion = context.question.bind(context)
+
+    context.question = async (message: string, options: any = {}) => {
+        const hasKeyboard = Boolean(options?.keyboard)
+        const questionOptions = hasKeyboard
+            ? options
+            : {
+                ...options,
+                keyboard: Build_Question_Control_Keyboard()
+            }
+
+        const answer: any = await sourceQuestion(message, questionOptions)
+
+        if (answer && !answer.payload) {
+            const rawText = Normalize_Question_Command(answer.text)
+            if (QUESTION_BACK_COMMANDS.has(rawText)) {
+                answer.payload = { command: 'back' }
+            } else if (QUESTION_CANCEL_COMMANDS.has(rawText)) {
+                answer.payload = { command: 'cancel' }
+            }
+        }
+
+        if (Question_Is_Back(answer)) {
+            answer.isBack = true
+        }
+        if (Question_Is_Cancel(answer)) {
+            answer.isCancel = true
+            context[QUESTION_CONTEXT_SUPPRESS_TIMEOUT_FLAG] = true
+            await Question_Cancel_To_Main_Menu(context)
+            answer.isTimeout = true
+        }
+
+        return answer
+    }
+
+    context[QUESTION_CONTEXT_PATCH_FLAG] = true
+}
+
 export function Sleep(ms: number) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);

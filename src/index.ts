@@ -6,7 +6,7 @@ import {
 } from 'vk-io-question';
 import { registerUserRoutes } from './engine/player'
 import { InitGameRoutes } from './engine/init';
-import { Keyboard_Index, Logger, Worker_Checker } from './engine/core/helper';
+import { Keyboard_Index, Logger, Patch_Question_Context, Question_Is_Back, Question_Is_Cancel, Worker_Checker } from './engine/core/helper';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import prisma from './engine/events/module/prisma_client';
 import { Exit, Main_Menu_Init } from './engine/events/contoller';
@@ -21,9 +21,9 @@ export const token: string = String(process.env.token)
 export const root: number = Number(process.env.root) //root user
 export const chat_id: number = Number(process.env.chat_id) //chat for logs
 export const group_id: number = Number(process.env.group_id)//clear chat group
-export const timer_text = { answerTimeLimit: 300_000 } // ожидать пять минут
-export const timer_text_oper = { answerTimeLimit: 60_000 } // ожидать пять минут
-export const answerTimeLimit = 300_000 // ожидать пять минут
+export const timer_text = { answerTimeLimit: 600_000 } // ожидать десять минут
+export const timer_text_oper = { answerTimeLimit: 600_000 } // ожидать десять минут
+export const answerTimeLimit = 600_000 // ожидать десять минут
 export const starting_date = new Date(); // время работы бота
 //авторизация
 async function Group_Id_Get() {
@@ -46,6 +46,10 @@ const hearManager = new HearManager<IQuestionMessageContext>();
 
 //настройка
 vk.updates.use(questionManager.middleware);
+vk.updates.use(async (context: any, next: any) => {
+	Patch_Question_Context(context)
+	return await next()
+});
 vk.updates.on('message_new', hearManager.middleware);
 
 //регистрация роутов из других классов
@@ -69,107 +73,144 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	const user_check = await prisma.user.findFirst({ where: { idvk: context.senderId } })
 	//если пользователя нет, то начинаем регистрацию
 	if (!user_check) {
-		//согласие на обработку
-		const answer = await context.question(`⌛ Как только вы открыли дверь банка Гринготтс 🏦, из ниоткуда перед вами предстали два гоблина и надменно сказали: \n\n— Видимо, вы здесь впервые. Прежде чем войти, распишитесь здесь о своем согласии на обработку персональных данных. \n\nВ тот же миг в ваших руках магическим образом появился пергамент. \n\n💡 Предупреждение: любые вопросы в банковской системе ограничены 5 минутами на ваши ответы в процессе обслуживания!`,
-			{	
-				keyboard: Keyboard.builder()
-				.textButton({ label: '✏', payload: { command: 'Согласиться' }, color: 'positive' }).row()
-				.textButton({ label: '👣', payload: { command: 'Отказаться' }, color: 'negative' }).oneTime(),
-				answerTimeLimit
-			}
-		);
-		if (answer.isTimeout) { return await context.send(`⏰ Время ожидания подтверждения согласия истекло!`) }
-		if (!/да|yes|Согласиться|конечно|✏/i.test(answer.text|| '{}')) {
-			await context.send('⌛ Вы отказались дать свое согласие, а живым отсюда никто не уходил, вас упаковали!');
-			return;
+		const registrationState = {
+			consent: null as any,
+			visit: null as any,
+			name: null as string | null,
+			class: null as string | null,
+			spec: null as string | null
 		}
-		//приветствие игрока
-		const visit = await context.question(`⌛ Поставив свою подпись, вы, стараясь не смотреть косо на гоблинов, вошли в здание банка, подошли к стойке, где за информационной системой сидела полная гоблинша с бородавкой на носу.`,
-			{ 	
-				keyboard: Keyboard.builder()
-				.textButton({ label: 'Подойти и поздороваться', payload: { command: 'Согласиться' }, color: 'positive' }).row()
-				.textButton({ label: 'Ждать, пока она закончит', payload: { command: 'Отказаться' }, color: 'negative' }).oneTime().inline(),
-				answerTimeLimit
-			}
-		);
-		if (visit.isTimeout) { return await context.send(`⏰ Время ожидания активности истекло!`) }
-		let name_check = false
-		let datas: any = []
-		while (name_check == false) {
-			const name = await context.question( `🧷 Приветствую в банке Гринготтс🏦! Назовите ваше имя и фамилию. \n\n❗ Внимание! Предоставление заведомо ложных данных преследуются законом!`, timer_text)
-			if (name.isTimeout) { return await context.send(`⏰ Время ожидания ввода имени истекло!`) }
-			if (name.text.length <= 64) {
-				name_check = true
-				datas.push({name: `${name.text}`})
-				if (name.text.length > 32) { await context.send(`⚠ Ваши ФИО не влезают на стандартный бланк (32 символа)! Гоблин может использовать бланк повышенной ширины, но нужно доплатить 1G за каждый не поместившийся символ.`) }
-			} else { await context.send(`⛔ Ваши ФИО не влезают на бланк повышенной ширины (64 символа), и вообще, запрещены магическим законодательством! Выплатите штраф в 30G или мы будем вынуждены позвать стражей порядка для отправки вас в Азкабан.`) }
-		}
-		let answer_check = false
-		while (answer_check == false) {
-			const answer1 = await context.question(`🧷 Укажите ваше положение в Хогвартс Онлайн`,
-				{	
-					keyboard: Keyboard.builder()
-					.textButton({ label: 'Ученик', payload: { command: 'student' }, color: 'secondary' })
-					.textButton({ label: 'Профессор', payload: { command: 'professor' }, color: 'secondary' })
-					.textButton({ label: 'Житель', payload: { command: 'citizen' }, color: 'secondary' })
-					.oneTime().inline(), answerTimeLimit
-				}
-			)
-			if (answer1.isTimeout) { return await context.send(`⏰ Время ожидания выбора положения истекло!`) }
-			if (!answer1.payload) {
-				await context.send(`💡 Жмите только по кнопкам с иконками!`)
-			} else {
-				datas.push({class: `${answer1.text}`})
-				answer_check = true
-			}
-		}
-		let spec_check = false
-		while (spec_check == false) {
-			// Проверяем, является ли пользователь студентом
-			if (datas[1].class === 'Ученик') {
-				// Для студентов показываем кнопки с факультетами
-				const faculty = await context.question(`🧷 Выберите ваш факультет:`,
-					{
+		let step: 'consent' | 'visit' | 'name' | 'class' | 'spec' = 'consent'
+		while (true) {
+			if (step === 'consent') {
+				const answer = await context.question(`⌛ Как только вы открыли дверь банка Гринготтс 🏦, из ниоткуда перед вами предстали два гоблина и надменно сказали: \n\n— Видимо, вы здесь впервые. Прежде чем войти, распишитесь здесь о своем согласии на обработку персональных данных. \n\nВ тот же миг в ваших руках магическим образом появился пергамент. \n\n💡 Предупреждение: любые вопросы в банковской системе ограничены 10 минутами на ваши ответы в процессе обслуживания!`,
+					{	
 						keyboard: Keyboard.builder()
-						.textButton({ label: 'Гриффиндор', payload: { command: 'gryffindor' }, color: 'secondary' })
-						.textButton({ label: 'Когтевран', payload: { command: 'ravenclaw' }, color: 'secondary' }).row()
-						.textButton({ label: 'Пуффендуй', payload: { command: 'hufflepuff' }, color: 'secondary' })
-						.textButton({ label: 'Слизерин', payload: { command: 'slytherin' }, color: 'secondary' }).row()
-						.oneTime().inline(),
+						.textButton({ label: '✏', payload: { command: 'Согласиться' }, color: 'positive' }).row()
+						.textButton({ label: '👣', payload: { command: 'Отказаться' }, color: 'negative' }).oneTime(),
 						answerTimeLimit
 					}
-				)
-				if (faculty.isTimeout) { return await context.send(`⏰ Время ожидания выбора факультета истекло!`) }
-				
-				if (faculty.payload) {
-					// Преобразуем command в читаемое название
-					const facultyNames: any = {
-						'gryffindor': 'Гриффиндор',
-						'ravenclaw': 'Когтевран',
-						'hufflepuff': 'Пуффендуй',
-						'slytherin': 'Слизерин'
-					}
-					datas.push({spec: facultyNames[faculty.payload.command] || faculty.text})
-					spec_check = true
-				} else {
-					await context.send(`💡 Пожалуйста, выберите факультет с помощью кнопок!`)
+				);
+				if (Question_Is_Cancel(answer)) { return }
+				if (Question_Is_Back(answer)) { await context.send(`💡 Это первый шаг регистрации. Откат назад невозможен.`); continue }
+				if (answer.isTimeout) { return await context.send(`⏰ Время ожидания подтверждения согласия истекло!`) }
+				if (!/да|yes|Согласиться|конечно|✏/i.test(answer.text|| '{}')) {
+					await context.send('⌛ Вы отказались дать свое согласие, а живым отсюда никто не уходил, вас упаковали!');
+					return;
 				}
-			} else {
-				// Для профессоров и жителей - текстовый ввод
-				const name = await context.question(`🧷 Укажите вашу специализацию в Хогвартс Онлайн. Если вы профессор/житель, введите должность.`, timer_text)
-				if (name.isTimeout) { return await context.send(`⏰ Время ожидания выбора специализации истекло!`) }
-				if (name.text.length <= 30) {
-					spec_check = true
-					datas.push({spec: `${name.text}`})
-				} else { 
-					await context.send(`💡 Введите до 30 символов включительно!`) 
+				registrationState.consent = answer
+				step = 'visit'
+				continue
+			}
+
+			if (step === 'visit') {
+				const visit = await context.question(`⌛ Поставив свою подпись, вы, стараясь не смотреть косо на гоблинов, вошли в здание банка, подошли к стойке, где за информационной системой сидела полная гоблинша с бородавкой на носу.`,
+					{ 	
+						keyboard: Keyboard.builder()
+						.textButton({ label: 'Подойти и поздороваться', payload: { command: 'Согласиться' }, color: 'positive' }).row()
+						.textButton({ label: 'Ждать, пока она закончит', payload: { command: 'Отказаться' }, color: 'negative' }).oneTime().inline(),
+						answerTimeLimit
+					}
+				);
+				if (Question_Is_Cancel(visit)) { return }
+				if (Question_Is_Back(visit)) { step = 'consent'; continue }
+				if (visit.isTimeout) { return await context.send(`⏰ Время ожидания активности истекло!`) }
+				registrationState.visit = visit
+				step = 'name'
+				continue
+			}
+
+			if (step === 'name') {
+				const name = await context.question( `🧷 Приветствую в банке Гринготтс🏦! Назовите ваше имя и фамилию. \n\n❗ Внимание! Предоставление заведомо ложных данных преследуются законом!`, timer_text)
+				if (Question_Is_Cancel(name)) { return }
+				if (Question_Is_Back(name)) { step = 'visit'; continue }
+				if (name.isTimeout) { return await context.send(`⏰ Время ожидания ввода имени истекло!`) }
+				if (name.text.length <= 64) {
+					registrationState.name = `${name.text}`
+					if (name.text.length > 32) { await context.send(`⚠ Ваши ФИО не влезают на стандартный бланк 32 символа! Гоблин может использовать бланк повышенной ширины, но нужно доплатить 1G за каждый не поместившийся символ.`) }
+					step = 'class'
+				} else { await context.send(`⛔ Ваши ФИО не влезают на бланк повышенной ширины 64 символа, и вообще, запрещены магическим законодательством! Выплатите штраф в 30G или мы будем вынуждены позвать стражей порядка для отправки вас в Азкабан.`) }
+				continue
+			}
+
+			if (step === 'class') {
+				const answer1 = await context.question(`🧷 Укажите ваше положение в Хогвартс Онлайн`,
+					{	
+						keyboard: Keyboard.builder()
+						.textButton({ label: 'Ученик', payload: { command: 'student' }, color: 'secondary' })
+						.textButton({ label: 'Профессор', payload: { command: 'professor' }, color: 'secondary' })
+						.textButton({ label: 'Житель', payload: { command: 'citizen' }, color: 'secondary' })
+						.oneTime().inline(), answerTimeLimit
+					}
+				)
+				if (Question_Is_Cancel(answer1)) { return }
+				if (Question_Is_Back(answer1)) { step = 'name'; continue }
+				if (answer1.isTimeout) { return await context.send(`⏰ Время ожидания выбора положения истекло!`) }
+				if (!answer1.payload) {
+					await context.send(`💡 Жмите только по кнопкам с иконками!`)
+				} else {
+					registrationState.class = `${answer1.text}`
+					step = 'spec'
+				}
+				continue
+			}
+
+			if (step === 'spec') {
+				if (registrationState.class === 'Ученик') {
+					const faculty = await context.question(`🧷 Выберите ваш факультет:`,
+						{
+							keyboard: Keyboard.builder()
+							.textButton({ label: 'Гриффиндор', payload: { command: 'gryffindor' }, color: 'secondary' })
+							.textButton({ label: 'Когтевран', payload: { command: 'ravenclaw' }, color: 'secondary' }).row()
+							.textButton({ label: 'Пуффендуй', payload: { command: 'hufflepuff' }, color: 'secondary' })
+							.textButton({ label: 'Слизерин', payload: { command: 'slytherin' }, color: 'secondary' }).row()
+							.oneTime().inline(),
+							answerTimeLimit
+						}
+					)
+					if (Question_Is_Cancel(faculty)) { return }
+					if (Question_Is_Back(faculty)) { step = 'class'; continue }
+					if (faculty.isTimeout) { return await context.send(`⏰ Время ожидания выбора факультета истекло!`) }
+					if (faculty.payload) {
+						const facultyNames: any = {
+							'gryffindor': 'Гриффиндор',
+							'ravenclaw': 'Когтевран',
+							'hufflepuff': 'Пуффендуй',
+							'slytherin': 'Слизерин'
+						}
+						registrationState.spec = facultyNames[faculty.payload.command] || faculty.text
+						break
+					} else {
+						await context.send(`💡 Пожалуйста, выберите факультет с помощью кнопок!`)
+					}
+				} else {
+					const name = await context.question(`🧷 Укажите вашу специализацию в Хогвартс Онлайн. Если вы профессор или житель, введите должность.`, timer_text)
+					if (Question_Is_Cancel(name)) { return }
+					if (Question_Is_Back(name)) { step = 'class'; continue }
+					if (name.isTimeout) { return await context.send(`⏰ Время ожидания выбора специализации истекло!`) }
+					if (name.text.length <= 30) {
+						registrationState.spec = `${name.text}`
+						break
+					} else {
+						await context.send(`💡 Введите до 30 символов включительно!`)
+					}
 				}
 			}
 		}
-		const save = await prisma.user.create({	data: {	idvk: context.senderId, name: datas[0].name, class: datas[1].class, spec: datas[2].spec, id_role: 1, gold: 65 } })
+
+		const save = await prisma.user.create({
+			data: {
+				idvk: context.senderId,
+				name: String(registrationState.name),
+				class: String(registrationState.class),
+				spec: String(registrationState.spec),
+				id_role: 1,
+				gold: 65
+			}
+		})
 		await context.send(`⌛ Благодарю за сотрудничество ${save.class} ${save.name}, ${save.spec}. \n⚖ Вы получили банковскую карту UID: ${save.id}. \n🏦 Вам зачислено ${save.gold} галлеонов`)
 		console.log(`Success save user idvk: ${context.senderId}`)
-		await context.send(`‼ Список обязательных для покупки вещей: \n1. Волшебная палочка \n2. Сова, кошка или жаба \n3. Комплект учебников (на первых порах вам хватит стандартного набора) \n \nПосетите Косой переулок и приобретите их первым делом!`)
+		await context.send(`‼ Список обязательных для покупки вещей: \n1. Волшебная палочка \n2. Сова, кошка или жаба \n3. Комплект учебников на первых порах вам хватит стандартного набора \n \nПосетите Косой переулок и приобретите их первым делом!`)
 		const check_bbox = await prisma.blackBox.findFirst({ where: { idvk: context.senderId } })
 		const ans_selector = `⁉ ${save.class} @id${save.idvk}(${save.name}) ${save.spec} ${!check_bbox ? "легально" : "НЕЛЕГАЛЬНО"} получает банковскую карту UID: ${save.id}!`
 		await vk.api.messages.send({
@@ -177,7 +218,8 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 			random_id: 0,
 			message: ans_selector
 		})
-		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили, напишите [!банк] без квадратных скобочек, а затем нажмите кнопку: ✅Подтвердить авторизацию!`)
+		await Keyboard_Index(context, `💡 Подсказка: Когда все операции вы успешно завершили, напишите !банк без квадратных скобочек, а затем нажмите кнопку ✅Подтвердить авторизацию!`)
+		return await next();
 	} else {
 		await Keyboard_Index(context, `⌛ Загрузка, пожалуйста, подождите...`)
 	}
