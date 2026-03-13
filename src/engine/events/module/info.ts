@@ -8,6 +8,37 @@ import { Analyzer_Birthday_Counter } from "./analyzer"
 import { image_admin, image_artefact, image_birthday, image_storage } from "../../data_center/system_image"
 import { Send_Message_Universal } from "../../core/helper"
 
+function Storage_Image_Short(value: string | null | undefined): string {
+    const text = String(value ?? '').trim()
+    if (!text) {
+        return 'нет изображения'
+    }
+    return text.length > 70 ? `${text.slice(0, 67)}...` : text
+}
+
+function Chunk_By_Length(lines: string[], maxLength: number = 3200): string[] {
+    const chunks: string[] = []
+    let current = ''
+
+    for (const line of lines) {
+        const candidate = current ? `${current}\n${line}` : line
+        if (candidate.length > maxLength) {
+            if (current) {
+                chunks.push(current)
+            }
+            current = line
+        } else {
+            current = candidate
+        }
+    }
+
+    if (current) {
+        chunks.push(current)
+    }
+
+    return chunks
+}
+
 export async function Card_Enter(context:any) {
     const get_user: User | null | undefined = await prisma.user.findFirst({ where: { idvk: context.peerId } })
     if (get_user) {
@@ -120,13 +151,24 @@ export async function Inventory_Enter(context: any) {
 export async function Storage_Enter(context: any) {
     const attached = image_storage//await Image_Random(context, "storage")
     const get_user:any = await prisma.user.findFirst({ where: { idvk: context.peerId } })
-    const storage: Storage[] = await prisma.storage.findMany({ where: { id_user: get_user.id } })
-    
-    const text = storage.length > 0 ? `✉ Ваше хранилище: \n\n ${storage.map(store => `📦 ${store.id}-${store.name}\n`).join('')}` : `✉ Увы, но пока пусто, добавьте свои ролевые предметы :(`
+    if (!get_user) { return }
+    const storage: any[] = await prisma.storage.findMany({ where: { id_user: get_user.id }, orderBy: { id: 'asc' } })
     console.log(`User ${context.peerId} see self storage`)  
     const keyboard = new KeyboardBuilder().callbackButton({ label: '🚫', payload: { command: 'system_call' }, color: 'secondary' }).inline().oneTime()
     keyboard.textButton({ label: '➕📦', payload: { command: 'Согласиться' }, color: 'secondary' })
-    await Send_Message_Universal(context.peerId, text, keyboard, attached)
+
+    if (storage.length === 0) {
+        await Send_Message_Universal(context.peerId, `✉ Увы, но пока пусто, добавьте свои ролевые предметы :(`, keyboard, attached)
+        return
+    }
+
+    const lines: string[] = storage.map(store => `📦 ${store.id}-${store.name}\n🖼 ${Storage_Image_Short(store.image)}`)
+    const chunks: string[] = Chunk_By_Length(lines)
+
+    await Send_Message_Universal(context.peerId, `✉ Ваше хранилище: \n\n${chunks[0]}`, keyboard, attached)
+    for (let i = 1; i < chunks.length; i++) {
+        await Send_Message_Universal(context.peerId, `✉ Продолжение хранилища: \n\n${chunks[i]}`)
+    }
     //await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${text}`, keyboard: keyboard, attachment: attached?.toString()})
 }
 

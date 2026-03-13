@@ -10,6 +10,39 @@ import { Item, User } from "@prisma/client";
 import { Location_Printer } from "./events/module/quest";
 import { Storage_Printer } from "./events/module/storage";
 
+async function Input_Target_UID(context: IQuestionMessageContext, title: string): Promise<number | null> {
+    while (true) {
+        const uid: any = await context.question(
+            title,
+            {
+                keyboard: Keyboard.builder()
+                .textButton({ label: '🚫Отмена', payload: { command: 'cancel' }, color: 'secondary' })
+                .oneTime().inline(),
+                answerTimeLimit
+            }
+        )
+
+        if (Question_Is_Cancel(uid)) { return null }
+        if (uid.isTimeout) {
+            await context.send(`⏰ Время ожидания ввода UID истекло!`)
+            return null
+        }
+
+        const text = String(uid?.text ?? '').trim()
+        if (/^\d+$/.test(text)) {
+            const id = Number(text)
+            const target = await prisma.user.findFirst({ where: { id } })
+            if (!target) {
+                await context.send(`💡 Нет такого банковского счета!`)
+                continue
+            }
+            return id
+        }
+
+        await context.send(`💡 Необходимо ввести корректный UID!`)
+    }
+}
+
 // МОДУЛЬ ОБРАБОТКИ ВВОДА ПОЛЬЗОВАТЕЛЕМ 
 async function Ipnut_Gold(context: IQuestionMessageContext, operationName: string): Promise<number | null> {
     let golden: number = 0
@@ -2134,6 +2167,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     .textButton({ label: '✏🔮', payload: { command: 'artefact_edit' }, color: 'secondary' })
                     .textButton({ label: '✏', payload: { command: 'editor' }, color: 'secondary' }).row()
                     .textButton({ label: '👁👜', payload: { command: 'inventory_show' }, color: 'secondary' }).row()
+                    .textButton({ label: '📦🛠', payload: { command: 'storage_admin' }, color: 'secondary' }).row()
                     .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' }).row()
                     .textButton({ label: '☠', payload: { command: 'user_delete' }, color: 'secondary' })
                     .oneTime().inline(),
@@ -2149,6 +2183,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     'artefact_show_selected': Artefact_Show,
                     'artefact_edit': Artefact_Edit,
                     'inventory_show': Inventory_Show,
+                    'storage_admin': Storage_Admin,
                     'user_delete': User_delete,
                     'editor': Editor,
                 }
@@ -2156,6 +2191,36 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             } else {
                 await context.send(`⚙ Операция отменена пользователем.`)
             }
+        }
+
+        async function Storage_Admin(id: number) {
+            const mode = await context.question(
+                `🧷 Режим админ-хранилища. Выберите источник UID:`,
+                {
+                    keyboard: Keyboard.builder()
+                    .textButton({ label: 'Текущий UID', payload: { command: 'storage_current' }, color: 'secondary' })
+                    .textButton({ label: 'Другой UID', payload: { command: 'storage_other' }, color: 'secondary' }).row()
+                    .textButton({ label: '🔙', payload: { command: 'back' }, color: 'secondary' })
+                    .textButton({ label: '🚫', payload: { command: 'cancel' }, color: 'negative' })
+                    .oneTime().inline(),
+                    answerTimeLimit
+                }
+            )
+
+            if (Question_Is_Cancel(mode) || Question_Is_Back(mode) || mode.isTimeout) {
+                return
+            }
+
+            let targetUid = id
+            if (mode?.payload?.command === 'storage_other') {
+                const selected = await Input_Target_UID(context, `🧷 Введите 💳UID для открытия админ-хранилища:`)
+                if (selected === null) {
+                    return
+                }
+                targetUid = selected
+            }
+
+            await Storage_Printer(context, targetUid)
         }
     })
 
