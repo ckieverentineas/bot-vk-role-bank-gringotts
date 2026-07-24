@@ -12,7 +12,9 @@ export async function Image_Text_Add_Card(context: any, x: number, y: number, te
     const lenna = await Jimp.read(`${dir}/${file_name[randomInt(0, file_name.length)]}`)
     const font = await Jimp.loadFont('./src/art/font/impact_medium/impact.fnt')
     const font_big = await Jimp.loadFont('./src/art/font/impact_big/impact.fnt') 
-    const res = await lenna.resize(1687, 1077).print(font_big, x, y, (`${text.idvk * Math.pow(10, 16-String(text.idvk).length)+text.id}`).slice(-16).replace(/\d{4}(?=.)/g, '$& ').replace(/ /g, `${' '.repeat(7)}`))
+    const idvkText = String(text.idvk)
+    const cardNumber = `${idvkText}${String(text.id).padStart(Math.max(0, 16 - idvkText.length), '0')}`
+    const res = await lenna.resize(1687, 1077).print(font_big, x, y, cardNumber.slice(-16).replace(/\d{4}(?=.)/g, '$& ').replace(/ /g, `${' '.repeat(7)}`))
     .print(font, x, y+200, text.name, 1200)
     .print(font, lenna.getWidth()-370, y+200, text.crdate.toLocaleDateString('de-DE', { year: "numeric", month: "2-digit", day: "2-digit" }) )
     const attachment = await vk.upload.messagePhoto({

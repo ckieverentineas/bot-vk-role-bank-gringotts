@@ -1,8 +1,7 @@
 import { VK, Keyboard } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
 import {
-    QuestionManager,
-    IQuestionMessageContext
+    QuestionManager
 } from 'vk-io-question';
 import { registerUserRoutes } from './engine/player'
 import { InitGameRoutes } from './engine/init';
@@ -20,22 +19,44 @@ dotenv.config()
 export const token: string = String(process.env.token)
 export const root: number = Number(process.env.root) //root user
 export const chat_id: number = Number(process.env.chat_id) //chat for logs
-export const group_id: number = Number(process.env.group_id)//clear chat group
+export let group_id: number = Number(process.env.group_id) || 0 //clear chat group
 export const timer_text = { answerTimeLimit: 600_000 } // ожидать десять минут
 export const timer_text_oper = { answerTimeLimit: 600_000 } // ожидать десять минут
 export const answerTimeLimit = 600_000 // ожидать десять минут
 export const starting_date = new Date(); // время работы бота
 //авторизация
-async function Group_Id_Get() {
-	const vk = new VK({ token: token, apiLimit: 1 });
-	const [group] = await vk.api.groups.getById(vk);
-	const groupId = group.id;
-	return groupId
+export let vk = new VK({ token: token, pollingGroupId: group_id || undefined, apiLimit: 20 });
+
+async function Group_Id_Get(): Promise<number> {
+	const envGroupId = group_id
+
+	try {
+		const detector = new VK({ token: token, apiLimit: 1 });
+		const response = await detector.api.groups.getById({});
+		const detectedGroupId = Number(response.groups?.[0]?.id)
+		if (Number.isSafeInteger(detectedGroupId) && detectedGroupId > 0) {
+			if (Number.isSafeInteger(envGroupId) && envGroupId > 0 && envGroupId !== detectedGroupId) {
+				console.warn(`group_id from .env (${envGroupId}) differs from token group id (${detectedGroupId}); using token group id.`)
+			}
+			return detectedGroupId
+		}
+	} catch (error) {
+		console.log(`Group id autodetect failed: ${error}`)
+	}
+
+	if (Number.isSafeInteger(envGroupId) && envGroupId > 0) {
+		return envGroupId
+	}
+
+	throw new Error('Cannot resolve VK group id. Set group_id in .env or check token permissions.')
 }
-export const vk = new VK({ token: token, pollingGroupId: Number(Group_Id_Get()), apiLimit: 20 });
-//инициализация
-const questionManager = new QuestionManager();
-const hearManager = new HearManager<IQuestionMessageContext>();
+
+async function Bootstrap() {
+	group_id = await Group_Id_Get()
+	vk = new VK({ token: token, pollingGroupId: group_id, apiLimit: 20 });
+	//инициализация
+	const questionManager = new QuestionManager();
+	const hearManager = new HearManager<any>();
 
 /*prisma.$use(async (params, next) => {
 	console.log('This is middleware!')
@@ -58,7 +79,7 @@ registerUserRoutes(hearManager)
 
 //миддлевар для предварительной обработки сообщений
 vk.updates.on('message_new', async (context: any, next: any) => {
-	if (context.peerType == 'chat') { 
+	if (context.peerType === 'chat' && context.peerId !== context.senderId) {
 		try { 
 			await vk.api.messages.delete({'peer_id': context.peerId, 'delete_for_all': 1, 'cmids': context.conversationMessageId, 'group_id': group_id})
 			console.log(`User ${context.senderId} sent message and deleted`)
@@ -267,9 +288,14 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 	return await next();
 })
 
-vk.updates.start().then(async () => {
-	await Logger('running succes')
+	await vk.updates.start()
+	await Logger(`running succes with group_id ${group_id}`)
 	await Start_Worker_API_Bot()
-}).catch(console.error);
-setInterval(Worker_Checker, 86400000);
+	setInterval(Worker_Checker, 86400000);
+}
+
+Bootstrap().catch((error) => {
+	console.error(error);
+	process.exitCode = 1;
+});
 process.on('warning', e => console.warn(e.stack))

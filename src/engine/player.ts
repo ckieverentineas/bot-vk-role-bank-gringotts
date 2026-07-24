@@ -1,14 +1,15 @@
 import { HearManager } from "@vk-io/hear";
 import { Keyboard, KeyboardBuilder } from "vk-io";
-import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, timer_text_oper, vk } from '../index';
-import { Accessed, Keyboard_Index, Question_Is_Back, Question_Is_Cancel } from "./core/helper";
+import { Accessed, Keyboard_Index, Question_Is_Back, Question_Is_Cancel, To_Vk_Id } from "./core/helper";
 import { Image_Random} from "./core/imagecpu";
 import prisma from "./events/module/prisma_client";
 import { User_Info } from "./events/module/tool";
 import { Item, User } from "@prisma/client";
 import { Location_Printer } from "./events/module/quest";
 import { Storage_Printer } from "./events/module/storage";
+
+type IQuestionMessageContext = any
 
 async function Input_Target_UID(context: IQuestionMessageContext, title: string): Promise<number | null> {
     while (true) {
@@ -484,7 +485,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         : `⚙ С вас снято ${ui.amount}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`;
                         
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: operation_message
                     })
@@ -612,7 +613,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         : `⚙ С вас снято ${ui.amount}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`;
                         
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: operation_message
                     })
@@ -667,7 +668,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                             }
                             try {
                                 await vk.api.messages.send({
-                                    user_id: user_del.idvk,
+                                    user_id: To_Vk_Id(user_del.idvk),
                                     random_id: 0,
                                     message: `❗ Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
                                 })
@@ -705,7 +706,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { increment: gold }, xp: { increment: xp } } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get?.idvk,
+                        user_id: To_Vk_Id(user_get?.idvk),
                         random_id: 0,
                         message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                     })
@@ -739,7 +740,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { decrement: gold }, xp: { decrement: xp } } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get?.idvk,
+                        user_id: To_Vk_Id(user_get?.idvk),
                         random_id: 0,
                         message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                     })
@@ -770,7 +771,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold + count } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                     })
@@ -801,7 +802,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
                     try {
                         await vk.api.messages.send({
-                            user_id: user_get.idvk,
+                            user_id: To_Vk_Id(user_get.idvk),
                             random_id: 0,
                             message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                         })
@@ -834,7 +835,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
                         try {
                             await vk.api.messages.send({
-                                user_id: user_get.idvk, random_id: 0,
+                                user_id: To_Vk_Id(user_get.idvk), random_id: 0,
                                 message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                             })
                             await context.send(`⚙ Операция завершена успешно`)
@@ -867,7 +868,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp + count } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`
                     })
@@ -899,7 +900,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })
                     try {
                         await vk.api.messages.send({
-                            user_id: user_get.idvk,
+                            user_id: To_Vk_Id(user_get.idvk),
                             random_id: 0,
                             message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                         })
@@ -919,7 +920,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })
                     try {
                         await vk.api.messages.send({
-                            user_id: user_get.idvk,
+                            user_id: To_Vk_Id(user_get.idvk),
                             random_id: 0,
                             message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                         })
@@ -1128,7 +1129,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена имени с ${user.name} на ${update_name.name}.`)
                     try {
                         await vk.api.messages.send({
-                            user_id: user.idvk,
+                            user_id: To_Vk_Id(user.idvk),
                             random_id: 0,
                             message: `⚙ Ваше имя в Хогвартс Онлайн изменилось с ${user.name} на ${update_name.name}.`
                         })
@@ -1191,7 +1192,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена положения с ${user.class} на ${update_class.class}.`)
                 try {
                     await vk.api.messages.send({
-                        user_id: user.idvk,
+                        user_id: To_Vk_Id(user.idvk),
                         random_id: 0,
                         message: `⚙ Ваше положение в Хогвартс Онлайн изменилось с ${user.class} на ${update_class.class}.`
                     })
@@ -1256,7 +1257,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена специализации с ${user.spec} на ${update_spec.spec}.`)
                         try {
                             await vk.api.messages.send({
-                                user_id: user.idvk,
+                                user_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `⚙ Ваша специализация в Хогвартс Онлайн изменилась с ${user.spec} на ${update_spec.spec}.`
                             })
@@ -1304,7 +1305,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         await context.send(`⚙ Для пользователя 💳UID которого ${user.id}, произведена смена специализации с ${user.spec} на ${update_spec.spec}.`)
                         try {
                             await vk.api.messages.send({
-                                user_id: user.idvk,
+                                user_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `⚙ Ваша специализация в Хогвартс Онлайн изменилась с ${user.spec} на ${update_spec.spec}.`
                             })
@@ -1350,7 +1351,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                         }
                         try {
                             await vk.api.messages.send({
-                                user_id: user_del.idvk,
+                                user_id: To_Vk_Id(user_del.idvk),
                                 random_id: 0,
                                 message: `❗ Ваша карточка 💳UID: ${user_del.id} больше не действительна. Спасибо, что пользовались банком Гринготтс 🏦, ${user_del.name}. Возвращайтесь к нам снова!`
                             })
@@ -1485,7 +1486,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 
                 try {
                     await vk.api.messages.send({
-                        user_id: target.idvk,
+                        user_id: To_Vk_Id(target.idvk),
                         random_id: 0,
                         message: `⚙ Поздравляем! Вы получили новый 🔮: ${artefact_create.name}\n${artefact_create.label}: ${artefact_create.type}`
                     })
@@ -1658,7 +1659,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 
                     try {
                         await vk.api.messages.send({
-                            user_id: target.idvk,
+                            user_id: To_Vk_Id(target.idvk),
                             random_id: 0,
                             message: `⚙ Ваш артефакт ${deleted.name} изъял ОМОН!`
                         })
@@ -1956,7 +1957,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { increment: gold }, xp: { increment: xp } } })
             try {
                 await vk.api.messages.send({
-                    user_id: user_get?.idvk,
+                    user_id: To_Vk_Id(user_get?.idvk),
                     random_id: 0,
                     message: `⚙ Вам начислено ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                 })
@@ -1984,7 +1985,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             const money_put = await prisma.user.update({ where: { id: user_get?.id }, data: { gold: { decrement: gold }, xp: { decrement: xp } } })
             try {
                 await vk.api.messages.send({
-                    user_id: user_get?.idvk,
+                    user_id: To_Vk_Id(user_get?.idvk),
                     random_id: 0,
                     message: `⚙ С вас снято ${gold}💰 ${xp}🧙. \n\nВаш счёт:\n${money_put.gold}💰\n${money_put.xp}🧙\n\nУведомление: ${messa}`
                 })
@@ -2012,7 +2013,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold + count } })
             try {
                 await vk.api.messages.send({
-                    user_id: user_get.idvk,
+                    user_id: To_Vk_Id(user_get.idvk),
                     random_id: 0,
                     message: `⚙ Вам начислено ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                 })
@@ -2038,7 +2039,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                     })
@@ -2067,7 +2068,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                     const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { gold: user_get.gold - count } })
                     try {
                         await vk.api.messages.send({
-                            user_id: user_get.idvk, random_id: 0,
+                            user_id: To_Vk_Id(user_get.idvk), random_id: 0,
                             message: `⚙ С вас снято ${count}💰. \nВаш счёт: ${money_put.gold}💰 \nУведомление: ${messa}`
                         })
                         await context.send(`⚙ Операция завершена успешно`)
@@ -2095,7 +2096,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp + count } })
             try {
                 await vk.api.messages.send({
-                    user_id: user_get.idvk,
+                    user_id: To_Vk_Id(user_get.idvk),
                     random_id: 0,
                     message: `⚙ Вам начислено ${count}🧙. \nВаш МО: ${money_put.xp}🧙 \nУведомление: ${messa}`
                 })
@@ -2121,7 +2122,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                     })
@@ -2140,7 +2141,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                 const money_put = await prisma.user.update({ where: { id: user_get.id }, data: { xp: user_get.xp - count } })
                 try {
                     await vk.api.messages.send({
-                        user_id: user_get.idvk,
+                        user_id: To_Vk_Id(user_get.idvk),
                         random_id: 0,
                         message: `⚙ С вас снято ${count}🧙. \nВаш МО: ${money_put.xp}🧙  \nУведомление: ${messa}`
                     })
@@ -2285,7 +2286,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (user_find) {
                 try {
                     await vk.api.messages.send({
-                        user_id: user_find.idvk,
+                        user_id: To_Vk_Id(user_find.idvk),
                         random_id: 0,
                         message: `⚙ Ваш товар ${item.name} пожертвовали в АЗКАБАН!`
                     })
@@ -2315,7 +2316,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
             if (user_find) {
                 try {
                     await vk.api.messages.send({
-                        user_id: user_find.idvk,
+                        user_id: To_Vk_Id(user_find.idvk),
                         random_id: 0,
                         message: `⚙ Ваш артефакт ${art_del.name} изъял ОМОН!`
                     })
@@ -2382,7 +2383,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                 await context.send(`⚙ Администратором становится ${get_user.name}`)
                                 try {
                                     await vk.api.messages.send({
-                                        user_id: get_user.idvk,
+                                        user_id: To_Vk_Id(get_user.idvk),
                                         random_id: 0,
                                         message: `⚙ Вас назначили администратором`
                                     })
@@ -2406,7 +2407,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
                                 await context.send(`⚙ Обычным пользователем становится ${get_user.name}`)
                                 try {
                                     await vk.api.messages.send({
-                                        user_id: get_user.idvk,
+                                        user_id: To_Vk_Id(get_user.idvk),
                                         random_id: 0,
                                         message: `⚙ Вас понизили до обычного пользователя`
                                     })

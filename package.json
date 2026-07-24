@@ -5,34 +5,36 @@
   "engines": {
     "node": "16.x"
   },
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --project src/tsconfig.json",
-    "start": "ts-node src/index.ts",
-    "dev": "ts-node-dev --max-old-space-size=256 --optimize-for-size --no-notify src/index.ts --optimize-for-size max_new_space_size=256 --optimize-for-size"
+    "generate": "prisma generate",
+    "build": "npm run generate && rimraf ./build && tsc -p src/tsconfig.json",
+    "start": "npm run build && node build/index.js",
+    "dev": "ts-node-dev -T -P src/tsconfig.json --max-old-space-size=256 --optimize-for-size --no-notify src/index.ts",
+    "pm2": "ts-node-dev -T -P src/tsconfig.json src/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@prisma/client": "^3.12.0",
-    "@types/node": "^17.0.45",
-    "@vk-io/hear": "^1.1.0",
-    "nodemon": "^2.0.15",
-    "prisma": "^3.12.0",
-    "rimraf": "^3.0.2",
-    "ts-node": "^10.7.0",
-    "ts-node-dev": "^1.1.8",
-    "ts-xlsx": "^0.0.11",
-    "typescript": "^4.6.3",
-    "vk-io": "^4.5.2",
-    "vk-io-question": "^3.1.1",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@vk-io/hear": "^1.1.1",
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
+    "jimp": "^0.16.2",
+    "pm2": "^5.4.3",
+    "vk-io": "^4.10.1",
+    "vk-io-question": "^4.0.0",
     "xlsx": "^0.18.5"
   },
-  "dependencies": {
-    "dotenv": "^16.0.3",
-    "express": "^5.1.0",
-    "jimp": "^0.16.2"
+  "devDependencies": {
+    "@types/node": "^16.18.126",
+    "nodemon": "^3.1.14",
+    "prisma": "^5.22.0",
+    "rimraf": "^5.0.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }

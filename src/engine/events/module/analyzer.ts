@@ -2,6 +2,7 @@ import { Analyzer, User } from "@prisma/client"
 import prisma from "./prisma_client"
 import { randomInt } from "crypto"
 import { chat_id, vk } from "../../.."
+import { To_Vk_Id } from "../../core/helper"
 
 export async function Analyzer_Init(id_user: number) {
     const analyzer: Analyzer | null = await prisma.analyzer.findFirst({ where: { id_user: id_user } })
@@ -54,7 +55,7 @@ export async function Analyzer_Birthday_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })
@@ -106,7 +107,7 @@ export async function Analyzer_Beer_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })
@@ -158,7 +159,7 @@ export async function Analyzer_Beer_Premium_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })
@@ -210,7 +211,7 @@ export async function Analyzer_Underwear_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })
@@ -262,7 +263,7 @@ export async function Analyzer_Quest_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })
@@ -314,7 +315,7 @@ export async function Analyzer_Convert_MO_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })
@@ -367,7 +368,7 @@ export async function Analyzer_THERE_Counter(context: any) {
                             const xp = randomInt(1, 15)
                             await prisma.user.update({ where: { id: id_user }, data: { xp: { increment: xp } } })
                             await vk.api.messages.send({
-                                peer_id: user.idvk,
+                                peer_id: To_Vk_Id(user.idvk),
                                 random_id: 0,
                                 message: `🌟 Получено достижение:\n${achive_add.name}`
                             })

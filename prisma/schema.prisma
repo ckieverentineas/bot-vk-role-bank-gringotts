@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   id          Int           @id @default(autoincrement())
-  idvk        Int
+  idvk        BigInt
   name        String
   class       String
   spec        String
@@ -30,7 +30,7 @@ model User {
 
 model BlackBox {
   id   Int @id @default(autoincrement())
-  idvk Int @unique
+  idvk BigInt @unique
 }
 
 model Role {

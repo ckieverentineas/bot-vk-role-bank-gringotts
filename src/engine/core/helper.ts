@@ -4,9 +4,18 @@ import { Keyboard, KeyboardBuilder, PhotoAttachment } from "vk-io"
 import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "../.."
 import { Image_Interface, Image_Random } from "./imagecpu"
 import { promises as fsPromises } from 'fs'
-import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses"
 
 const prisma = new PrismaClient()
+
+export type VkId = number | bigint | string
+
+export function To_Vk_Id(idvk: VkId | null | undefined): number {
+    const id = Number(idvk)
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        throw new Error(`Invalid VK id: ${String(idvk)}`)
+    }
+    return id
+}
 
 const QUESTION_CONTEXT_PATCH_FLAG = '__question_context_patched'
 const QUESTION_CONTEXT_SEND_PATCH_FLAG = '__question_context_send_patched'
@@ -47,11 +56,12 @@ export function Question_Is_Cancel(answer: any): boolean {
 }
 
 async function Question_Cancel_To_Main_Menu(context: any) {
-    const idvk = Number(context?.senderId ?? context?.peerId ?? context?.userId)
-    if (!idvk || Number.isNaN(idvk)) {
+    const rawIdvk = context?.senderId ?? context?.peerId ?? context?.userId
+    if (!rawIdvk) {
         return
     }
 
+    const idvk = To_Vk_Id(rawIdvk)
     const user = await prisma.user.findFirst({ where: { idvk } })
     if (!user) {
         await Send_Message_Universal(context.peerId, `⚙ Операция отменена. Для запуска новой сессии напишите !банк`)
@@ -232,7 +242,7 @@ export async function Book_Random_String(filename: string) {
 export async function Keyboard_Index(context: any, messa: any) {
     const user_check: any = await prisma.user.findFirst({ where: { idvk: context.senderId } })
     const keyboard = new KeyboardBuilder()
-    if (user_check.idvk == root) {
+    if (To_Vk_Id(user_check.idvk) === root) {
         keyboard.textButton({ label: 'Косой переулок', payload: { command: 'sliz' }, color: 'negative' }).row()
         .textButton({ label: 'права', payload: { command: 'sliz' }, color: 'primary' }).row()
     }
@@ -245,9 +255,13 @@ export async function Keyboard_Index(context: any, messa: any) {
     keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
     await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
-    .then(async (response: MessagesSendResponse) => { 
+    .then(async (response: any) => {
         await Sleep(5000)
-        return vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
+        const messageId = typeof response === 'number' ? response : response?.message_id
+        if (!messageId) {
+            return
+        }
+        return vk.api.messages.delete({ message_ids: [messageId], delete_for_all: 1 }) })
     .then(() => { console.log(`User ${context.senderId} succes get keyboard`) })
     .catch((error) => { console.error(`User ${context.senderId} fail get keyboard: ${error}`) });
 
@@ -492,22 +506,24 @@ export async function Confirm_User_Success(context: any, text: string) {
     return res
 }
 
-export async function Send_Message(idvk: number, message: string, keyboard?: Keyboard) {
+export async function Send_Message(idvk: VkId, message: string, keyboard?: Keyboard) {
     message = message ? message : 'invalid message'
+    const peerId = To_Vk_Id(idvk)
     try {
-        keyboard ? await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) : await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } )
+        keyboard ? await vk.api.messages.send({ peer_id: peerId, random_id: 0, message: `${message}`, keyboard: keyboard } ) : await vk.api.messages.send({ peer_id: peerId, random_id: 0, message: `${message}` } )
     } catch (e) {
         console.log(`Ошибка отправки сообщения: ${e}`)
     }
 }
 
-export async function Send_Message_Universal(idvk: number, message: string, keyboard?: Keyboard, attachment?: string | PhotoAttachment | null) {
+export async function Send_Message_Universal(idvk: VkId, message: string, keyboard?: Keyboard, attachment?: string | PhotoAttachment | null) {
     message = message ? message : 'invalid message'
+    const peerId = To_Vk_Id(idvk)
     try {
-        if (!attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } ) }
-        if (attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, attachment: attachment } ) }
-        if (!attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) }
-        if (attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard, attachment: attachment } ) }
+        if (!attachment && !keyboard) { await vk.api.messages.send({ peer_id: peerId, random_id: 0, message: `${message}` } ) }
+        if (attachment && !keyboard) { await vk.api.messages.send({ peer_id: peerId, random_id: 0, message: `${message}`, attachment: attachment } ) }
+        if (!attachment && keyboard) { await vk.api.messages.send({ peer_id: peerId, random_id: 0, message: `${message}`, keyboard: keyboard } ) }
+        if (attachment && keyboard) { await vk.api.messages.send({ peer_id: peerId, random_id: 0, message: `${message}`, keyboard: keyboard, attachment: attachment } ) }
     } catch (e) {
         console.log(`Ошибка отправки сообщения: ${e}`)
     }
