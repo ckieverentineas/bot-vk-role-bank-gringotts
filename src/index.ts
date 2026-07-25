@@ -247,6 +247,9 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	return await next();
 })
 vk.updates.on('message_event', async (context: any, next: any) => { 
+	const rawPayload = context.eventPayload
+	const payload = typeof rawPayload === 'string' ? JSON.parse(rawPayload) : (rawPayload ?? {})
+	Object.defineProperty(context, 'eventPayload', { value: payload, writable: false, configurable: true })
 	const config: any = {
 		"system_call": Main_Menu_Init,
 		"card_enter": Card_Enter,
@@ -281,7 +284,12 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 		'storage_enter': Storage_Enter
 	}
 	try {
-		await config[context.eventPayload.command](context)
+		const handler = config[payload.command]
+		if (handler) {
+			await handler(context)
+		} else {
+			console.log(`Неизвестная команда: ${payload.command}`)
+		}
 	} catch (e) {
 		console.log(`Ошибка события ${e}`)
 	}

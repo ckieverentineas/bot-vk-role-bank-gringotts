@@ -114,6 +114,14 @@ export function Patch_Question_Context(context: any) {
 
         const answer: any = await sourceQuestion(message, questionOptions)
 
+        if (answer) {
+            if (answer.messagePayload) {
+                answer.payload = answer.messagePayload
+            } else {
+                answer.payload = undefined
+            }
+        }
+
         if (answer && !answer.payload) {
             const rawText = Normalize_Question_Command(answer.text)
             if (QUESTION_BACK_COMMANDS.has(rawText)) {
